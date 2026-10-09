@@ -100,6 +100,25 @@ async def exam_websocket_endpoint(websocket: WebSocket, exam_id: str):
                         "timestamp": time.time()
                     }))
 
+                elif msg_type == "CANDIDATE_VIOLATION":
+                    v_type = data.get("violation_type", "Tab Switch Detected")
+                    v_count = data.get("count", 1)
+                    cand_name = data.get("candidate_name", "Registered Candidate")
+                    reg_no = data.get("reg_no", "SSEC-A-0001")
+                    terminal = data.get("terminal", "C-042")
+
+                    # Live Alert to Admin Command Centre Proctor Feed
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "CANDIDATE_VIOLATION",
+                        "exam_id": exam_id,
+                        "candidate_name": cand_name,
+                        "reg_no": reg_no,
+                        "terminal": terminal,
+                        "violation_type": v_type,
+                        "count": v_count,
+                        "timestamp": time.time()
+                    })
+
                 elif msg_type == "SUBMIT_EXAM":
                     cand_id = data.get("candidate_id")
                     reg_no = data.get("reg_no")
@@ -141,7 +160,7 @@ async def exam_websocket_endpoint(websocket: WebSocket, exam_id: str):
 async def admin_websocket_endpoint(websocket: WebSocket):
     """
     Real-Time WebSocket channel for Administrator Command Centre.
-    Receives live test-taker progress, submissions, questions edits, and database updates.
+    Receives live test-taker progress, violations, proctoring feeds, and dispatches broadcast announcements.
     """
     channel = "admin_feed"
     await ws_manager.connect(websocket, channel)
@@ -172,6 +191,30 @@ async def admin_websocket_endpoint(websocket: WebSocket):
                         "type": "TIME_EXTENDED",
                         "exam_id": exam_id,
                         "extra_minutes": extra_mins,
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "BROADCAST_ANNOUNCEMENT":
+                    broadcast_msg = data.get("message", "Attention all candidates: Invigilator Announcement.")
+                    await ws_manager.broadcast_all({
+                        "type": "BROADCAST_ANNOUNCEMENT",
+                        "message": broadcast_msg,
+                        "sender": "Central Invigilator",
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "SEND_CANDIDATE_WARNING":
+                    target_exam = data.get("exam_id", "EX-1001")
+                    await ws_manager.broadcast(f"exam_{target_exam}", {
+                        "type": "PROCTOR_WARNING",
+                        "reg_no": data.get("reg_no"),
+                        "message": data.get("message", "Proctor Alert: Return to your test terminal immediately."),
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "LOCK_TERMINAL":
+                    target_exam = data.get("exam_id", "EX-1001")
+                    await ws_manager.broadcast(f"exam_{target_exam}", {
+                        "type": "FORCE_LOCK_TERMINAL",
+                        "reg_no": data.get("reg_no"),
+                        "reason": data.get("reason", "Terminal locked by Administrator."),
                         "timestamp": time.time()
                     })
             except Exception:

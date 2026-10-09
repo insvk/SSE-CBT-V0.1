@@ -451,10 +451,11 @@ function updateWsStatus(connected: boolean): void {
     }
 }
 
-function showLiveToast(text: string): void {
+function showLiveToast(text: string, isError = false): void {
     const toast = document.getElementById('exam-live-toast');
     if (!toast) return;
     toast.textContent = text;
+    toast.style.borderLeftColor = isError ? '#ef4444' : '#10b981';
     toast.style.display = 'block';
     toast.style.opacity = '1';
     setTimeout(() => {
@@ -504,6 +505,32 @@ function initExamWebSocket(): void {
     }
 }
 
+function showInvigilatorMessage(icon: string, title: string, text: string): void {
+    const modal = document.getElementById('modal-invigilator-msg');
+    const elIcon = document.getElementById('invig-icon');
+    const elTitle = document.getElementById('invig-title');
+    const elBody = document.getElementById('invig-msg-body');
+    const elTime = document.getElementById('invig-msg-time');
+    if (modal && elBody) {
+        if (elIcon) elIcon.textContent = icon;
+        if (elTitle) elTitle.textContent = title;
+        elBody.textContent = text;
+        if (elTime) elTime.textContent = `Received at ${new Date().toLocaleTimeString()}`;
+        modal.style.display = 'flex';
+    }
+}
+
+function triggerTerminalForceLock(reason: string): void {
+    const lockOverlay = document.getElementById('modal-terminal-locked');
+    const reasonText = document.getElementById('lock-reason-text');
+    if (lockOverlay) {
+        if (reasonText) reasonText.textContent = reason;
+        lockOverlay.classList.add('active');
+    }
+    if (timerInterval) clearInterval(timerInterval);
+    performFinalSubmission();
+}
+
 function handleExamSocketMessage(msg: any): void {
     if (msg.type === 'TIME_EXTENDED') {
         const extraMins = msg.extra_minutes || 15;
@@ -527,6 +554,18 @@ function handleExamSocketMessage(msg: any): void {
         currentRemainingSeconds = 179 * 60 + 41;
         loadQuestion(0);
         showLiveToast(`⚠️ Examination session reset by Proctor.`);
+    } else if (msg.type === 'BROADCAST_ANNOUNCEMENT') {
+        showInvigilatorMessage("📢", "Central Invigilator Announcement", msg.message || "Attention all candidates: Please maintain exam focus.");
+    } else if (msg.type === 'PROCTOR_WARNING') {
+        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        if (!msg.reg_no || msg.reg_no === myReg) {
+            showInvigilatorMessage("⚠️", "Direct Warning From Central Invigilator", msg.message || "Please return your full attention to the exam terminal screen.");
+        }
+    } else if (msg.type === 'FORCE_LOCK_TERMINAL') {
+        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        if (!msg.reg_no || msg.reg_no === myReg) {
+            triggerTerminalForceLock(msg.reason || "Terminal locked by Central Invigilator.");
+        }
     } else if (msg.type === 'ACK') {
         updateSyncTime();
     }
@@ -922,8 +961,522 @@ async function fetchRemoteQuestions(): Promise<void> {
     loadQuestion(2); // Question 3 loaded by default matching screenshot
 }
 
+// ============================================================
+// TCS iON SECURITY, KIOSK ANTI-CHEAT & PROCTOR TELEMETRY SUITE
+// ============================================================
+
+// 1. Role & Auth Verification
+function initAuthAndRole(): void {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.replace('/login.html');
+        return;
+    }
+    const role = localStorage.getItem('user_role');
+    if (role === 'super_admin') {
+        if (ui.btnGodEditQ) ui.btnGodEditQ.style.display = 'inline-flex';
+        if (ui.btnGodTools) ui.btnGodTools.style.display = 'inline-flex';
+    } else {
+        if (ui.btnGodEditQ) ui.btnGodEditQ.style.display = 'none';
+        if (ui.btnGodTools) ui.btnGodTools.style.display = 'none';
+    }
+}
+
+// 2. Terminal Identification
+const currentTerminalId = localStorage.getItem('terminal_id') || 'C-042';
+const candTermTag = document.getElementById('cand-terminal-tag');
+if (candTermTag) candTermTag.textContent = currentTerminalId;
+const lockedTermTag = document.getElementById('locked-term-id');
+if (lockedTermTag) lockedTermTag.textContent = currentTerminalId;
+
+// 3. Dynamic Moving Watermark
+function initWatermark(): void {
+    const name = localStorage.getItem('candidate_name') || 'NARESH S';
+    const reg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+    const row1 = document.getElementById('wm-row-1');
+    const row2 = document.getElementById('wm-row-2');
+    const row4 = document.getElementById('wm-row-4');
+
+    const updateWm = () => {
+        const timeStr = new Date().toLocaleTimeString();
+        if (row1) row1.textContent = `${name} • ${reg} • TERMINAL ${currentTerminalId} • ${timeStr}`;
+        if (row2) row2.textContent = `SSE CBT PLATFORM V0.1 • OFFICIAL EXAM • AUDIT ACTIVE`;
+        if (row4) row4.textContent = `${name} • ${reg} • TERMINAL ${currentTerminalId} • SECURE CBT`;
+    };
+    updateWm();
+    setInterval(updateWm, 5000);
+}
+
+// 4. AI Proctor Preview Canvas & Toggle
+function initProctorPreview(): void {
+    const card = document.getElementById('proctor-cam-card');
+    const toggleBtn = document.getElementById('proctor-cam-toggle');
+    const minBtn = document.getElementById('proctor-min-btn');
+
+    if (toggleBtn && card) {
+        toggleBtn.addEventListener('click', () => {
+            const isCol = card.classList.toggle('collapsed');
+            if (minBtn) minBtn.textContent = isCol ? '+' : '−';
+        });
+    }
+
+    const canvas = document.getElementById('proctor-canvas') as HTMLCanvasElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let scanY = 0;
+    let scanDir = 1;
+
+    function renderFrame() {
+        if (!ctx) return;
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Face outline silhouette
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(canvas.width / 2, canvas.height / 2, 35, 48, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Green tracking corners
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const rw = 40;
+        const rh = 50;
+
+        // Top-left
+        ctx.beginPath();
+        ctx.moveTo(cx - rw, cy - rh + 10);
+        ctx.lineTo(cx - rw, cy - rh);
+        ctx.lineTo(cx - rw + 10, cy - rh);
+        ctx.stroke();
+
+        // Top-right
+        ctx.beginPath();
+        ctx.moveTo(cx + rw - 10, cy - rh);
+        ctx.lineTo(cx + rw, cy - rh);
+        ctx.lineTo(cx + rw, cy - rh + 10);
+        ctx.stroke();
+
+        // Bottom-left
+        ctx.beginPath();
+        ctx.moveTo(cx - rw, cy + rh - 10);
+        ctx.lineTo(cx - rw, cy + rh);
+        ctx.lineTo(cx - rw + 10, cy + rh);
+        ctx.stroke();
+
+        // Bottom-right
+        ctx.beginPath();
+        ctx.moveTo(cx + rw - 10, cy + rh);
+        ctx.lineTo(cx + rw, cy + rh);
+        ctx.lineTo(cx + rw, cy + rh - 10);
+        ctx.stroke();
+
+        // Moving scanning radar beam
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(cx - rw, cy - rh + scanY);
+        ctx.lineTo(cx + rw, cy - rh + scanY);
+        ctx.stroke();
+
+        scanY += scanDir * 1.5;
+        if (scanY > rh * 2 || scanY < 0) scanDir *= -1;
+
+        // Overlay status text
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#10b981';
+        ctx.fillText('FACE CONFIDENCE: 99.4%', 8, 14);
+        ctx.fillText('GAZE: CENTER (NORMAL)', 8, canvas.height - 8);
+
+        requestAnimationFrame(renderFrame);
+    }
+    renderFrame();
+}
+
+// 5. Accessibility Font Scaling
+let currentFontScale = 16;
+const btnFontDec = document.getElementById('btn-font-dec');
+const btnFontReset = document.getElementById('btn-font-reset');
+const btnFontInc = document.getElementById('btn-font-inc');
+
+function setQuestionFontSize(size: number): void {
+    currentFontScale = size;
+    if (ui.qText) ui.qText.style.fontSize = `${currentFontScale}px`;
+    document.querySelectorAll('.option-card-row').forEach((row: any) => {
+        row.style.fontSize = `${currentFontScale - 1}px`;
+    });
+}
+
+if (btnFontDec) btnFontDec.onclick = () => { if (currentFontScale > 13) setQuestionFontSize(currentFontScale - 2); };
+if (btnFontReset) btnFontReset.onclick = () => setQuestionFontSize(16);
+if (btnFontInc) btnFontInc.onclick = () => { if (currentFontScale < 24) setQuestionFontSize(currentFontScale + 2); };
+
+// 6. Anti-Cheat Kiosk Enforcement (Tab Switch, Shortcuts & Fullscreen)
+let violationCount = 0;
+const MAX_VIOLATIONS = 3;
+
+function reportSecurityViolation(reason: string): void {
+    if (isSubmitting) return;
+    violationCount++;
+
+    const candName = localStorage.getItem('candidate_name') || 'NARESH S';
+    const regNo = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+
+    // Transmit violation alert directly to Central Invigilator Command Centre
+    if (examSocket && examSocket.readyState === WebSocket.OPEN) {
+        examSocket.send(JSON.stringify({
+            type: "CANDIDATE_VIOLATION",
+            exam_id: EXAM_ID,
+            candidate_name: candName,
+            reg_no: regNo,
+            terminal: currentTerminalId,
+            violation_type: reason,
+            count: violationCount
+        }));
+    }
+
+    if (violationCount >= MAX_VIOLATIONS) {
+        triggerTerminalForceLock(`3 Security Violations Exceeded (${reason}). Examination terminated.`);
+    } else {
+        const violModal = document.getElementById('modal-violation-alert');
+        const badgeText = document.getElementById('viol-badge-text');
+        const descText = document.getElementById('viol-desc-text');
+        if (badgeText) badgeText.textContent = `⚠️ Strike ${violationCount} of 3: ${reason}`;
+        if (descText) descText.textContent = `Active window focus was lost. This malpractice event was transmitted to Central Invigilator telemetry.`;
+        if (violModal) violModal.style.display = 'flex';
+    }
+}
+
+// Focus & Visibility Watchers
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && !isSubmitting) {
+        reportSecurityViolation("Tab Switched / Kiosk Minimized");
+    }
+});
+
+window.addEventListener('blur', () => {
+    if (!isSubmitting) {
+        reportSecurityViolation("Window Focus Lost (Alt-Tab / External Click)");
+    }
+});
+
+// DevTools, Copy-Paste, Refresh Interceptor
+window.addEventListener('keydown', (e) => {
+    const isDevTools = e.key === 'F12' || 
+        (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) ||
+        (e.ctrlKey && ['u', 'U', 's', 'S', 'p', 'P'].includes(e.key));
+    const isCopyPaste = (e.ctrlKey && ['c', 'C', 'v', 'V', 'x', 'X'].includes(e.key));
+    const isRefresh = e.key === 'F5' || (e.ctrlKey && ['r', 'R'].includes(e.key));
+
+    if (isDevTools || isCopyPaste || isRefresh) {
+        e.preventDefault();
+        e.stopPropagation();
+        showLiveToast("⚠️ Security Notice: Shortcuts and inspection tools are blocked in Kiosk Mode.", true);
+        reportSecurityViolation(`Blocked Shortcut: ${e.key}`);
+        return false;
+    }
+});
+
+window.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    showLiveToast("⚠️ Right-click context menu is disabled in Kiosk Mode.");
+    return false;
+});
+
+// Fullscreen Kiosk Mode
+let fsCountdownTimer: any = null;
+let fsRemainingSec = 15;
+
+function toggleKioskFullscreen(): void {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {
+            showLiveToast("Fullscreen request requires user interaction.", true);
+        });
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+        }
+    }
+}
+
+const btnToggleFs = document.getElementById('btn-toggle-fullscreen');
+if (btnToggleFs) btnToggleFs.onclick = toggleKioskFullscreen;
+
+const btnResumeFs = document.getElementById('btn-resume-fullscreen');
+if (btnResumeFs) {
+    btnResumeFs.onclick = () => {
+        document.documentElement.requestFullscreen().then(() => {
+            const modalFs = document.getElementById('modal-fullscreen-lock');
+            if (modalFs) modalFs.classList.remove('active');
+            if (fsCountdownTimer) clearInterval(fsCountdownTimer);
+        }).catch(() => {});
+    };
+}
+
+document.addEventListener('fullscreenchange', () => {
+    const modalFs = document.getElementById('modal-fullscreen-lock');
+    const countSpan = document.getElementById('fs-countdown-sec');
+    const fsText = document.getElementById('fullscreen-text');
+
+    if (!document.fullscreenElement) {
+        if (fsText) fsText.textContent = 'Fullscreen';
+        if (modalFs && !isSubmitting && violationCount < MAX_VIOLATIONS) {
+            modalFs.classList.add('active');
+            fsRemainingSec = 15;
+            if (countSpan) countSpan.textContent = '15';
+            if (fsCountdownTimer) clearInterval(fsCountdownTimer);
+            fsCountdownTimer = setInterval(() => {
+                fsRemainingSec--;
+                if (countSpan) countSpan.textContent = fsRemainingSec.toString();
+                if (fsRemainingSec <= 0) {
+                    clearInterval(fsCountdownTimer);
+                    reportSecurityViolation("Exited Fullscreen Timeout");
+                }
+            }, 1000);
+        }
+    } else {
+        if (fsText) fsText.textContent = 'Exit Fullscreen';
+        if (modalFs) modalFs.classList.remove('active');
+        if (fsCountdownTimer) clearInterval(fsCountdownTimer);
+    }
+});
+
+// Acknowledge buttons
+const btnAckViol = document.getElementById('btn-ack-violation');
+if (btnAckViol) {
+    btnAckViol.onclick = () => {
+        const violModal = document.getElementById('modal-violation-alert');
+        if (violModal) violModal.style.display = 'none';
+    };
+}
+
+const btnAckInvig = document.getElementById('btn-ack-invig');
+if (btnAckInvig) {
+    btnAckInvig.onclick = () => {
+        const invigModal = document.getElementById('modal-invigilator-msg');
+        if (invigModal) invigModal.style.display = 'none';
+    };
+}
+
+// 7. TCS iON Virtual Scientific Calculator Engine
+let calcCurrent = '0';
+let calcExpression = '';
+let calcMemory = 0;
+let isRadMode = false;
+let resetNextNum = false;
+
+const calcWindow = document.getElementById('calc-window');
+const calcScreen = document.getElementById('calc-screen');
+const calcExpr = document.getElementById('calc-expr');
+const btnOpenCalc = document.getElementById('btn-open-calc');
+const btnCloseCalc = document.getElementById('btn-close-calc');
+const calcRadDegBtn = document.getElementById('calc-rad-deg');
+
+function updateCalcDisplay(): void {
+    if (calcScreen) calcScreen.textContent = calcCurrent;
+    if (calcExpr) calcExpr.textContent = calcExpression || '\u00A0';
+}
+
+if (btnOpenCalc && calcWindow) {
+    btnOpenCalc.onclick = () => {
+        calcWindow.classList.toggle('active');
+    };
+}
+
+if (btnCloseCalc && calcWindow) {
+    btnCloseCalc.onclick = () => {
+        calcWindow.classList.remove('active');
+    };
+}
+
+// Make Calculator Draggable
+const calcHandle = document.getElementById('calc-drag-handle');
+if (calcHandle && calcWindow) {
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let initLeft = 0;
+    let initTop = 0;
+
+    calcHandle.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = calcWindow.getBoundingClientRect();
+        initLeft = rect.left;
+        initTop = rect.top;
+        calcWindow.style.right = 'auto';
+        calcWindow.style.left = `${initLeft}px`;
+        calcWindow.style.top = `${initTop}px`;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        calcWindow.style.left = `${initLeft + dx}px`;
+        calcWindow.style.top = `${initTop + dy}px`;
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+}
+
+// Calculator Functions & Operations
+function calcFactorial(n: number): number {
+    if (n < 0 || !Number.isInteger(n)) return NaN;
+    if (n === 0 || n === 1) return 1;
+    let res = 1;
+    for (let i = 2; i <= Math.min(n, 20); i++) res *= i;
+    return res;
+}
+
+if (calcRadDegBtn) {
+    calcRadDegBtn.onclick = () => {
+        isRadMode = !isRadMode;
+        calcRadDegBtn.textContent = isRadMode ? 'Rad' : 'Deg';
+    };
+}
+
+// Memory buttons
+const btnMc = document.getElementById('calc-mc');
+if (btnMc) btnMc.onclick = () => { calcMemory = 0; showLiveToast("Calc: Memory cleared (MC)"); };
+
+const btnMr = document.getElementById('calc-mr');
+if (btnMr) btnMr.onclick = () => { calcCurrent = calcMemory.toString(); resetNextNum = true; updateCalcDisplay(); };
+
+const btnMs = document.getElementById('calc-ms');
+if (btnMs) btnMs.onclick = () => { calcMemory = parseFloat(calcCurrent) || 0; showLiveToast("Calc: Stored in memory (MS)"); };
+
+const btnMPlus = document.getElementById('calc-mplus');
+if (btnMPlus) btnMPlus.onclick = () => { calcMemory += (parseFloat(calcCurrent) || 0); showLiveToast("Calc: Added to memory (M+)"); };
+
+const btnMMinus = document.getElementById('calc-mminus');
+if (btnMMinus) btnMMinus.onclick = () => { calcMemory -= (parseFloat(calcCurrent) || 0); showLiveToast("Calc: Subtracted from memory (M-)"); };
+
+// Clear & Backspace
+const btnC = document.getElementById('calc-c');
+if (btnC) btnC.onclick = () => { calcCurrent = '0'; calcExpression = ''; updateCalcDisplay(); };
+
+const btnCe = document.getElementById('calc-ce');
+if (btnCe) btnCe.onclick = () => { calcCurrent = '0'; updateCalcDisplay(); };
+
+const btnBack = document.getElementById('calc-back');
+if (btnBack) btnBack.onclick = () => {
+    if (calcCurrent.length > 1) {
+        calcCurrent = calcCurrent.slice(0, -1);
+    } else {
+        calcCurrent = '0';
+    }
+    updateCalcDisplay();
+};
+
+// Numeric and Symbol Insert buttons
+document.querySelectorAll('.calc-btn[data-insert]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const val = btn.getAttribute('data-insert') || '';
+        if (['+', '-', '*', '/', '^', '%'].includes(val)) {
+            calcExpression = `${calcExpression} ${calcCurrent} ${val}`;
+            calcCurrent = '0';
+            resetNextNum = false;
+        } else if (val === '(' || val === ')') {
+            calcExpression += ` ${val} `;
+        } else if (val === 'pi') {
+            calcCurrent = Math.PI.toString();
+            resetNextNum = true;
+        } else if (val === 'e') {
+            calcCurrent = Math.E.toString();
+            resetNextNum = true;
+        } else {
+            // Digit or dot
+            if (calcCurrent === '0' || resetNextNum) {
+                calcCurrent = val === '.' ? '0.' : val;
+                resetNextNum = false;
+            } else {
+                if (val === '.' && calcCurrent.includes('.')) return;
+                calcCurrent += val;
+            }
+        }
+        updateCalcDisplay();
+    });
+});
+
+// Scientific Function buttons
+document.querySelectorAll('.calc-btn[data-fn]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const fn = btn.getAttribute('data-fn');
+        const num = parseFloat(calcCurrent) || 0;
+        let res = num;
+
+        const toRad = (d: number) => isRadMode ? d : (d * Math.PI / 180);
+        const toDeg = (r: number) => isRadMode ? r : (r * 180 / Math.PI);
+
+        switch (fn) {
+            case 'sin': res = Math.sin(toRad(num)); break;
+            case 'cos': res = Math.cos(toRad(num)); break;
+            case 'tan': res = Math.tan(toRad(num)); break;
+            case 'asin': res = toDeg(Math.asin(num)); break;
+            case 'acos': res = toDeg(Math.acos(num)); break;
+            case 'atan': res = toDeg(Math.atan(num)); break;
+            case 'sinh': res = Math.sinh(num); break;
+            case 'cosh': res = Math.cosh(num); break;
+            case 'tanh': res = Math.tanh(num); break;
+            case 'log': res = Math.log10(num); break;
+            case 'ln': res = Math.log(num); break;
+            case 'sq': res = Math.pow(num, 2); break;
+            case 'cube': res = Math.pow(num, 3); break;
+            case 'sqrt': res = Math.sqrt(num); break;
+            case 'cbrt': res = Math.cbrt(num); break;
+            case 'inv': res = num !== 0 ? 1 / num : NaN; break;
+            case 'fact': res = calcFactorial(num); break;
+            case 'exp': res = Math.pow(10, num); break;
+            case 'neg': res = -num; break;
+            case 'abs': res = Math.abs(num); break;
+        }
+
+        calcExpression = `${fn}(${calcCurrent})`;
+        calcCurrent = Number.isFinite(res) ? (Math.round(res * 100000000) / 100000000).toString() : 'Error';
+        resetNextNum = true;
+        updateCalcDisplay();
+    });
+});
+
+// Equals Calculation
+const btnCalcEq = document.getElementById('calc-eq');
+if (btnCalcEq) {
+    btnCalcEq.onclick = () => {
+        try {
+            let expr = `${calcExpression} ${calcCurrent}`.trim();
+            expr = expr.replace(/\^/g, '**');
+            // Safe evaluation of arithmetic only
+            if (!/^[0-9+\-*/().\s%*]+$/.test(expr)) {
+                calcCurrent = 'Error';
+            } else {
+                // eslint-disable-next-line no-eval
+                const result = Function(`'use strict'; return (${expr})`)();
+                calcExpression = `${expr} =`;
+                calcCurrent = Number.isFinite(result) ? (Math.round(result * 100000000) / 100000000).toString() : 'Error';
+            }
+        } catch (_) {
+            calcCurrent = 'Error';
+        }
+        resetNextNum = true;
+        updateCalcDisplay();
+    };
+}
+
 // INITIALIZE CONSOLE
+initAuthAndRole();
 initProfile();
+initWatermark();
+initProctorPreview();
 startTimer();
 initExamWebSocket();
 fetchRemoteQuestions();
+

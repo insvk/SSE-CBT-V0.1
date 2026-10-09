@@ -7,6 +7,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        const token = localStorage.getItem('access_token');
+        const role = localStorage.getItem('user_role');
+        const godMode = localStorage.getItem('god_mode') === 'true';
+        if (!token || (role !== 'super_admin' && !godMode)) {
+          alert('Access Denied: Super Admin authentication required. Candidate accounts are strictly restricted to the Exam Portal.');
+          window.location.replace('/login.html');
+        }
+      })();
+    </script>
     <style>
       *, *::before, *::after {
         box-sizing: border-box;
@@ -1183,6 +1194,49 @@
                 ⚠️ Emergency Reset
               </button>
               <button class="btn btn-primary btn-sm" id="btn-assign" disabled>Assign to Exam</button>
+            </div>
+          </div>
+
+          <!-- TCS iON GLOBAL INVIGILATOR BROADCAST TOOL -->
+          <div style="background: var(--bg-card); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 0.85rem 1.25rem; margin-bottom: 1.5rem; display: flex; gap: 0.75rem; align-items: center; box-shadow: var(--card-shadow);">
+            <span style="font-size: 1.25rem;">📢</span>
+            <input type="text" id="input-broadcast-msg" placeholder="Broadcast live announcement to all active candidate exam screens (e.g. '5 minutes remaining in Physics Section')..." style="flex: 1; height: 38px; border-radius: var(--radius); border: 1px solid var(--border-color); background: var(--bg-body); padding: 0 0.85rem; font-size: 0.825rem; color: var(--text-heading); outline: none;" />
+            <button class="btn btn-primary btn-sm" id="btn-send-broadcast" style="background: linear-gradient(135deg, #1e3a8a, #2563eb);">
+              📢 Broadcast Alert
+            </button>
+          </div>
+
+          <!-- TCS iON LIVE PROCTORING LAB & TERMINAL MONITORING GRID -->
+          <div style="background: var(--bg-card); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--card-shadow);" id="proctor-lab-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+              <div>
+                <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 8px;">
+                  <span>📡 TCS iON Live Candidate Proctoring Lab</span>
+                  <span class="badge-pill badge-live" style="background: #ecfdf5; color: #047857;">ACTIVE INVIGILATION</span>
+                </h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                  Real-time terminal telemetry, biometric webcam snapshots, tab-switch violation counters, and instant candidate interventions.
+                </p>
+              </div>
+              <span id="active-terminals-count" style="font-size: 0.8rem; font-weight: 700; color: var(--brand-blue); background: rgba(50, 31, 219, 0.08); padding: 0.25rem 0.65rem; border-radius: 9999px;">
+                Connecting Terminals...
+              </span>
+            </div>
+
+            <!-- Terminals Grid -->
+            <div id="terminals-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
+              <!-- Populated dynamically via JS with candidate proctor cards -->
+            </div>
+
+            <!-- TCS iON Incident & Malpractice Audit Log -->
+            <div style="margin-top: 1.25rem; background: var(--bg-body); border-radius: var(--radius); padding: 0.85rem 1rem; border: 1px solid var(--border-color);">
+              <div style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+                <span>🛡️ TCS iON Incident &amp; Malpractice Audit Feed</span>
+                <span style="color: #10b981; font-size: 0.7rem;">🟢 Live Proctoring Engine Active</span>
+              </div>
+              <div id="incident-audit-log" style="font-family: var(--font-mono); font-size: 0.75rem; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; color: var(--text-main);">
+                <div style="color: #64748b;">[System Ready] Central Invigilator Proctoring Engine initialized &bull; Awaiting candidate telemetry.</div>
+              </div>
             </div>
           </div>
 

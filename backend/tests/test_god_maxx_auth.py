@@ -112,3 +112,46 @@ def test_god_maxx_emergency_controls():
     unlock_res = client.post("/api/v1/exams/EX-1001/unlock-sessions")
     assert unlock_res.status_code == 200
     assert unlock_res.json()["status"] == "success"
+
+
+def test_candidate_forbidden_from_admin_endpoints():
+    """
+    SECURITY BARRIER TEST:
+    Strictly validates that candidate accounts cannot access admin routes,
+    including candidate lists, dashboard summaries, and question creation.
+    """
+    secret = settings.SUPABASE_JWT_SECRET or "super-secret-jwt-token-with-at-least-32-characters-long"
+    import jwt, time
+    candidate_token = jwt.encode(
+        {
+            "sub": "00000000-0000-0000-0000-000000000055",
+            "role": "candidate",
+            "god_mode": False,
+            "aud": "authenticated",
+            "exp": int(time.time()) + 3600,
+        },
+        secret,
+        algorithm="HS256",
+    )
+    headers = {
+        "Authorization": f"Bearer {candidate_token}",
+        "x-tenant-id": DEFAULT_TENANT_ID,
+    }
+
+    # 1. Candidates cannot access dashboard summary
+    res1 = client.get("/api/v1/candidates/dashboard-summary", headers=headers)
+    assert res1.status_code == 403
+    assert "Super Admin" in res1.json()["detail"] or "Forbidden" in res1.json()["detail"]
+
+    # 2. Candidates cannot access candidate management
+    res2 = client.get("/api/v1/candidates/", headers=headers)
+    assert res2.status_code == 403
+
+    # 3. Candidates cannot create accounts
+    res3 = client.post(
+        "/api/v1/auth/create-account",
+        headers=headers,
+        json={"full_name": "Hacker", "role": "admin"}
+    )
+    assert res3.status_code == 403
+

@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Official NTA Score Card | JEE (Main) 2026</title>
+    <script>
+      (function() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          window.location.replace('/login.html');
+        }
+      })();
+    </script>
     
     <style>
       body {
@@ -160,9 +168,9 @@
         align-items: center;
       }
     </style>
-    <script type="module" crossorigin src="/assets/scorecard-1ffafedf.js"></script>
+    <script type="module" crossorigin src="/assets/scorecard-a556b8d6.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
-    <link rel="stylesheet" href="/assets/style-f56c3c3d.css">
+    <link rel="stylesheet" href="/assets/style-5f067ebd.css">
   </head>
   <body>
     

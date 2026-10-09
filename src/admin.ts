@@ -305,6 +305,7 @@ async function loadCandidates(query = ""): Promise<void> {
         });
         
         bindCheckboxes();
+        renderProctorTerminals();
     } catch (err) {
         showToast("Failed to load candidates from Supabase", true);
     }
@@ -596,6 +597,159 @@ if (ui.btnAssign) {
     };
 }
 
+// --- TCS iON PROCTORING LAB & TERMINALS GRID ---
+const terminalViolations: Record<string, number> = {};
+
+function appendIncidentLog(text: string, isAlert = false): void {
+    const logEl = document.getElementById('incident-audit-log');
+    if (!logEl) return;
+    const timeStr = new Date().toLocaleTimeString();
+    const div = document.createElement('div');
+    div.style.color = isAlert ? '#ef4444' : 'var(--text-main)';
+    div.style.fontWeight = isAlert ? '700' : '500';
+    div.innerHTML = `<span style="color: #64748b;">[${timeStr}]</span> ${escapeHtml(text)}`;
+    logEl.prepend(div);
+}
+
+function renderProctorTerminals(): void {
+    const grid = document.getElementById('terminals-grid');
+    const countEl = document.getElementById('active-terminals-count');
+    if (!grid) return;
+
+    if (cachedCandidates.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 1.5rem;">No active candidate terminals connected yet.</div>`;
+        if (countEl) countEl.textContent = '0 Terminals Connected';
+        return;
+    }
+
+    if (countEl) countEl.textContent = `${cachedCandidates.length} Active Terminals Online`;
+    grid.innerHTML = '';
+
+    cachedCandidates.forEach((c: any, idx: number) => {
+        const terminalId = `Terminal C-04${idx + 1}`;
+        const regNo = c.registration_number || `SSEC-${c.batch || 'A'}-000${idx + 1}`;
+        const violations = terminalViolations[regNo] || 0;
+        const initials = (c.full_name || 'CD').split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
+
+        const card = document.createElement('div');
+        card.id = `terminal-card-${escapeHtml(regNo)}`;
+        card.style.background = 'var(--bg-body)';
+        card.style.border = violations > 0 ? '1.5px solid #ef4444' : '1px solid var(--border-color)';
+        card.style.borderRadius = 'var(--radius)';
+        card.style.padding = '1rem';
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
+        card.style.gap = '0.65rem';
+        card.style.transition = 'all 0.2s';
+
+        card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.75rem; font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">${terminalId}</span>
+                <span id="term-status-${escapeHtml(regNo)}" class="status-pill ${violations > 0 ? 'status-suspended' : 'status-active'}">
+                    ${violations > 0 ? `⚠️ ${violations} Violation${violations > 1 ? 's' : ''}` : '🟢 Active in Exam'}
+                </span>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #321fdb, #818cf8); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem;">
+                    ${initials}
+                </div>
+                <div style="display: flex; flex-direction: column; overflow: hidden;">
+                    <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${escapeHtml(c.full_name)}
+                    </span>
+                    <span style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted);">
+                        ${escapeHtml(regNo)} &bull; Slot ${escapeHtml(c.batch || 'A')}
+                    </span>
+                </div>
+            </div>
+
+            <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 0.45rem 0.65rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                <span>Camera: <strong style="color: #10b981;">AI Verified</strong></span>
+                <span id="term-progress-${escapeHtml(regNo)}" style="font-weight: 600; color: var(--brand-blue);">Ready</span>
+            </div>
+
+            <div style="display: flex; gap: 0.45rem; margin-top: 0.25rem;">
+                <button class="btn btn-outline btn-sm" style="flex: 1; padding: 0.3rem 0.4rem; font-size: 0.72rem; color: #d97706; border-color: #fde68a;" onclick="sendCandidateWarning('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}')">
+                    ⚠️ Warn
+                </button>
+                <button class="btn btn-outline btn-sm" style="flex: 1; padding: 0.3rem 0.4rem; font-size: 0.72rem; color: #ef4444; border-color: #fca5a5;" onclick="lockCandidateTerminal('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}')">
+                    🔒 Lock
+                </button>
+                <button class="btn btn-outline btn-sm" style="flex: 1; padding: 0.3rem 0.4rem; font-size: 0.72rem;" onclick="resetAttempt('${escapeHtml(c.id)}')">
+                    🔄 Reset
+                </button>
+            </div>
+        `;
+
+        grid.appendChild(card);
+    });
+}
+
+(window as any).sendCandidateWarning = (regNo: string, name: string) => {
+    const customMsg = prompt(`Enter warning message to display immediately on ${name}'s terminal:`, "Invigilator Alert: Please maintain exam focus on your terminal screen.");
+    if (!customMsg) return;
+
+    if (adminSocket && adminSocket.readyState === WebSocket.OPEN) {
+        adminSocket.send(JSON.stringify({
+            type: "SEND_CANDIDATE_WARNING",
+            exam_id: "EX-1001",
+            reg_no: regNo,
+            message: customMsg
+        }));
+        showToast(`⚠️ Warning dispatched to ${name} (${regNo})`);
+        appendIncidentLog(`Dispatched Invigilator Warning to ${name} (${regNo}): "${customMsg}"`);
+    } else {
+        showToast("WebSocket disconnected, unable to send live warning", true);
+    }
+};
+
+(window as any).lockCandidateTerminal = (regNo: string, name: string) => {
+    if (!confirm(`Are you sure you want to forcibly LOCK the terminal of ${name} (${regNo})?`)) return;
+
+    if (adminSocket && adminSocket.readyState === WebSocket.OPEN) {
+        adminSocket.send(JSON.stringify({
+            type: "LOCK_TERMINAL",
+            exam_id: "EX-1001",
+            reg_no: regNo,
+            reason: "Malpractice investigation lock by Central Invigilator."
+        }));
+        showToast(`🔒 Terminal locked for ${name} (${regNo})`);
+        appendIncidentLog(`Forcibly LOCKED terminal for ${name} (${regNo})`, true);
+    }
+};
+
+// Global Invigilator Broadcast Tool
+const btnBroadcast = document.getElementById('btn-send-broadcast');
+const inputBroadcast = document.getElementById('input-broadcast-msg') as HTMLInputElement;
+
+if (btnBroadcast && inputBroadcast) {
+    btnBroadcast.addEventListener('click', () => {
+        const msg = inputBroadcast.value.trim();
+        if (!msg) {
+            showToast("Please enter an announcement message to broadcast", true);
+            inputBroadcast.focus();
+            return;
+        }
+
+        if (adminSocket && adminSocket.readyState === WebSocket.OPEN) {
+            adminSocket.send(JSON.stringify({
+                type: "BROADCAST_ANNOUNCEMENT",
+                message: msg
+            }));
+            showToast("📢 Broadcast alert dispatched to all active candidate screens!");
+            appendIncidentLog(`Global Broadcast Dispatched: "${msg}"`);
+            inputBroadcast.value = '';
+        } else {
+            showToast("WebSocket connection offline", true);
+        }
+    });
+
+    inputBroadcast.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') btnBroadcast.click();
+    });
+}
+
 // --- REAL-TIME WEBSOCKET FEED ---
 let adminSocket: WebSocket | null = null;
 let adminPingTimer: any = null;
@@ -628,16 +782,42 @@ function initAdminWebSocket(): void {
         adminSocket.onmessage = (event) => {
             try {
                 const msg = JSON.parse(event.data);
-                if (msg.type === 'CANDIDATE_RESPONSE') {
+
+                if (msg.type === 'CANDIDATE_VIOLATION') {
+                    const reg = msg.reg_no || 'SSEC';
+                    terminalViolations[reg] = (terminalViolations[reg] || 0) + 1;
+                    showToast(`⚠️ TCS iON Violation: Candidate ${msg.candidate_name || reg} - ${msg.violation_type}`, true);
+                    appendIncidentLog(`SECURITY VIOLATION: Candidate ${msg.candidate_name || reg} (${reg}) on ${msg.terminal || 'Terminal'} - ${msg.violation_type} (Strike #${msg.count || terminalViolations[reg]})`, true);
+                    
+                    const termCard = document.getElementById(`terminal-card-${reg}`);
+                    if (termCard) {
+                        termCard.style.border = '2px solid #ef4444';
+                        termCard.style.background = 'rgba(239, 68, 68, 0.05)';
+                    }
+                    const termStatus = document.getElementById(`term-status-${reg}`);
+                    if (termStatus) {
+                        termStatus.className = 'status-pill status-suspended';
+                        termStatus.textContent = `⚠️ Strike #${terminalViolations[reg]}`;
+                    }
+
+                } else if (msg.type === 'CANDIDATE_RESPONSE') {
                     showToast(`🟢 Live Response: Candidate ${msg.candidate_name || 'Candidate'} - Q${msg.question_id || '1'}`);
+                    const termProgress = document.getElementById(`term-progress-${msg.reg_no}`);
+                    if (termProgress) {
+                        termProgress.textContent = `Q${msg.question_id} Answered`;
+                    }
+
                 } else if (msg.type === 'CANDIDATE_SUBMITTED') {
                     showToast(`🏆 Candidate submitted: Score ${msg.score}/${msg.max_possible}`);
+                    appendIncidentLog(`Candidate ${msg.candidate_name || msg.reg_no} completed and submitted examination.`);
                     loadCandidates();
                     loadDashboardSummary();
+
                 } else if (msg.type === 'CANDIDATE_CREATED') {
                     showToast(`👤 Candidate created: ${msg.candidate?.full_name || ''}`);
                     loadCandidates();
                     loadDashboardSummary();
+
                 } else if (msg.type === 'CANDIDATE_STATUS_CHANGED') {
                     showToast(`🔄 Candidate status updated: ${msg.status}`);
                     loadCandidates();
@@ -684,3 +864,4 @@ initTheme();
 loadDashboardSummary();
 loadCandidates();
 initAdminWebSocket();
+

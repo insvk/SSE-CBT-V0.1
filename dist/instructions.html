@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>General Examination Instructions | JEE (Main) CBT</title>
+    <script>
+      (function() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          window.location.replace('/login.html');
+        }
+      })();
+    </script>
     
     <style>
       body {
@@ -75,7 +83,7 @@
         margin: 2rem 0;
       }
     </style>
-    <link rel="stylesheet" href="/assets/style-f56c3c3d.css">
+    <link rel="stylesheet" href="/assets/style-5f067ebd.css">
   </head>
   <body>
     

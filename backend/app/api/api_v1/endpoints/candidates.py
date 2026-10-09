@@ -5,7 +5,7 @@ import io
 import logging
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
-from app.core.security import get_tenant_user
+from app.core.security import get_tenant_user, require_admin_user
 from app.core.db import get_db
 from app.core.tenant import ensure_tenant_exists
 from app.core.ws_manager import ws_manager
@@ -55,7 +55,7 @@ def _generate_reg_number(db, tenant_id: str, slot: str) -> str:
 
 
 @router.get("/dashboard-summary")
-def get_dashboard_summary(user_context: dict = Depends(get_tenant_user)):
+def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
     """Computes real-time, non-dummy operational metrics directly from Supabase tables."""
     tid = user_context["tenant_id"]
     db = get_db()
@@ -150,8 +150,8 @@ def get_dashboard_summary(user_context: dict = Depends(get_tenant_user)):
 
 
 @router.get("/", response_model=List[CandidateResponse])
-def get_candidates(user_context: dict = Depends(get_tenant_user)):
-    """Fetch candidates for the authorized tenant."""
+def get_candidates(user_context: dict = Depends(require_admin_user)):
+    """Fetch candidates for the authorized tenant (Admin Only)."""
     tid = user_context["tenant_id"]
     db = get_db()
     ensure_tenant_exists(db, tid)
@@ -168,8 +168,8 @@ def get_candidates(user_context: dict = Depends(get_tenant_user)):
 
 
 @router.post("/", response_model=CandidateResponse)
-async def create_candidate(cand: CandidateCreate, user_context: dict = Depends(get_tenant_user)):
-    """Create a single candidate and persist to the database."""
+async def create_candidate(cand: CandidateCreate, user_context: dict = Depends(require_admin_user)):
+    """Create a single candidate and persist to the database (Admin Only)."""
     tid = user_context["tenant_id"]
     db = get_db()
     ensure_tenant_exists(db, tid)
@@ -300,7 +300,7 @@ async def bulk_import_candidates(
 @router.post("/bulk-assign")
 def bulk_assign(
     payload: BulkAssignRequest,
-    user_context: dict = Depends(get_tenant_user),
+    user_context: dict = Depends(require_admin_user),
 ):
     """
     Assigns multiple candidates to an exam in Supabase.
@@ -343,8 +343,8 @@ def bulk_assign(
 
 
 @router.delete("/{candidate_id}")
-def suspend_candidate(candidate_id: str, user_context: dict = Depends(get_tenant_user)):
-    """Suspends a candidate in the database."""
+def suspend_candidate(candidate_id: str, user_context: dict = Depends(require_admin_user)):
+    """Suspends a candidate in the database (Admin Only)."""
     tid = user_context["tenant_id"]
     db = get_db()
 
@@ -368,7 +368,7 @@ def suspend_candidate(candidate_id: str, user_context: dict = Depends(get_tenant
 
 
 @router.patch("/{candidate_id}/toggle-status")
-async def toggle_candidate_status(candidate_id: str, user_context: dict = Depends(get_tenant_user)):
+async def toggle_candidate_status(candidate_id: str, user_context: dict = Depends(require_admin_user)):
     """God MAXX Tool: Toggles candidate status between active and suspended."""
     tid = user_context["tenant_id"]
     db = get_db()
@@ -402,7 +402,7 @@ async def toggle_candidate_status(candidate_id: str, user_context: dict = Depend
 
 
 @router.post("/{candidate_id}/reset-attempt")
-async def reset_candidate_attempt(candidate_id: str, user_context: dict = Depends(get_tenant_user)):
+async def reset_candidate_attempt(candidate_id: str, user_context: dict = Depends(require_admin_user)):
     """God MAXX Tool: Resets candidate exam attempt for immediate re-take."""
     tid = user_context["tenant_id"]
     db = get_db()

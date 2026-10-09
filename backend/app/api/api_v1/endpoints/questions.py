@@ -6,7 +6,7 @@ import io
 import logging
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, status
-from app.core.security import get_tenant_user
+from app.core.security import get_tenant_user, require_admin_user
 from app.core.db import get_db
 from app.core.tenant import ensure_tenant_exists
 from app.core.ws_manager import ws_manager
@@ -102,8 +102,8 @@ def get_question_bank(
 
 
 @router.post("/", status_code=201)
-def create_question(question: QuestionCreate, user_context: dict = Depends(get_tenant_user)):
-    """Creates a single question and persists it to the question bank."""
+def create_question(question: QuestionCreate, user_context: dict = Depends(require_admin_user)):
+    """Creates a single question and persists it to the question bank (Admin Only)."""
     tid = user_context["tenant_id"]
     db = get_db()
     ensure_tenant_exists(db, tid)
@@ -133,7 +133,7 @@ def create_question(question: QuestionCreate, user_context: dict = Depends(get_t
 async def dry_run_import(
     file: UploadFile = File(...),
     format: str = Form("csv"),
-    user_context: dict = Depends(get_tenant_user),
+    user_context: dict = Depends(require_admin_user),
 ):
     """
     UNIVERSAL BULK QUESTION IMPORT - DRY RUN
@@ -194,8 +194,8 @@ async def dry_run_import(
 
 
 @router.post("/import/commit/{job_id}")
-def commit_import(job_id: str, user_context: dict = Depends(get_tenant_user)):
-    """Commits a validated dry-run job into the live database question bank."""
+def commit_import(job_id: str, user_context: dict = Depends(require_admin_user)):
+    """Commits a validated dry-run job into the live database question bank (Admin Only)."""
     tid = user_context["tenant_id"]
     db = get_db()
     ensure_tenant_exists(db, tid)

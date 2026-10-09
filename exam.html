@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SSE CBT PLATFORM V0.1 | Computer Based Test</title>
+    <!-- Top-of-Head Security Auth Guard -->
+    <script>
+      (function() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          window.location.replace('/login.html');
+        }
+      })();
+    </script>
     <link rel="stylesheet" href="/src/style.css" />
     <!-- KaTeX for Official LaTeX Math Rendering -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
@@ -13,13 +22,34 @@
   <body>
     <div class="exam-layout">
       
-      <!-- 1. TOP HEADER (EXACT REPLICA OF SCREENSHOT) -->
+      <!-- 1. TOP HEADER (EXACT REPLICA OF SCREENSHOT + TCS iON EXTENSIONS) -->
       <header class="exam-header">
         <div class="exam-title-text" id="exam-header-title">
           SSE CBT PLATFORM V0.1 - JEE MAIN 2026 MOCK TEST
         </div>
 
         <div class="exam-header-right">
+          <!-- Font Size Scaling Accessibility Group -->
+          <div class="font-scale-group" style="display: flex; gap: 2px; align-items: center; border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 4px; background: #f8fafc;" title="Change Font Size">
+            <button type="button" class="btn-font-scale" id="btn-font-dec" style="background: none; border: none; font-size: 0.72rem; font-weight: 700; cursor: pointer; padding: 2px 6px; color: var(--text-body);" title="Decrease Font">A-</button>
+            <button type="button" class="btn-font-scale" id="btn-font-reset" style="background: none; border: none; font-size: 0.82rem; font-weight: 700; cursor: pointer; padding: 2px 6px; color: var(--primary);" title="Default Font">A</button>
+            <button type="button" class="btn-font-scale" id="btn-font-inc" style="background: none; border: none; font-size: 0.92rem; font-weight: 700; cursor: pointer; padding: 2px 6px; color: var(--text-body);" title="Increase Font">A+</button>
+          </div>
+
+          <!-- TCS iON Virtual Calculator Button -->
+          <button type="button" class="header-action-item" id="btn-open-calc" title="Open Virtual Scientific Calculator">
+            <span style="font-size: 0.95rem;">🧮</span>
+            <span>Calculator</span>
+          </button>
+
+          <!-- Kiosk Fullscreen Trigger -->
+          <button type="button" class="header-action-item" id="btn-toggle-fullscreen" title="Toggle Fullscreen Kiosk Mode">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+            </svg>
+            <span id="fullscreen-text">Fullscreen</span>
+          </button>
+
           <!-- Sync Widget -->
           <div class="sync-widget" id="btn-manual-sync" title="Synchronize state with cloud">
             <div class="sync-top">
@@ -101,11 +131,11 @@
               <span class="question-heading" id="question-number">Question 3</span>
               <span class="question-type-tag" id="question-type-label">Single Select Type</span>
               
-              <!-- God MAXX Live Edit Controls -->
-              <button type="button" class="btn btn-sm btn-outline" id="btn-god-edit-q" style="font-size: 0.75rem; border-color: #f59e0b; color: #b45309; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
+              <!-- God MAXX Live Edit Controls (Super Admin Only) -->
+              <button type="button" class="btn btn-sm btn-outline" id="btn-god-edit-q" style="display: none; font-size: 0.75rem; border-color: #f59e0b; color: #b45309; padding: 2px 8px; align-items: center; gap: 4px;">
                 ✏️ Edit (God MAXX)
               </button>
-              <button type="button" class="btn btn-sm btn-outline" id="btn-god-tools" style="font-size: 0.75rem; border-color: #8b5cf6; color: #6d28d9; padding: 2px 8px;">
+              <button type="button" class="btn btn-sm btn-outline" id="btn-god-tools" style="display: none; font-size: 0.75rem; border-color: #8b5cf6; color: #6d28d9; padding: 2px 8px;">
                 ⚡ God MAXX Tools
               </button>
             </div>
@@ -354,6 +384,194 @@
     </div>
 
     <div id="exam-live-toast" style="display:none; position:fixed; top:65px; right:20px; background:#0f172a; color:#f8fafc; padding:0.75rem 1.25rem; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.35); font-size:0.875rem; font-weight:600; border-left:4px solid #10b981; z-index:9999; max-width:400px; transition: all 0.3s ease;"></div>
+
+    <!-- DYNAMIC MOVING ANTI-SCREEN-CAPTURE WATERMARK -->
+    <div class="anti-cheat-watermark" id="anti-cheat-watermark">
+      <div class="watermark-row" id="wm-row-1">NARESH S &bull; 5254740(V4.3.7) &bull; TERMINAL C-042 &bull; SECURE CBT</div>
+      <div class="watermark-row" id="wm-row-2">SSE CBT PLATFORM V0.1 &bull; OFFICIAL EXAM &bull; CLOUD LIVE</div>
+      <div class="watermark-row" id="wm-row-3">CONFIDENTIAL EXAMINATION &bull; DO NOT PHOTOGRAPH &bull; AUDIT ACTIVE</div>
+      <div class="watermark-row" id="wm-row-4">NARESH S &bull; 5254740(V4.3.7) &bull; TERMINAL C-042 &bull; SECURE CBT</div>
+    </div>
+
+    <!-- LIVE AI PROCTOR PREVIEW CARD -->
+    <div class="proctor-cam-card" id="proctor-cam-card">
+      <div class="proctor-cam-header" id="proctor-cam-toggle">
+        <span style="display:flex; align-items:center; gap:5px;">
+          <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 6px #10b981;"></span>
+          AI Proctor: LIVE
+        </span>
+        <span style="cursor:pointer; font-size:0.85rem; font-weight:bold;" id="proctor-min-btn">&minus;</span>
+      </div>
+      <div class="proctor-cam-viewport">
+        <video id="proctor-video" autoplay playsinline muted style="display:none;"></video>
+        <canvas id="proctor-canvas" width="210" height="125"></canvas>
+        <div class="proctor-face-box"></div>
+      </div>
+      <div class="proctor-cam-meta">
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#64748b;">Face:</span>
+          <span style="color:#10b981; font-weight:700;">Verified (Center)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#64748b;">Terminal:</span>
+          <span style="color:#0284c7; font-weight:700;" id="cand-terminal-tag">C-042</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TCS iON VIRTUAL SCIENTIFIC CALCULATOR -->
+    <div class="calc-window" id="calc-window">
+      <div class="calc-titlebar" id="calc-drag-handle">
+        <span style="display:flex; align-items:center; gap:6px;">
+          <span>🧮</span>
+          <span>TCS iON Scientific Calculator</span>
+        </span>
+        <button type="button" id="btn-close-calc" style="background:none; border:none; color:white; font-size:1.15rem; cursor:pointer; font-weight:700; line-height:1;">&times;</button>
+      </div>
+      <div class="calc-display-panel">
+        <div class="calc-history-line" id="calc-expr">&nbsp;</div>
+        <div class="calc-result-line" id="calc-screen">0</div>
+      </div>
+      <div class="calc-keypad-grid">
+        <!-- Row 1: Mode & Memory -->
+        <button type="button" class="calc-btn op" id="calc-rad-deg">Deg</button>
+        <button type="button" class="calc-btn" id="calc-mc">MC</button>
+        <button type="button" class="calc-btn" id="calc-mr">MR</button>
+        <button type="button" class="calc-btn" id="calc-ms">MS</button>
+        <button type="button" class="calc-btn" id="calc-mplus">M+</button>
+        <button type="button" class="calc-btn" id="calc-mminus">M-</button>
+        <button type="button" class="calc-btn action" id="calc-c">C</button>
+        <button type="button" class="calc-btn action" id="calc-ce">CE</button>
+        <button type="button" class="calc-btn action" id="calc-back">⌫</button>
+
+        <!-- Row 2: Trig & Constants -->
+        <button type="button" class="calc-btn op" data-fn="sin">sin</button>
+        <button type="button" class="calc-btn op" data-fn="cos">cos</button>
+        <button type="button" class="calc-btn op" data-fn="tan">tan</button>
+        <button type="button" class="calc-btn op" data-fn="asin">sin⁻¹</button>
+        <button type="button" class="calc-btn op" data-fn="acos">cos⁻¹</button>
+        <button type="button" class="calc-btn op" data-fn="atan">tan⁻¹</button>
+        <button type="button" class="calc-btn op" data-insert="(">(</button>
+        <button type="button" class="calc-btn op" data-insert=")">)</button>
+        <button type="button" class="calc-btn op" data-insert="/">÷</button>
+
+        <!-- Row 3: Hyperbolic, logs, 7 8 9 * -->
+        <button type="button" class="calc-btn op" data-fn="sinh">sinh</button>
+        <button type="button" class="calc-btn op" data-fn="cosh">cosh</button>
+        <button type="button" class="calc-btn op" data-fn="tanh">tanh</button>
+        <button type="button" class="calc-btn op" data-fn="log">log</button>
+        <button type="button" class="calc-btn op" data-fn="ln">ln</button>
+        <button type="button" class="calc-btn num" data-insert="7">7</button>
+        <button type="button" class="calc-btn num" data-insert="8">8</button>
+        <button type="button" class="calc-btn num" data-insert="9">9</button>
+        <button type="button" class="calc-btn op" data-insert="*">&times;</button>
+
+        <!-- Row 4: Powers, roots, 4 5 6 - -->
+        <button type="button" class="calc-btn op" data-fn="sq">x²</button>
+        <button type="button" class="calc-btn op" data-fn="cube">x³</button>
+        <button type="button" class="calc-btn op" data-insert="^">xʸ</button>
+        <button type="button" class="calc-btn op" data-fn="sqrt">√</button>
+        <button type="button" class="calc-btn op" data-fn="cbrt">∛</button>
+        <button type="button" class="calc-btn num" data-insert="4">4</button>
+        <button type="button" class="calc-btn num" data-insert="5">5</button>
+        <button type="button" class="calc-btn num" data-insert="6">6</button>
+        <button type="button" class="calc-btn op" data-insert="-">&minus;</button>
+
+        <!-- Row 5: Inverses, facts, 1 2 3 + -->
+        <button type="button" class="calc-btn op" data-fn="inv">1/x</button>
+        <button type="button" class="calc-btn op" data-fn="fact">n!</button>
+        <button type="button" class="calc-btn op" data-insert="pi">π</button>
+        <button type="button" class="calc-btn op" data-insert="e">e</button>
+        <button type="button" class="calc-btn op" data-fn="exp">10ˣ</button>
+        <button type="button" class="calc-btn num" data-insert="1">1</button>
+        <button type="button" class="calc-btn num" data-insert="2">2</button>
+        <button type="button" class="calc-btn num" data-insert="3">3</button>
+        <button type="button" class="calc-btn op" data-insert="+">+</button>
+
+        <!-- Row 6: Mod, +/- and 0 . = -->
+        <button type="button" class="calc-btn op" data-insert="%">mod</button>
+        <button type="button" class="calc-btn op" data-fn="neg">±</button>
+        <button type="button" class="calc-btn op" data-fn="abs">|x|</button>
+        <button type="button" class="calc-btn num" data-insert="0" style="grid-column: span 2;">0</button>
+        <button type="button" class="calc-btn num" data-insert=".">.</button>
+        <button type="button" class="calc-btn equals" id="calc-eq" style="grid-column: span 3;">=</button>
+      </div>
+    </div>
+
+    <!-- KIOSK FULLSCREEN ENFORCEMENT MODAL -->
+    <div class="kiosk-lock-overlay" id="modal-fullscreen-lock">
+      <div style="background: white; color: #0f172a; padding: 2.25rem; border-radius: 16px; max-width: 540px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; margin: 0 auto 1.25rem;">⚠️</div>
+        <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem;">Kiosk Fullscreen Required</h2>
+        <p style="font-size: 0.9rem; color: #475569; margin-bottom: 1.25rem; line-height: 1.5;">
+          TCS iON Examination Engine requires strict full screen mode. You have exited full screen.
+          Please resume full screen within <strong id="fs-countdown-sec" style="color: #dc2626; font-size: 1.1rem;">15</strong> seconds to avoid exam disqualification.
+        </p>
+        <button type="button" class="btn btn-primary" id="btn-resume-fullscreen" style="width: 100%; padding: 0.85rem; font-size: 1rem; font-weight: 700; background: #dc2626;">
+          🖥️ Resume Full Screen Mode
+        </button>
+      </div>
+    </div>
+
+    <!-- ANTI-CHEAT VIOLATION ALERT MODAL -->
+    <div class="modal-overlay" id="modal-violation-alert">
+      <div class="modal-content" style="max-width: 500px; border-top: 5px solid #dc2626;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;">
+          <span style="font-size: 1.5rem;">🚨</span>
+          <h3 style="font-size: 1.2rem; font-weight: 800; color: #dc2626;">Security Incident Detected</h3>
+        </div>
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem;">
+          <div style="font-weight: 800; color: #991b1b; font-size: 0.9rem;" id="viol-badge-text">
+            ⚠️ Strike 1 of 3: Window / Tab Switch Detected
+          </div>
+          <p style="font-size: 0.825rem; color: #7f1d1d; margin-top: 0.35rem; line-height: 1.4;" id="viol-desc-text">
+            Your browser window lost active focus or a disallowed action was attempted. This event has been stamped and transmitted to Central Invigilator telemetry.
+          </p>
+        </div>
+        <p style="font-size: 0.825rem; color: #64748b; margin-bottom: 1.25rem;">
+          <strong>TCS iON 3-Strike Rule:</strong> On the 3rd security strike, your exam will be terminated immediately and locked permanently.
+        </p>
+        <div style="display: flex; justify-content: flex-end;">
+          <button type="button" class="btn btn-primary" id="btn-ack-violation" style="background: #dc2626;">I Understand &amp; Resume Test</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVIGILATOR BROADCAST & DIRECT WARNING MODAL -->
+    <div class="modal-overlay" id="modal-invigilator-msg">
+      <div class="modal-content" style="max-width: 500px; border-top: 5px solid #0284c7;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;">
+          <span style="font-size: 1.5rem;" id="invig-icon">📢</span>
+          <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;" id="invig-title">Central Invigilator Announcement</h3>
+        </div>
+        <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+          <p style="font-size: 0.925rem; color: #0369a1; font-weight: 600; line-height: 1.5;" id="invig-msg-body">
+            Please maintain silence and face your terminal at all times.
+          </p>
+          <span style="font-size: 0.72rem; color: #64748b; margin-top: 0.5rem; display: block;" id="invig-msg-time"></span>
+        </div>
+        <div style="display: flex; justify-content: flex-end;">
+          <button type="button" class="btn btn-primary" id="btn-ack-invig">Acknowledge</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERMINAL FORCE-LOCKED OVERLAY -->
+    <div class="kiosk-lock-overlay" id="modal-terminal-locked">
+      <div style="background: white; color: #0f172a; padding: 2.5rem; border-radius: 16px; max-width: 560px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; border-top: 6px solid #b91c1c;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: #fee2e2; color: #b91c1c; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 1.25rem;">🔒</div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: #b91c1c; margin-bottom: 0.5rem;">TERMINAL LOCKED</h2>
+        <p style="font-size: 0.95rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;" id="lock-reason-text">
+          Security policy violation threshold exceeded or invigilator manual freeze.
+        </p>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.5;">
+          Your responses up to this point have been synchronized to the cloud database. Your test session is closed. Please remain seated and await examination supervisor instructions.
+        </p>
+        <div style="font-family: var(--font-mono); font-size: 0.8rem; background: #f8fafc; padding: 0.5rem; border-radius: 6px; border: 1px solid #e2e8f0; color: #475569;">
+          Terminal: <span id="locked-term-id">C-042</span> &bull; Status: LOCKED &bull; Code: ION-SEC-403
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="/src/exam.ts"></script>
   </body>

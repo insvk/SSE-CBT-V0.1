@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Question Bank | SSE CBT PLATFORM V0.1</title>
+    <script>
+      (function() {
+        const token = localStorage.getItem('access_token');
+        const role = localStorage.getItem('user_role');
+        const godMode = localStorage.getItem('god_mode') === 'true';
+        if (!token || (role !== 'super_admin' && !godMode)) {
+          alert('Access Denied: Super Admin authentication required to access Question Bank.');
+          window.location.replace('/login.html');
+        }
+      })();
+    </script>
     <link rel="stylesheet" href="/src/style.css" />
     <style>
       .page-container { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
