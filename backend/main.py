@@ -17,6 +17,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/health")
+@app.get("/")
 @app.get(f"{settings.API_V1_STR}/health")
 def health_check():
     return {"status": "ok", "message": "SIMATS CBT Backend is running."}
