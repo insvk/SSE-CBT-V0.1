@@ -134,7 +134,7 @@ def login(payload: LoginRequest):
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid credentials. For Admin use admin@sse,cbt.in / Admin@sse"
+        detail="Invalid credentials. Please verify your username and password."
     )
 
 

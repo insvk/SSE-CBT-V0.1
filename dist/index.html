@@ -66,7 +66,7 @@
 
       /* Saveetha University Logo */
       .logo-container {
-        margin-bottom: 2rem;
+        margin-bottom: 1.75rem;
       }
 
       .saveetha-brand-img {
@@ -82,7 +82,11 @@
         font-weight: 800;
         color: var(--text-dark);
         letter-spacing: -0.02em;
+        line-height: 1.3;
+        margin-top: 1.25rem;
         margin-bottom: 0.35rem;
+        overflow: visible;
+        padding-bottom: 2px;
       }
 
       .platform-subtitle {
@@ -92,60 +96,6 @@
         letter-spacing: 0.08em;
         text-transform: uppercase;
         margin-bottom: 2rem;
-      }
-
-      /* Quick-Fill Credentials Helper Chips */
-      .quick-chips-bar {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 1.25rem;
-        padding: 0.5rem 0.75rem;
-        background: #f8fafc;
-        border: 1px dashed #cbd5e1;
-        border-radius: 8px;
-        font-size: 0.75rem;
-      }
-
-      .quick-chips-title {
-        font-weight: 700;
-        color: #64748b;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        white-space: nowrap;
-      }
-
-      .chip-btn {
-        background: white;
-        border: 1px solid #cbd5e1;
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: #1e293b;
-        cursor: pointer;
-        transition: all 0.15s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-      }
-
-      .chip-btn:hover {
-        background: #eff6ff;
-        border-color: #93c5fd;
-        color: var(--primary-blue);
-      }
-
-      .chip-btn.admin-chip {
-        color: #b45309;
-        border-color: #fde68a;
-        background: #fffbeb;
-      }
-
-      .chip-btn.admin-chip:hover {
-        background: #fef3c7;
-        border-color: #f59e0b;
       }
 
       /* Form Fields */
@@ -408,7 +358,6 @@
         display: block;
       }
 
-      /* Subtle gradient overlay to match background seamlessly */
       .art-overlay {
         position: absolute;
         inset: 0;
@@ -540,17 +489,6 @@
           <h1 class="welcome-title">Welcome back !</h1>
           <div class="platform-subtitle">SSE CBT PLATFORM V0.1</div>
 
-          <!-- Quick Test Credentials Helper Chips -->
-          <div class="quick-chips-bar" id="quick-fill-bar">
-            <span class="quick-chips-title">⚡ Quick Fill:</span>
-            <button type="button" class="chip-btn admin-chip" id="chip-admin" title="Fill Authoritative God MAXX Admin">
-              👑 God MAXX Admin
-            </button>
-            <button type="button" class="chip-btn" id="chip-candidate" title="Fill Registered JEE Candidate">
-              🎓 Candidate
-            </button>
-          </div>
-
           <!-- Alert Toast for Login Status -->
           <div class="auth-alert" id="auth-alert"></div>
 
@@ -665,21 +603,24 @@
           <button type="button" class="modal-close-btn" data-close="modal-forgot-pwd">&times;</button>
         </div>
         <div class="modal-body">
-          <p style="font-size: 0.9rem; color: #475569; line-height: 1.6; margin-bottom: 1rem;">
-            For candidate accounts on the <strong>SSE CBT PLATFORM V0.1</strong>, standard login credentials are:
+          <p style="font-size: 0.9rem; color: #475569; line-height: 1.6; margin-bottom: 1.25rem;">
+            If you have forgotten your password or your terminal is locked, submit your registered Email Address or Roll Number below for verification:
           </p>
-          <div style="background: #f1f5f9; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem;">
-            <div><strong>Default Candidate PIN:</strong> <code style="color: #0284c7; font-weight: 700;">12345678</code> (or Date of Birth DDMMYYYY)</div>
-            <div style="margin-top: 0.35rem;"><strong>Default Roll Number:</strong> <code style="color: #0284c7; font-weight: 700;">5254740(V4.3.7)</code></div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label">Email or Registration Number</label>
+            <input type="text" id="recovery-ident-input" class="form-input" placeholder="Enter registered roll number or email" />
           </div>
-          <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5;">
-            If you need your password reset or terminal unlocked, please contact the <strong>Examination Controller</strong> or <strong>God MAXX Administrator</strong> at <a href="mailto:admin@sse,cbt.in" style="color: var(--primary-blue); font-weight: 600;">admin@sse,cbt.in</a>.
+          <div id="recovery-feedback" style="display: none; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.825rem; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; margin-bottom: 1rem;">
+            Your recovery request has been logged. Please verify your identity with the test center invigilator.
+          </div>
+          <p style="font-size: 0.8rem; color: #64748b; line-height: 1.5;">
+            For immediate exam-hall assistance, please inform your Chief Superintendent or Invigilator.
           </p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" data-close="modal-forgot-pwd">Close</button>
-          <button type="button" class="btn-login" style="width: auto; padding: 0 1.25rem; height: 38px; font-size: 0.85rem;" id="btn-use-default-creds">
-            Auto-fill Candidate PIN
+          <button type="button" class="btn-login" style="width: auto; padding: 0 1.25rem; height: 38px; font-size: 0.85rem;" id="btn-submit-recovery">
+            Submit Request
           </button>
         </div>
       </div>
@@ -696,22 +637,13 @@
           <p style="font-size: 0.875rem; color: #475569; margin-bottom: 1.25rem;">
             Authenticate using your official Saveetha Institute institutional account (@saveetha.com):
           </p>
-          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            <button type="button" class="chip-btn" id="sso-candidate-btn" style="padding: 0.75rem 1rem; justify-content: flex-start; border-radius: 8px; font-size: 0.875rem; width: 100%;">
-              <span style="font-size: 1.25rem;">👨‍🎓</span>
-              <div style="text-align: left; margin-left: 0.5rem;">
-                <div style="font-weight: 700;">Naresh S (Candidate)</div>
-                <div style="font-size: 0.75rem; color: #64748b;">naresh.sse@saveetha.com &bull; Roll: 5254740(V4.3.7)</div>
-              </div>
-            </button>
-            <button type="button" class="chip-btn admin-chip" id="sso-admin-btn" style="padding: 0.75rem 1rem; justify-content: flex-start; border-radius: 8px; font-size: 0.875rem; width: 100%;">
-              <span style="font-size: 1.25rem;">👑</span>
-              <div style="text-align: left; margin-left: 0.5rem;">
-                <div style="font-weight: 700;">God MAXX Exam Controller</div>
-                <div style="font-size: 0.75rem; color: #92400e;">admin@sse,cbt.in &bull; Super Admin</div>
-              </div>
-            </button>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label">Saveetha Institutional Email</label>
+            <input type="email" id="sso-email-field" class="form-input" placeholder="username@saveetha.com" />
           </div>
+          <button type="button" class="btn-login" id="sso-connect-btn" style="width: 100%; height: 44px; margin-top: 0.5rem;">
+            Connect with Google SSO &rarr;
+          </button>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" data-close="modal-google-sso">Cancel</button>
@@ -734,7 +666,7 @@
             </div>
             <div class="form-group" style="margin-bottom: 0.85rem;">
               <label class="form-label">Registration / Roll Number<span class="required-star">*</span></label>
-              <input type="text" id="reg-rollno" class="form-input" placeholder="e.g. SSEC-A-CBT-1001" required />
+              <input type="text" id="reg-rollno" class="form-input" placeholder="Enter issued roll number" required />
             </div>
             <div class="form-group" style="margin-bottom: 0.85rem;">
               <label class="form-label">Email Address</label>
@@ -742,10 +674,10 @@
             </div>
             <div class="form-group" style="margin-bottom: 0.85rem;">
               <label class="form-label">Password<span class="required-star">*</span></label>
-              <input type="password" id="reg-pwd" class="form-input" placeholder="Create password (default: 12345678)" value="12345678" required />
+              <input type="password" id="reg-pwd" class="form-input" placeholder="Create password" required />
             </div>
             <button type="submit" class="btn-login" style="margin-top: 1rem;">
-              Complete Registration &amp; Start Exam &rarr;
+              Complete Registration &amp; Proceed &rarr;
             </button>
           </form>
         </div>
@@ -766,10 +698,6 @@
         const alertBox = document.getElementById('auth-alert');
         const btnSubmit = document.getElementById('btn-submit-login');
 
-        // Quick Fill Chips
-        const chipAdmin = document.getElementById('chip-admin');
-        const chipCand = document.getElementById('chip-candidate');
-
         // Modal triggers
         const linkForgot = document.getElementById('link-forgot-password');
         const modalForgot = document.getElementById('modal-forgot-pwd');
@@ -777,7 +705,8 @@
         const modalGoogle = document.getElementById('modal-google-sso');
         const linkRegister = document.getElementById('link-register-account');
         const modalRegister = document.getElementById('modal-register');
-        const btnUseDefaultCreds = document.getElementById('btn-use-default-creds');
+        const btnSubmitRecovery = document.getElementById('btn-submit-recovery');
+        const recoveryFeedback = document.getElementById('recovery-feedback');
 
         // Restore remembered user
         const savedUser = localStorage.getItem('cbt_remembered_user');
@@ -805,22 +734,7 @@
           eyeOffIcon.style.display = isPassword ? 'block' : 'none';
         });
 
-        // 2. Quick Fill Chips
-        chipAdmin.addEventListener('click', () => {
-          identInput.value = 'admin@sse,cbt.in';
-          pwdInput.value = 'Admin@sse';
-          hideAlert();
-          identInput.focus();
-        });
-
-        chipCand.addEventListener('click', () => {
-          identInput.value = '5254740(V4.3.7)';
-          pwdInput.value = '12345678';
-          hideAlert();
-          identInput.focus();
-        });
-
-        // 3. Modal Handlers
+        // 2. Modal Handlers
         function openModal(m) { m.style.display = 'flex'; }
         function closeModal(m) { m.style.display = 'none'; }
 
@@ -843,32 +757,27 @@
           });
         });
 
-        // Auto-fill default credentials from modal
-        btnUseDefaultCreds.addEventListener('click', () => {
-          identInput.value = '5254740(V4.3.7)';
-          pwdInput.value = '12345678';
-          closeModal(modalForgot);
-          identInput.focus();
+        // Recovery submit
+        btnSubmitRecovery.addEventListener('click', () => {
+          const val = document.getElementById('recovery-ident-input').value.trim();
+          if (val) {
+            recoveryFeedback.style.display = 'block';
+            setTimeout(() => { closeModal(modalForgot); recoveryFeedback.style.display = 'none'; }, 2000);
+          } else {
+            document.getElementById('recovery-ident-input').focus();
+          }
         });
 
-        // Google SSO mock options
-        document.getElementById('sso-candidate-btn').addEventListener('click', () => {
-          localStorage.setItem('access_token', 'google_sso_cand_token_' + Date.now());
-          localStorage.setItem('candidate_name', 'NARESH S');
-          localStorage.setItem('reg_no', '5254740(V4.3.7)');
+        // Google SSO connect
+        document.getElementById('sso-connect-btn').addEventListener('click', () => {
+          const email = document.getElementById('sso-email-field').value.trim() || 'candidate@saveetha.com';
+          localStorage.setItem('access_token', 'google_sso_token_' + Date.now());
           localStorage.setItem('user_role', 'candidate');
           localStorage.setItem('god_mode', 'false');
+          localStorage.setItem('candidate_name', email.split('@')[0].toUpperCase());
+          localStorage.setItem('reg_no', email.split('@')[0]);
           localStorage.setItem('tenant_id', '00000000-0000-0000-0000-000000000001');
           window.location.href = '/instructions.html';
-        });
-
-        document.getElementById('sso-admin-btn').addEventListener('click', () => {
-          localStorage.setItem('access_token', 'google_sso_admin_token_' + Date.now());
-          localStorage.setItem('candidate_name', 'God MAXX Administrator');
-          localStorage.setItem('user_role', 'super_admin');
-          localStorage.setItem('god_mode', 'true');
-          localStorage.setItem('tenant_id', '00000000-0000-0000-0000-000000000001');
-          window.location.href = '/admin.html';
         });
 
         // Self-registration submit
@@ -909,7 +818,7 @@
           window.location.href = '/instructions.html';
         });
 
-        // 4. Primary Form Submission Handler
+        // 3. Primary Form Submission Handler
         form.addEventListener('submit', async (e) => {
           e.preventDefault();
           hideAlert();
@@ -938,15 +847,6 @@
           btnSubmit.disabled = true;
           btnSubmit.innerHTML = '<span>Verifying credentials...</span>';
 
-          const normalizedIdent = ident.toLowerCase();
-          const isGodAdminAttempt = (
-            normalizedIdent === 'admin@sse,cbt.in' ||
-            normalizedIdent === 'admin@ssecbt.in' ||
-            normalizedIdent === 'admin@sse.cbt.in' ||
-            normalizedIdent === 'admin@cbt.in' ||
-            normalizedIdent === 'admin'
-          );
-
           try {
             const response = await fetch('/api/v1/auth/login', {
               method: 'POST',
@@ -964,54 +864,27 @@
 
               const user = data.user || {};
               if (user.role === 'super_admin' || user.god_mode) {
-                // GOD MAXX Admin Access
                 localStorage.setItem('user_role', 'super_admin');
                 localStorage.setItem('god_mode', 'true');
-                localStorage.setItem('candidate_name', 'God MAXX Administrator');
-                showAlert('God MAXX Authorization verified. Redirecting to Command Centre...', false);
+                localStorage.setItem('candidate_name', 'System Administrator');
+                showAlert('Authorization verified. Redirecting to Command Centre...', false);
                 setTimeout(() => { window.location.href = '/admin.html'; }, 400);
               } else {
-                // Candidate Access
                 localStorage.setItem('user_role', 'candidate');
                 localStorage.setItem('god_mode', 'false');
                 localStorage.setItem('candidate_id', user.id || 'cand_' + Date.now());
                 localStorage.setItem('reg_no', user.registration_number || ident);
-                localStorage.setItem('candidate_name', user.full_name || 'NARESH S');
-                showAlert('Candidate session verified. Launching CBT Console...', false);
+                localStorage.setItem('candidate_name', user.full_name || 'Candidate');
+                showAlert('Session verified. Launching CBT Console...', false);
                 setTimeout(() => { window.location.href = '/instructions.html'; }, 400);
               }
               return;
             } else {
-              const err = await response.json();
-              throw new Error(err.detail || 'Authentication failed');
+              const err = await response.json().catch(() => ({}));
+              throw new Error(err.detail || 'Invalid email address, username, or password.');
             }
           } catch (err) {
-            // Client-side fallback for offline / dev mock evaluation
-            if (isGodAdminAttempt && pwd === 'Admin@sse') {
-              localStorage.setItem('access_token', 'dev_god_maxx_token_' + Date.now());
-              localStorage.setItem('user_role', 'super_admin');
-              localStorage.setItem('god_mode', 'true');
-              localStorage.setItem('candidate_name', 'God MAXX Administrator');
-              localStorage.setItem('tenant_id', '00000000-0000-0000-0000-000000000001');
-              showAlert('God MAXX Authorization confirmed. Entering Command Centre...', false);
-              setTimeout(() => { window.location.href = '/admin.html'; }, 400);
-              return;
-            }
-
-            // Candidate fallback (accept default candidate PIN 12345678)
-            if (pwd === '12345678' || ident.startsWith('5254740') || ident.startsWith('SSEC')) {
-              localStorage.setItem('access_token', 'dev_candidate_token_' + Date.now());
-              localStorage.setItem('user_role', 'candidate');
-              localStorage.setItem('god_mode', 'false');
-              localStorage.setItem('reg_no', ident);
-              localStorage.setItem('candidate_name', ident.includes('5254740') ? 'NARESH S' : 'Candidate (' + ident + ')');
-              localStorage.setItem('tenant_id', '00000000-0000-0000-0000-000000000001');
-              showAlert('Candidate session initialized. Redirecting...', false);
-              setTimeout(() => { window.location.href = '/instructions.html'; }, 400);
-              return;
-            }
-
-            showAlert(err.message || 'Invalid credentials. For Admin use admin@sse,cbt.in / Admin@sse, or Candidate PIN 12345678.');
+            showAlert(err.message || 'Invalid email address, username, or password.');
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = '<span>Log In</span>';
           }
