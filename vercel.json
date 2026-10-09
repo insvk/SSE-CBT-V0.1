@@ -3,12 +3,7 @@
   "services": {
     "backend": {
       "root": "backend",
-      "framework": "fastapi",
-      "env": {
-        "SUPABASE_URL": "@supabase_url",
-        "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
-        "SUPABASE_JWT_SECRET": "@supabase_jwt_secret"
-      }
+      "framework": "fastapi"
     },
     "frontend": {
       "root": "frontend",
