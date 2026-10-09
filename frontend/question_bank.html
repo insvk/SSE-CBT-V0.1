@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Question Bank | PROJECT APEX OMEGA</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <style>
+      .page-container { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
+      .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+      .qb-grid { display: grid; grid-template-columns: 300px 1fr; gap: 2rem; }
+      .filters { background: white; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border-color); height: fit-content; }
+      .q-list { display: flex; flex-direction: column; gap: 1.5rem; }
+      .q-item { background: white; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border-color); }
+      .q-tags { display: flex; gap: 0.5rem; margin-top: 1rem; }
+      .tag { background: var(--bg-page); color: var(--text-muted); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    
+    <div class="page-container">
+      <div class="header-actions">
+        <h1>Question Bank</h1>
+        <div>
+          <button class="btn btn-outline" style="margin-right: 1rem;">Bulk Import CSV</button>
+          <button class="btn btn-primary">Create New Question</button>
+        </div>
+      </div>
+
+      <div class="qb-grid">
+        <aside class="filters">
+          <h3>Filters</h3>
+          <hr style="margin: 1rem 0; border: none; border-top: 1px solid var(--border-color);">
+          <div style="margin-bottom: 1rem;">
+            <label style="font-weight: 600; font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">Subject</label>
+            <select style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">
+              <option>All Subjects</option>
+              <option>Computer Science</option>
+              <option>Physics</option>
+            </select>
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label style="font-weight: 600; font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">Status</label>
+            <select style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">
+              <option>All Statuses</option>
+              <option>Draft</option>
+              <option>Approved</option>
+            </select>
+          </div>
+        </aside>
+
+        <main class="q-list" id="q-list">
+          <!-- Populated by JS -->
+        </main>
+      </div>
+    </div>
+
+    <script type="module" src="/src/question_bank.ts"></script>
+  </body>
+</html>

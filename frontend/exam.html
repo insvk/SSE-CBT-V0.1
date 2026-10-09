@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exam Window | PROJECT APEX OMEGA</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="exam-layout">
+      
+      <!-- HEADER -->
+      <header class="exam-header">
+        <div class="title">JEE Main Mock Exam - Candidate Name (Reg: APEX10293)</div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <div id="save-indicator" style="font-size: 0.875rem; font-weight: 600; color: var(--success);">All changes saved</div>
+          <div class="timer" id="timer-display">Loading...</div>
+        </div>
+      </header>
+
+      <!-- MAIN AREA -->
+      <main class="exam-main">
+        <div class="question-card" id="question-container">
+          <div class="question-header">
+            <span id="question-number">Question 1</span>
+            <span>Single Choice Type</span>
+          </div>
+          <div class="question-content" id="question-text">
+            Loading question...
+          </div>
+          <ul class="options-list" id="options-list">
+            <!-- Options will be injected here via JS -->
+          </ul>
+        </div>
+      </main>
+
+      <!-- SIDEBAR -->
+      <aside class="exam-sidebar">
+        <h3>Question Palette</h3>
+        <div class="palette-grid" id="palette-grid">
+          <!-- Palette buttons injected via JS -->
+        </div>
+
+        <div class="legend">
+          <div class="legend-item"><div class="legend-box not-visited"></div> Not Visited</div>
+          <div class="legend-item"><div class="legend-box answered" style="background: #10b981; border:none;"></div> Answered</div>
+          <div class="legend-item"><div class="legend-box review" style="background: #8b5cf6; border:none;"></div> Marked for Review</div>
+          <div class="legend-item"><div class="legend-box answered-review" style="background: #8b5cf6; border:none; position:relative;"><div style="position:absolute; bottom:2px; right:2px; width:6px; height:6px; background:#10b981; border-radius:50%;"></div></div> Answered & Marked for Review</div>
+        </div>
+
+        <button class="btn btn-primary" style="margin-top: 1rem;" id="btn-submit-exam">Submit Exam</button>
+      </aside>
+
+      <!-- FOOTER CONTROLS -->
+      <footer class="exam-footer">
+        <button class="btn btn-outline" id="btn-mark-review">Mark for Review & Next</button>
+        <button class="btn btn-outline" id="btn-clear">Clear Response</button>
+        
+        <div style="flex: 1"></div>
+        
+        <button class="btn btn-outline" id="btn-prev">&lt; Previous</button>
+        <button class="btn btn-success" id="btn-save-next">Save & Next</button>
+      </footer>
+
+    </div>
+
+    <!-- SUBMISSION DIALOG -->
+    <div id="submit-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
+      <div style="background: white; padding: 2rem; border-radius: var(--radius); width: 400px; box-shadow: var(--shadow);">
+        <h2 style="margin-bottom: 1rem; color: var(--text-main);">Exam Submission Summary</h2>
+        <table style="width: 100%; margin-bottom: 1.5rem; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 0.5rem 0;">Total Questions:</td><td id="sm-total" style="text-align: right; font-weight: 600;">0</td></tr>
+          <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 0.5rem 0;">Answered:</td><td id="sm-ans" style="text-align: right; font-weight: 600; color: var(--success);">0</td></tr>
+          <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 0.5rem 0;">Not Answered:</td><td id="sm-not-ans" style="text-align: right; font-weight: 600;">0</td></tr>
+          <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 0.5rem 0;">Marked for Review:</td><td id="sm-review" style="text-align: right; font-weight: 600; color: var(--review);">0</td></tr>
+          <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 0.5rem 0;">Answered & Marked:</td><td id="sm-ans-rev" style="text-align: right; font-weight: 600; color: var(--review);">0</td></tr>
+          <tr><td style="padding: 0.5rem 0;">Not Visited:</td><td id="sm-not-vis" style="text-align: right; font-weight: 600; color: var(--text-muted);">0</td></tr>
+        </table>
+        <p style="margin-bottom: 1.5rem; font-size: 0.875rem; color: var(--danger); font-weight: 600;">Are you sure you want to submit the exam? No changes will be allowed after submission.</p>
+        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+          <button class="btn btn-outline" id="btn-modal-cancel">Cancel</button>
+          <button class="btn btn-primary" id="btn-modal-confirm">Final Submit</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/exam.ts"></script>
+  </body>
+</html>

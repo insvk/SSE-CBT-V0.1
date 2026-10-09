@@ -1,0 +1,5 @@
+statement,opt_a,opt_b,opt_c,opt_d,correct_answer,marks,subject,difficulty
+"What is the time complexity of binary search?","O(n)","O(log n)","O(n^2)","O(1)","B",4,"Computer Science","Medium"
+"Which protocol is used for secure communication over a computer network?","HTTP","FTP","HTTPS","SMTP","C",4,"Computer Science","Easy"
+"This row is missing a correct answer","A","B","C","D","",4,"Computer Science","Easy"
+"This row has an invalid answer","A","B","C","D","Z",4,"Computer Science","Easy"

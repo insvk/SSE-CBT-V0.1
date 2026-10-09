@@ -1,0 +1,24 @@
+[
+  {
+    "statement": "In Python, which keyword is used to define a function?",
+    "opt_a": "func",
+    "opt_b": "define",
+    "opt_c": "def",
+    "opt_d": "function",
+    "correct_answer": "C",
+    "marks": 4,
+    "subject": "Python",
+    "difficulty": "Easy"
+  },
+  {
+    "statement": "What does SQL stand for?",
+    "opt_a": "Structured Query Language",
+    "opt_b": "Strong Question Language",
+    "opt_c": "Structured Question Logic",
+    "opt_d": "Sequential Query Language",
+    "correct_answer": "A",
+    "marks": 4,
+    "subject": "Database",
+    "difficulty": "Medium"
+  }
+]

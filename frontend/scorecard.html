@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scorecard | PROJECT APEX OMEGA</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <style>
+      .scorecard-container {
+        max-width: 800px;
+        margin: 4rem auto;
+        background: white;
+        padding: 3rem;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
+      }
+      .scorecard-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        border-bottom: 2px solid var(--primary);
+        padding-bottom: 1.5rem;
+      }
+      .scorecard-header img {
+        height: 60px;
+        margin-bottom: 1rem;
+      }
+      .scorecard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 3rem;
+      }
+      .info-group {
+        margin-bottom: 1rem;
+      }
+      .info-label {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+      }
+      .info-value {
+        font-size: 1.125rem;
+        font-weight: 500;
+      }
+      .score-box {
+        background: var(--bg-page);
+        padding: 2rem;
+        text-align: center;
+        border-radius: var(--radius);
+      }
+      .score-box .score {
+        font-size: 4rem;
+        font-weight: 700;
+        color: var(--primary);
+      }
+      .score-box .percentile {
+        font-size: 1.25rem;
+        color: var(--success);
+        font-weight: 600;
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    
+    <div class="scorecard-container">
+      <div class="scorecard-header">
+        <h1>SIMATS ENGINEERING CBT</h1>
+        <h2 style="color: var(--text-muted); font-weight: 400;">Official Candidate Scorecard</h2>
+      </div>
+
+      <div class="scorecard-grid">
+        <div>
+          <div class="info-group">
+            <div class="info-label">Candidate Name</div>
+            <div class="info-value" id="sc-name">Loading...</div>
+          </div>
+          <div class="info-group">
+            <div class="info-label">Registration Number</div>
+            <div class="info-value" id="sc-reg">Loading...</div>
+          </div>
+          <div class="info-group">
+            <div class="info-label">Exam Title</div>
+            <div class="info-value" id="sc-exam">Loading...</div>
+          </div>
+        </div>
+
+        <div class="score-box">
+          <div class="info-label">Total Score</div>
+          <div class="score" id="sc-score">--</div>
+          <div class="percentile" id="sc-percentile">-- PR</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%;" onclick="window.print()">Print Scorecard</button>
+    </div>
+
+    <script type="module" src="/src/scorecard.ts"></script>
+  </body>
+</html>
