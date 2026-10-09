@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000/api/v1/candidates';
+const API_BASE = '/api/v1/candidates';
 
 const ui = {
     tbody: document.getElementById('candidate-table-body')!,

@@ -1,5 +1,5 @@
 // --- CONFIG ---
-const API_BASE = 'http://localhost:8000/api/v1/exams';
+const API_BASE = '/api/v1/exams';
 const EXAM_ID = 'EX-1001';
 
 // --- MOCK QUESTIONS ---
