@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>General Instructions | PROJECT APEX OMEGA</title>
+    
+    <style>
+      .page-container { max-width: 1000px; margin: 2rem auto; background: white; padding: 3rem; border-radius: var(--radius); box-shadow: var(--shadow); }
+      .instructions { font-size: 1rem; line-height: 1.6; margin-bottom: 2rem; }
+      .instructions h3 { margin-top: 1.5rem; margin-bottom: 1rem; color: var(--primary); }
+      .instructions ul { padding-left: 1.5rem; margin-bottom: 1rem; }
+      .instructions li { margin-bottom: 0.5rem; }
+      .status-box { width: 1.5rem; height: 1.5rem; display: inline-block; vertical-align: middle; border: 1px solid var(--border-color); text-align: center; font-weight: bold; line-height: 1.5rem; font-size: 0.875rem; margin-right: 0.5rem; }
+    </style>
+    <link rel="stylesheet" href="/assets/style-abd8dbfa.css">
+  </head>
+  <body>
+    
+    <div class="page-container">
+      <h1 style="text-align: center; margin-bottom: 0.5rem;">General Instructions</h1>
+      <h4 style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Please read the instructions carefully</h4>
+
+      <div class="instructions">
+        <h3>General Information:</h3>
+        <ul>
+          <li>Total duration of examination is 180 minutes.</li>
+          <li>The clock will be set at the server. The countdown timer in the top right corner of screen will display the remaining time available for you to complete the examination. When the timer reaches zero, the examination will end by itself. You will not be required to end or submit your examination.</li>
+        </ul>
+
+        <h3>Navigating and Answering a Question:</h3>
+        <p>The Question Palette displayed on the right side of screen will show the status of each question using one of the following symbols:</p>
+        <br>
+        <ul style="list-style: none; padding: 0;">
+          <li><span class="status-box not-visited">1</span> You have not visited the question yet.</li>
+          <li><span class="status-box" style="background:#fff;">2</span> You have not answered the question.</li>
+          <li><span class="status-box answered" style="background:#10b981; color:white; border-color:#10b981;">3</span> You have answered the question.</li>
+          <li><span class="status-box review" style="background:#8b5cf6; color:white; border-color:#8b5cf6;">4</span> You have NOT answered the question, but have marked the question for review.</li>
+          <li><span class="status-box answered-review" style="background:#8b5cf6; color:white; border-color:#8b5cf6;">5</span> You have answered the question, but marked it for review.</li>
+        </ul>
+
+        <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
+
+        <div style="background: var(--bg-page); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border-color);">
+          <label style="display: flex; align-items: flex-start; gap: 1rem; cursor: pointer;">
+            <input type="checkbox" id="declaration-check" style="margin-top: 0.25rem; width: 1.5rem; height: 1.5rem;">
+            <span style="font-size: 0.875rem; font-weight: 500;">I have read and understood the instructions. All computer hardware allotted to me are in proper working condition. I declare that I am not in possession of / not wearing / not carrying any prohibited gadget like mobile phone, bluetooth devices etc.</span>
+          </label>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+          <button class="btn btn-primary" id="btn-proceed" style="padding: 1rem 3rem; font-size: 1.125rem;" disabled>I am ready to begin</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const check = document.getElementById('declaration-check');
+      const btn = document.getElementById('btn-proceed');
+
+      check.addEventListener('change', (e) => {
+        btn.disabled = !e.target.checked;
+      });
+
+      btn.addEventListener('click', () => {
+        // Enforce Fullscreen as requested
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().then(() => {
+                window.location.href = '/exam.html';
+            }).catch(() => {
+                // fallback
+                window.location.href = '/exam.html';
+            });
+        } else {
+            window.location.href = '/exam.html';
+        }
+      });
+    </script>
+  </body>
+</html>
