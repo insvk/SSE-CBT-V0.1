@@ -1,7 +1,7 @@
 # Audit & Gap Analysis Report (TCS iON JEE-Style Upgrade)
 
 ## PHASE 1: DISCOVERY (Feature-Preservation Map)
-We audited the existing MCQ platform (PROJECT APEX OMEGA) currently located in the repository.
+We audited the existing MCQ platform (SSE CBT PLATFORM V0.1) currently located in the repository.
 
 **Existing Working Features to Preserve:**
 1. **Frontend Architecture**: Vite-based SPA with `index.html`, `exam.html`, `admin.html`, `scorecard.html`, and `question_bank.html`.

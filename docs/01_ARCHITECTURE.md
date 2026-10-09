@@ -1,4 +1,4 @@
-# PROJECT APEX OMEGA - Architecture Document
+# SSE CBT PLATFORM V0.1 - Architecture Document
 
 ## Overview
 SIMATS ENGINEERING CBT PLATFORM V0.1 is an enterprise-grade CBT examination SaaS built from scratch.

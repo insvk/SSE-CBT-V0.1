@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "cleanUrls": true,
   "builds": [
     {
       "src": "api_app.py",
@@ -8,11 +9,19 @@
     {
       "src": "package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
+      "config": {
+        "distDir": "dist"
+      }
     }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api_app.py" },
-    { "source": "/health",   "destination": "/api_app.py" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api_app.py"
+    },
+    {
+      "source": "/health",
+      "destination": "/api_app.py"
+    }
   ]
 }

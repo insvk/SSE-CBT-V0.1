@@ -1,6 +1,6 @@
-# VERCEL CLOUD DEPLOYMENT GUIDE (PROJECT APEX OMEGA)
+# VERCEL CLOUD DEPLOYMENT GUIDE (SSE CBT PLATFORM V0.1)
 
-This guide provides the exact step-by-step instructions to deploy the APEX OMEGA Examination SaaS to Vercel. 
+This guide provides the exact step-by-step instructions to deploy the SSE CBT PLATFORM V0.1 Examination SaaS to Vercel. 
 
 The repository is already configured with `vercel.json` to handle the dual-architecture: **Static HTML/Vite Frontend** and **Serverless FastAPI Python Backend**.
 
@@ -22,7 +22,7 @@ The repository is already configured with `vercel.json` to handle the dual-archi
 ## Step 2: Configure the Build Settings
 Vercel will try to auto-detect the framework. Make sure the settings look like this:
 
-* **Project Name**: `apex-omega-cbt` (or whatever you prefer)
+* **Project Name**: `sse-cbt-platform-v0-1` (or whatever you prefer)
 * **Framework Preset**: `Other` (Do NOT select Vite or Python. Vercel will automatically read the `vercel.json` file we created at the root of the repo).
 * **Root Directory**: `./`
 * **Build Command**: `npm run build` (This builds the frontend).
@@ -58,7 +58,7 @@ Click **"Add"** for each variable.
 
 ## Step 5: Verification & Post-Deployment Checklist
 
-Once deployed, click **"Continue to Dashboard"** and then **"Visit"** to open your live URL (e.g., `https://apex-omega-cbt.vercel.app`).
+Once deployed, click **"Continue to Dashboard"** and then **"Visit"** to open your live URL (e.g., `https://sse-cbt-platform-v0-1.vercel.app`).
 
 ### Verify Frontend
 - [ ] Navigate to `/login.html` and ensure the page loads correctly.

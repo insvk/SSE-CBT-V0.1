@@ -1,5 +1,8 @@
-
 .env
 __pycache__/
 *.pyc
 node_modules/
+.venv/
+venv/
+.pytest_cache/
+supabase/.temp/

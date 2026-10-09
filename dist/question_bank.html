@@ -3,30 +3,44 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Question Bank | PROJECT APEX OMEGA</title>
+    <title>Question Bank | SSE CBT PLATFORM V0.1</title>
     
     <style>
       .page-container { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
       .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-      .qb-grid { display: grid; grid-template-columns: 300px 1fr; gap: 2rem; }
+      .qb-grid { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; }
       .filters { background: white; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border-color); height: fit-content; }
       .q-list { display: flex; flex-direction: column; gap: 1.5rem; }
       .q-item { background: white; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border-color); }
       .q-tags { display: flex; gap: 0.5rem; margin-top: 1rem; }
       .tag { background: var(--bg-page); color: var(--text-muted); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+      .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+      .modal-content { background: white; padding: 2rem; border-radius: var(--radius); width: 550px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow); }
+      .form-group { margin-bottom: 1rem; }
+      .form-group label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.35rem; }
+      .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius); }
+      #toast { visibility: hidden; min-width: 250px; background-color: var(--success); color: #fff; text-align: center; border-radius: var(--radius); padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); font-weight: 600;}
+      #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+      @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+      @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
-    <script type="module" crossorigin src="/assets/question_bank-7ca8dcb0.js"></script>
+    <script type="module" crossorigin src="/assets/question_bank-d73f2d14.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
-    <link rel="stylesheet" href="/assets/style-abd8dbfa.css">
+    <link rel="stylesheet" href="/assets/style-f56c3c3d.css">
   </head>
   <body>
     
     <div class="page-container">
+      <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+        <a href="/admin.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">&larr; Back to Admin Dashboard</a>
+        <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear();" style="color: #ef4444; text-decoration: none; font-weight: 600; font-size: 0.85rem;">🚪 Sign Out</a>
+      </div>
+
       <div class="header-actions">
         <h1>Question Bank</h1>
         <div>
-          <button class="btn btn-outline" style="margin-right: 1rem;">Bulk Import CSV</button>
-          <button class="btn btn-primary">Create New Question</button>
+          <button class="btn btn-outline" id="btn-import-qb" style="margin-right: 1rem;">Bulk Import CSV</button>
+          <button class="btn btn-primary" id="btn-create-qb">Create New Question</button>
         </div>
       </div>
 
@@ -36,18 +50,20 @@
           <hr style="margin: 1rem 0; border: none; border-top: 1px solid var(--border-color);">
           <div style="margin-bottom: 1rem;">
             <label style="font-weight: 600; font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">Subject</label>
-            <select style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">
-              <option>All Subjects</option>
-              <option>Computer Science</option>
-              <option>Physics</option>
+            <select id="filter-subject" style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">
+              <option value="All">All Subjects</option>
+              <option value="Physics">Physics</option>
+              <option value="Chemistry">Chemistry</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="Computer Science">Computer Science</option>
             </select>
           </div>
           <div style="margin-bottom: 1rem;">
             <label style="font-weight: 600; font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">Status</label>
-            <select style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">
-              <option>All Statuses</option>
-              <option>Draft</option>
-              <option>Approved</option>
+            <select id="filter-status" style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">
+              <option value="All">All Statuses</option>
+              <option value="approved">Approved</option>
+              <option value="draft">Draft</option>
             </select>
           </div>
         </aside>
@@ -57,6 +73,87 @@
         </main>
       </div>
     </div>
+
+    <!-- Create Question Modal -->
+    <div class="modal-overlay" id="modal-create-q">
+      <div class="modal-content">
+        <h3>Create New Question</h3>
+        <form id="form-create-q">
+          <div class="form-group">
+            <label>Question Statement</label>
+            <textarea id="q-stmt" rows="3" required placeholder="Enter the complete question text..."></textarea>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group"><label>Option A</label><input type="text" id="q-opta" required></div>
+            <div class="form-group"><label>Option B</label><input type="text" id="q-optb" required></div>
+            <div class="form-group"><label>Option C</label><input type="text" id="q-optc" required></div>
+            <div class="form-group"><label>Option D</label><input type="text" id="q-optd" required></div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>Correct Answer</label>
+              <select id="q-correct" required>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Subject</label>
+              <select id="q-subj">
+                <option value="Physics">Physics</option>
+                <option value="Chemistry">Chemistry</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="Computer Science">Computer Science</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>Difficulty</label>
+              <select id="q-diff">
+                <option value="Easy">Easy</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Marks</label>
+              <input type="number" id="q-marks" value="4" step="0.5" required>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+            <button type="button" class="btn btn-outline" id="btn-cancel-create-q">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Question</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bulk Import Modal -->
+    <div class="modal-overlay" id="modal-import-q">
+      <div class="modal-content">
+        <h3>Bulk Import Questions (CSV / JSON)</h3>
+        <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+          CSV columns: <code>statement, opt_a, opt_b, opt_c, opt_d, correct_answer, marks, subject, difficulty</code>
+        </p>
+        <form id="form-import-q">
+          <input type="file" id="qb-file-input" accept=".csv,.json" required style="margin-bottom: 1rem; width: 100%;">
+          <div id="dry-run-report" style="display: none; padding: 1rem; background: var(--bg-page); border-radius: var(--radius); margin-bottom: 1rem;">
+            <h4 style="margin-bottom: 0.5rem;" id="dr-title">Validation Preview</h4>
+            <div id="dr-summary" style="font-size: 0.875rem;"></div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <button type="button" class="btn btn-outline" id="btn-cancel-import-q">Cancel</button>
+            <button type="button" class="btn btn-outline" id="btn-dry-run">Verify File (Dry Run)</button>
+            <button type="submit" class="btn btn-primary" id="btn-commit-import" disabled>Commit Import</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="toast">Action Successful!</div>
 
     
   </body>

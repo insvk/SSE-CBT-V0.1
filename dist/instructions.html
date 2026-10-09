@@ -3,53 +3,152 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>General Instructions | PROJECT APEX OMEGA</title>
+    <title>General Examination Instructions | JEE (Main) CBT</title>
     
     <style>
-      .page-container { max-width: 1000px; margin: 2rem auto; background: white; padding: 3rem; border-radius: var(--radius); box-shadow: var(--shadow); }
-      .instructions { font-size: 1rem; line-height: 1.6; margin-bottom: 2rem; }
-      .instructions h3 { margin-top: 1.5rem; margin-bottom: 1rem; color: var(--primary); }
-      .instructions ul { padding-left: 1.5rem; margin-bottom: 1rem; }
-      .instructions li { margin-bottom: 0.5rem; }
-      .status-box { width: 1.5rem; height: 1.5rem; display: inline-block; vertical-align: middle; border: 1px solid var(--border-color); text-align: center; font-weight: bold; line-height: 1.5rem; font-size: 0.875rem; margin-right: 0.5rem; }
+      body {
+        background: #f1f5f9;
+        padding: 2.5rem 1rem;
+        font-family: var(--font-sans);
+      }
+      .instructions-container {
+        max-width: 960px;
+        margin: 0 auto;
+        background: white;
+        padding: 3rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border-color);
+      }
+      .inst-header {
+        text-align: center;
+        border-bottom: 2px solid var(--primary);
+        padding-bottom: 1.5rem;
+        margin-bottom: 2rem;
+      }
+      .inst-header h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--text-main);
+      }
+      .inst-header p {
+        font-size: 0.95rem;
+        color: var(--text-muted);
+        margin-top: 0.35rem;
+      }
+      .instructions-body {
+        font-size: 0.975rem;
+        line-height: 1.7;
+        color: #334155;
+      }
+      .section-heading {
+        color: #1e3a8a;
+        font-weight: 800;
+        margin: 1.5rem 0 0.75rem 0;
+        font-size: 1.15rem;
+      }
+      .symbol-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0 1.5rem 0;
+      }
+      .symbol-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        vertical-align: middle;
+      }
+      .symbol-box {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 30px;
+        font-weight: 800;
+        font-size: 0.85rem;
+        color: white;
+      }
+      .declaration-panel {
+        background: #eff6ff;
+        border: 1.5px solid #bfdbfe;
+        padding: 1.5rem;
+        border-radius: var(--radius);
+        margin: 2rem 0;
+      }
     </style>
-    <link rel="stylesheet" href="/assets/style-abd8dbfa.css">
+    <link rel="stylesheet" href="/assets/style-f56c3c3d.css">
   </head>
   <body>
     
-    <div class="page-container">
-      <h1 style="text-align: center; margin-bottom: 0.5rem;">General Instructions</h1>
-      <h4 style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Please read the instructions carefully</h4>
+    <div class="instructions-container">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+        <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear();" style="color: #ef4444; font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+          &larr; Exit to Login
+        </a>
+        <div style="font-size: 0.825rem; color: #64748b; font-weight: 600;">
+          Candidate: <span id="inst-cand-name" style="color: #1e3a8a; font-weight: 700;">NARESH S</span> &bull; Terminal: <code style="color: #0284c7;">C-042</code>
+        </div>
+      </div>
 
-      <div class="instructions">
-        <h3>General Information:</h3>
-        <ul>
-          <li>Total duration of examination is 180 minutes.</li>
-          <li>The clock will be set at the server. The countdown timer in the top right corner of screen will display the remaining time available for you to complete the examination. When the timer reaches zero, the examination will end by itself. You will not be required to end or submit your examination.</li>
+      <div class="inst-header">
+        <h1>NATIONAL TESTING AGENCY</h1>
+        <p>Joint Entrance Examination (Main) — Computer Based Test Guidelines</p>
+      </div>
+
+      <div class="instructions-body">
+        <h3 class="section-heading">1. General Information &amp; Authoritative Server Clock</h3>
+        <ul style="padding-left: 1.5rem; margin-bottom: 1.5rem;">
+          <li>Total duration of examination is <strong>180 minutes</strong> (3 hours).</li>
+          <li>The clock is synchronized with the central examination server. The timer in the top-right corner displays the remaining time available. When the timer reaches zero, the examination will automatically submit.</li>
+          <li>Each correct answer awards <strong>+4.0 marks</strong>. Each incorrect response incurs <strong>-1.0 mark</strong>. Unanswered questions receive <strong>0 marks</strong>.</li>
         </ul>
 
-        <h3>Navigating and Answering a Question:</h3>
-        <p>The Question Palette displayed on the right side of screen will show the status of each question using one of the following symbols:</p>
-        <br>
-        <ul style="list-style: none; padding: 0;">
-          <li><span class="status-box not-visited">1</span> You have not visited the question yet.</li>
-          <li><span class="status-box" style="background:#fff;">2</span> You have not answered the question.</li>
-          <li><span class="status-box answered" style="background:#10b981; color:white; border-color:#10b981;">3</span> You have answered the question.</li>
-          <li><span class="status-box review" style="background:#8b5cf6; color:white; border-color:#8b5cf6;">4</span> You have NOT answered the question, but have marked the question for review.</li>
-          <li><span class="status-box answered-review" style="background:#8b5cf6; color:white; border-color:#8b5cf6;">5</span> You have answered the question, but marked it for review.</li>
-        </ul>
+        <h3 class="section-heading">2. Question Palette Status Symbols</h3>
+        <table class="symbol-table">
+          <tr>
+            <td style="width: 60px;">
+              <span class="symbol-box" style="background: #94a3b8; border-radius: 4px;">01</span>
+            </td>
+            <td><strong>Not Visited:</strong> You have not visited the question yet.</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="symbol-box badge-not-answered">02</span>
+            </td>
+            <td><strong>Not Answered:</strong> You have visited the question but have not answered it yet.</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="symbol-box badge-answered">03</span>
+            </td>
+            <td><strong>Answered:</strong> You have answered the question.</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="symbol-box badge-review">04</span>
+            </td>
+            <td><strong>Marked for Review:</strong> You have NOT answered the question, but have marked it for review.</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="symbol-box badge-answered-review">05</span>
+            </td>
+            <td><strong>Answered &amp; Marked for Review:</strong> The question will be evaluated in final scoring.</td>
+          </tr>
+        </table>
 
-        <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
-
-        <div style="background: var(--bg-page); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border-color);">
+        <div class="declaration-panel">
           <label style="display: flex; align-items: flex-start; gap: 1rem; cursor: pointer;">
-            <input type="checkbox" id="declaration-check" style="margin-top: 0.25rem; width: 1.5rem; height: 1.5rem;">
-            <span style="font-size: 0.875rem; font-weight: 500;">I have read and understood the instructions. All computer hardware allotted to me are in proper working condition. I declare that I am not in possession of / not wearing / not carrying any prohibited gadget like mobile phone, bluetooth devices etc.</span>
+            <input type="checkbox" id="declaration-check" style="margin-top: 0.25rem; width: 1.4rem; height: 1.4rem; accent-color: var(--primary);">
+            <span style="font-size: 0.9rem; font-weight: 600; color: #1e3a8a;">
+              I have read and understood all instructions. All computer hardware allotted to me is in proper working condition. I declare that I am not in possession of any unauthorized electronic gadget.
+            </span>
           </label>
         </div>
 
         <div style="text-align: center; margin-top: 2rem;">
-          <button class="btn btn-primary" id="btn-proceed" style="padding: 1rem 3rem; font-size: 1.125rem;" disabled>I am ready to begin</button>
+          <button class="btn btn-primary btn-lg" id="btn-proceed" style="padding: 1rem 3.5rem; font-size: 1.1rem;" disabled>
+            I am Ready to Begin &rarr;
+          </button>
         </div>
       </div>
     </div>
@@ -58,21 +157,24 @@
       const check = document.getElementById('declaration-check');
       const btn = document.getElementById('btn-proceed');
 
+      const candNameSpan = document.getElementById('inst-cand-name');
+      if (candNameSpan) {
+        const storedName = localStorage.getItem('candidate_name');
+        const storedReg = localStorage.getItem('reg_no');
+        if (storedName) candNameSpan.textContent = storedName + (storedReg ? ` (${storedReg})` : '');
+      }
+
       check.addEventListener('change', (e) => {
         btn.disabled = !e.target.checked;
       });
 
       btn.addEventListener('click', () => {
-        // Enforce Fullscreen as requested
         if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen().then(() => {
-                window.location.href = '/exam.html';
-            }).catch(() => {
-                // fallback
-                window.location.href = '/exam.html';
-            });
-        } else {
+          document.documentElement.requestFullscreen().finally(() => {
             window.location.href = '/exam.html';
+          });
+        } else {
+          window.location.href = '/exam.html';
         }
       });
     </script>
