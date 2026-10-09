@@ -1,3 +1,4 @@
+export {};
 // --- CONFIG ---
 const API_BASE = '/api/v1/exams';
 const EXAM_ID = 'EX-1001';
@@ -29,7 +30,7 @@ const ui = {
     saveIndicator: document.getElementById('save-indicator')!,
     timerDisplay: document.getElementById('timer-display')!,
     modal: document.getElementById('submit-modal')!,
-    modalConfirm: document.getElementById('btn-modal-confirm')!,
+    modalConfirm: document.getElementById('btn-modal-confirm') as HTMLButtonElement,
     modalCancel: document.getElementById('btn-modal-cancel')!
 };
 
