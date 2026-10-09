@@ -32,7 +32,7 @@
     
     <div class="page-container">
       <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-        <a href="/admin.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">&larr; Back to Admin Dashboard</a>
+        <a href="javascript:void(0)" onclick="const role = localStorage.getItem('user_role'); window.location.href = (role === 'super_admin' ? '/admin.html' : '/candidate_dashboard.html');" style="color: var(--primary); text-decoration: none; font-weight: 600;">&larr; Back to Dashboard</a>
         <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear();" style="color: #ef4444; text-decoration: none; font-weight: 600; font-size: 0.85rem;">🚪 Sign Out</a>
       </div>
 

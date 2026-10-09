@@ -29,9 +29,11 @@ function escapeHtml(str: string): string {
 
 let cachedCandidates: any[] = [];
 
+// UI Element References
 const ui = {
     tbody: document.getElementById('candidate-table-body')!,
     searchInput: document.getElementById('search-input') as HTMLInputElement,
+    topSearchInput: document.getElementById('top-search-input') as HTMLInputElement,
     btnImport: document.getElementById('btn-import')!,
     btnCreate: document.getElementById('btn-create')!,
     btnAssign: document.getElementById('btn-assign') as HTMLButtonElement,
@@ -47,17 +49,63 @@ const ui = {
     checkAll: document.getElementById('check-all') as HTMLInputElement,
     credResultBox: document.getElementById('cred-result-box')!,
     btnCopyCred: document.getElementById('btn-copy-cred') as HTMLButtonElement,
-    toast: document.getElementById('toast')!
+    toast: document.getElementById('toast')!,
+    sidebar: document.getElementById('sidebar')!,
+    sidebarToggleBtn: document.getElementById('sidebar-toggle-btn')!,
+    themeToggleBtn: document.getElementById('theme-toggle-btn')!,
+    sidebarThemeToggle: document.getElementById('sidebar-theme-toggle')!,
+    themeIcon: document.getElementById('theme-icon')!,
 };
 
-function showToast(msg: string, isError = false) {
-    ui.toast.textContent = msg;
-    ui.toast.style.backgroundColor = isError ? "var(--danger)" : "var(--success)";
-    ui.toast.className = "show";
-    setTimeout(() => { ui.toast.className = ui.toast.className.replace("show", ""); }, 3000);
+// --- THEME MANAGEMENT (REPLICATING LIGHT/DARK REFERENCE SPLIT) ---
+function initTheme(): void {
+    const savedTheme = localStorage.getItem('cbt_theme') || 'light';
+    applyTheme(savedTheme);
 }
 
-function copyText(text: string, label = "Password") {
+function applyTheme(theme: string): void {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('cbt_theme', theme);
+    if (ui.themeIcon) {
+        ui.themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+}
+
+function toggleTheme(): void {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme);
+    showToast(`Switched to ${nextTheme.toUpperCase()} theme`);
+}
+
+if (ui.themeToggleBtn) {
+    ui.themeToggleBtn.addEventListener('click', toggleTheme);
+}
+if (ui.sidebarThemeToggle) {
+    ui.sidebarThemeToggle.addEventListener('click', toggleTheme);
+}
+
+// --- SIDEBAR COLLAPSE TOGGLE ---
+if (ui.sidebarToggleBtn && ui.sidebar) {
+    ui.sidebarToggleBtn.addEventListener('click', () => {
+        ui.sidebar.classList.toggle('collapsed');
+        const isCollapsed = ui.sidebar.classList.contains('collapsed');
+        ui.sidebarToggleBtn.innerHTML = isCollapsed ? '<span>▶</span>' : '<span>◀</span>';
+    });
+}
+
+// --- TOAST NOTIFICATIONS ---
+function showToast(msg: string, isError = false): void {
+    if (!ui.toast) return;
+    ui.toast.textContent = msg;
+    ui.toast.style.backgroundColor = isError ? "var(--brand-red, #ef4444)" : "var(--brand-blue, #321fdb)";
+    ui.toast.className = "show";
+    setTimeout(() => { 
+        ui.toast.className = ui.toast.className.replace("show", ""); 
+    }, 3200);
+}
+
+function copyText(text: string, label = "Password"): void {
     navigator.clipboard.writeText(text).then(() => {
         showToast(`${label} copied to clipboard!`);
     }).catch(() => {
@@ -69,7 +117,112 @@ function copyText(text: string, label = "Password") {
     copyText(pwd, "Password");
 };
 
-async function loadCandidates(query = "") {
+// --- RENDER DYNAMIC COREUI CHARTS (ZERO DUMMY DATA) ---
+function renderDynamicCharts(summary: any): void {
+    // 1. Top Card: Spline Flow Curve based on monthly trend from Supabase
+    const trend: number[] = summary.monthly_trend || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const total = summary.total_candidates || 0;
+    
+    const flowNum = document.getElementById('card-cand-flow-num');
+    if (flowNum) {
+        flowNum.textContent = total > 0 ? `${total.toLocaleString()} Active` : '0 Active';
+    }
+
+    // Generate SVG path points dynamically
+    const maxVal = Math.max(...trend, 5);
+    const points = trend.slice(0, 7).map((val, idx) => {
+        const x = Math.round((idx / 6) * 500);
+        const y = Math.round(100 - (val / maxVal) * 80);
+        return { x, y };
+    });
+
+    if (points.length >= 2) {
+        let dLine = `M ${points[0].x},${points[0].y}`;
+        for (let i = 1; i < points.length; i++) {
+            const prev = points[i - 1];
+            const curr = points[i];
+            const cpx = (prev.x + curr.x) / 2;
+            dLine += ` C ${cpx},${prev.y} ${cpx},${curr.y} ${curr.x},${curr.y}`;
+        }
+        const dArea = `${dLine} L 500,120 L 0,120 Z`;
+
+        const pathLine = document.getElementById('sparkline-line');
+        const pathArea = document.getElementById('sparkline-area');
+        if (pathLine) pathLine.setAttribute('d', dLine);
+        if (pathArea) pathArea.setAttribute('d', dArea);
+    }
+
+    // 2. Traffic Dual-Bar Chart based on real batches in Supabase
+    const barsContainer = document.getElementById('traffic-bars-container');
+    const labelsContainer = document.getElementById('traffic-labels-container');
+    
+    if (barsContainer && summary.slot_traffic) {
+        barsContainer.innerHTML = '';
+        if (labelsContainer) labelsContainer.innerHTML = '';
+
+        const slotList = summary.slot_traffic;
+        const maxSlotCount = Math.max(...slotList.map((s: any) => s.registered), 4);
+
+        slotList.forEach((st: any) => {
+            const hReg = Math.max(12, Math.round((st.registered / maxSlotCount) * 85));
+            const hComp = Math.max(8, Math.round((st.completed / maxSlotCount) * 85));
+
+            const barGroup = document.createElement('div');
+            barGroup.style.display = 'flex';
+            barGroup.style.alignItems = 'flex-end';
+            barGroup.style.gap = '4px';
+            barGroup.style.height = '100%';
+            barGroup.title = `${st.slot}: ${st.registered} Registered, ${st.completed} Completed`;
+
+            barGroup.innerHTML = `
+                <div style="width: 14px; height: ${hReg}px; background: #4f46e5; border-radius: 3px 3px 0 0; transition: height 0.5s ease;"></div>
+                <div style="width: 14px; height: ${hComp}px; background: #38bdf8; border-radius: 3px 3px 0 0; transition: height 0.5s ease;"></div>
+            `;
+            barsContainer.appendChild(barGroup);
+
+            if (labelsContainer) {
+                const lbl = document.createElement('span');
+                lbl.textContent = st.slot;
+                lbl.style.fontSize = '0.72rem';
+                lbl.style.fontWeight = '600';
+                labelsContainer.appendChild(lbl);
+            }
+        });
+    }
+}
+
+// --- LOAD DASHBOARD SUMMARY (ZERO DUMMY DATA) ---
+async function loadDashboardSummary(): Promise<void> {
+    try {
+        const res = await fetch(`${API_BASE}/dashboard-summary`, { headers: getHeaders() });
+        if (res.ok) {
+            const summary = await res.json();
+            
+            // Middle stat cards
+            const statTotal = document.getElementById('stat-total-cands');
+            if (statTotal) statTotal.textContent = (summary.total_candidates || 0).toLocaleString();
+
+            const statSub = document.getElementById('stat-registered-sub');
+            if (statSub) statSub.textContent = `${(summary.total_candidates || 0).toLocaleString()} registered candidates in Supabase DB`;
+
+            const statAttempts = document.getElementById('stat-total-attempts');
+            if (statAttempts) statAttempts.textContent = (summary.total_attempts || 0).toLocaleString();
+
+            const statQuestions = document.getElementById('stat-total-questions');
+            if (statQuestions) statQuestions.textContent = `${summary.total_questions || 0}`;
+
+            const statCompletion = document.getElementById('stat-completion-rate');
+            if (statCompletion) statCompletion.textContent = `${summary.completion_rate || 0}%`;
+
+            renderDynamicCharts(summary);
+        }
+    } catch (e) {
+        console.warn("Failed to load live dashboard summary", e);
+    }
+}
+
+// --- LOAD CANDIDATES LIST ---
+async function loadCandidates(query = ""): Promise<void> {
     try {
         const res = await fetch(API_BASE, { headers: getHeaders() });
         let data = await res.json();
@@ -91,8 +244,16 @@ async function loadCandidates(query = "") {
 
         ui.tbody.innerHTML = "";
         
-        const statTotal = document.getElementById('stat-total-cands');
-        if (statTotal) statTotal.textContent = data.length.toString();
+        if (data.length === 0) {
+            ui.tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                        No candidates found. Use <strong>+ Add new candidate</strong> above to provision credentials.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
 
         data.forEach((c: any) => {
             const tr = document.createElement('tr');
@@ -100,26 +261,33 @@ async function loadCandidates(query = "") {
             const isActive = (c.status || 'active') === 'active';
             const pwd = c.password || '12345678';
             const email = c.email || `${(c.registration_number || '').toLowerCase()}@ssecbt.in`;
+            const slot = c.batch || 'A';
 
             tr.innerHTML = `
                 <td><input type="checkbox" class="row-check" value="${escapeHtml(c.id)}"></td>
-                <td style="font-family: var(--font-mono); font-weight: 700; color: #1e3a8a;">${escapeHtml(c.registration_number)}</td>
                 <td>
-                    <div class="cand-avatar-pill">
-                        <div class="avatar-circle">${initials}</div>
-                        <span style="font-weight: 600;">${escapeHtml(c.full_name)}</span>
+                    <div class="user-cell">
+                        <div class="user-cell-avatar">${initials}</div>
+                        <div class="user-cell-info">
+                            <span class="user-cell-name">${escapeHtml(c.full_name)}</span>
+                            <span class="user-cell-sub">Slot ${escapeHtml(slot)} &bull; ${escapeHtml(c.registration_number)}</span>
+                        </div>
                     </div>
                 </td>
-                <td><span style="font-weight: 700; padding: 0.2rem 0.5rem; background: #f1f5f9; border-radius: 4px;">Slot ${escapeHtml(c.batch || 'A')}</span></td>
-                <td style="font-size: 0.825rem; color: #64748b;">${escapeHtml(email)}</td>
                 <td>
-                    <div class="pwd-badge">
+                    <span style="font-weight: 700; padding: 0.25rem 0.65rem; background: rgba(79, 70, 229, 0.1); color: var(--brand-blue); border-radius: 6px; font-size: 0.78rem;">
+                        Slot ${escapeHtml(slot)}
+                    </span>
+                </td>
+                <td style="font-size: 0.825rem; font-family: var(--font-mono); color: var(--text-muted);">${escapeHtml(email)}</td>
+                <td>
+                    <div style="display: inline-flex; align-items: center; gap: 0.35rem; background: var(--bg-body); padding: 0.25rem 0.55rem; border-radius: 6px; border: 1px solid var(--border-color); font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700;">
                         <span>${escapeHtml(pwd)}</span>
-                        <button class="pwd-copy-btn" title="Copy Password" onclick="copyPassword('${escapeHtml(pwd)}')">📋</button>
+                        <button style="background: none; border: none; cursor: pointer; font-size: 0.8rem;" title="Copy Password" onclick="copyPassword('${escapeHtml(pwd)}')">📋</button>
                     </div>
                 </td>
                 <td>
-                    <span class="status-badge ${isActive ? 'active' : 'suspended'}">
+                    <span class="status-pill ${isActive ? 'status-active' : 'status-suspended'}">
                         <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background: ${isActive ? '#10b981' : '#ef4444'};"></span>
                         ${escapeHtml(c.status || 'active')}
                     </span>
@@ -128,7 +296,7 @@ async function loadCandidates(query = "") {
                     <button class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-right: 0.35rem;" onclick="resetAttempt('${escapeHtml(c.id)}')">
                         🔄 Retake
                     </button>
-                    <button class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; color: ${isActive ? 'var(--danger)' : '#059669'}; border-color: ${isActive ? '#fca5a5' : '#86efac'};" onclick="toggleStatus('${escapeHtml(c.id)}')">
+                    <button class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; color: ${isActive ? '#ef4444' : '#10b981'}; border-color: ${isActive ? '#fca5a5' : '#86efac'};" onclick="toggleStatus('${escapeHtml(c.id)}')">
                         ${isActive ? 'Suspend' : 'Activate'}
                     </button>
                 </td>
@@ -137,29 +305,28 @@ async function loadCandidates(query = "") {
         });
         
         bindCheckboxes();
-
-        // Question count for dashboard
-        try {
-            fetch('/api/v1/questions/', { headers: getHeaders() })
-                .then(r => r.json())
-                .then(qs => {
-                    const qStat = document.getElementById('stat-total-questions');
-                    if (qStat && Array.isArray(qs)) qStat.textContent = qs.length.toString();
-                });
-        } catch (_) {}
-
     } catch (err) {
         showToast("Failed to load candidates from Supabase", true);
     }
 }
 
 // --- CREATION MODAL & GOD MAXX ACCOUNT PROVISIONING ---
-ui.btnCreate.onclick = () => {
-    ui.credResultBox.style.display = 'none';
-    ui.modalCreate.style.display = 'flex';
-};
+if (ui.btnCreate) {
+    ui.btnCreate.onclick = () => {
+        ui.credResultBox.style.display = 'none';
+        ui.modalCreate.style.display = 'flex';
+    };
+}
 
-// PIN Generator
+const quickNavBtn = document.getElementById('btn-quick-provision-nav');
+if (quickNavBtn) {
+    quickNavBtn.onclick = () => {
+        ui.credResultBox.style.display = 'none';
+        ui.modalCreate.style.display = 'flex';
+    };
+}
+
+// 6-digit PIN Generator
 if (ui.btnGenPwd) {
     ui.btnGenPwd.onclick = () => {
         const pin = Math.floor(100000 + Math.random() * 900000).toString();
@@ -168,95 +335,100 @@ if (ui.btnGenPwd) {
     };
 }
 
-ui.formCreate.onsubmit = async (e) => {
-    e.preventDefault();
-    const role = (document.getElementById('c-role') as HTMLSelectElement).value;
-    const fullName = (document.getElementById('c-name') as HTMLInputElement).value.trim();
-    const batch = (document.getElementById('c-batch') as HTMLInputElement).value.trim();
-    const regno = (document.getElementById('c-regno') as HTMLInputElement).value.trim();
-    const email = (document.getElementById('c-email') as HTMLInputElement).value.trim();
-    const pwd = (document.getElementById('c-password') as HTMLInputElement).value.trim();
+if (ui.formCreate) {
+    ui.formCreate.onsubmit = async (e) => {
+        e.preventDefault();
+        const role = (document.getElementById('c-role') as HTMLSelectElement).value;
+        const fullName = (document.getElementById('c-name') as HTMLInputElement).value.trim();
+        const batch = (document.getElementById('c-batch') as HTMLInputElement).value.trim();
+        const regno = (document.getElementById('c-regno') as HTMLInputElement).value.trim();
+        const email = (document.getElementById('c-email') as HTMLInputElement).value.trim();
+        const pwd = (document.getElementById('c-password') as HTMLInputElement).value.trim();
 
-    const payload = {
-        full_name: fullName,
-        role: role,
-        batch_or_slot: batch || "A",
-        registration_number: regno || undefined,
-        email: email || undefined,
-        initial_password: pwd || "12345678"
-    };
+        const payload = {
+            full_name: fullName,
+            role: role,
+            batch_or_slot: batch || "A",
+            registration_number: regno || undefined,
+            email: email || undefined,
+            initial_password: pwd || "12345678"
+        };
 
-    try {
-        const res = await fetch('/api/v1/auth/create-account', {
-            method: 'POST',
-            headers: getHeaders(),
-            body: JSON.stringify(payload)
-        });
+        try {
+            const res = await fetch('/api/v1/auth/create-account', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(payload)
+            });
 
-        if (res.ok) {
-            const result = await res.json();
-            showToast("Account Provisioned and Saved in Supabase!");
-            
-            const acc = result.account || {};
-            const resRegno = document.getElementById('res-regno');
-            const resName = document.getElementById('res-name');
-            const resPwd = document.getElementById('res-pwd');
-            const resSlot = document.getElementById('res-slot');
+            if (res.ok) {
+                const result = await res.json();
+                showToast("Account Provisioned and Saved in Supabase!");
+                
+                const acc = result.account || {};
+                const resRegno = document.getElementById('res-regno');
+                const resName = document.getElementById('res-name');
+                const resPwd = document.getElementById('res-pwd');
+                const resSlot = document.getElementById('res-slot');
 
-            if (resRegno) resRegno.textContent = acc.registration_number || regno || "N/A";
-            if (resName) resName.textContent = acc.full_name || fullName;
-            if (resPwd) resPwd.textContent = acc.password || pwd;
-            if (resSlot) resSlot.textContent = acc.slot || batch || "A";
+                if (resRegno) resRegno.textContent = acc.registration_number || regno || "N/A";
+                if (resName) resName.textContent = acc.full_name || fullName;
+                if (resPwd) resPwd.textContent = acc.password || pwd;
+                if (resSlot) resSlot.textContent = acc.slot || batch || "A";
 
-            ui.credResultBox.style.display = 'block';
+                ui.credResultBox.style.display = 'block';
 
-            // Setup copy credentials slip button
-            ui.btnCopyCred.onclick = () => {
-                const slip = `SSE CBT PLATFORM V0.1 CREDENTIALS\nName: ${acc.full_name || fullName}\nRoll No: ${acc.registration_number || regno || "N/A"}\nPassword: ${acc.password || pwd}\nSlot: ${acc.slot || batch || "A"}\nLogin URL: /login.html`;
-                copyText(slip, "Candidate Credentials Slip");
-            };
+                ui.btnCopyCred.onclick = () => {
+                    const slip = `SSE CBT PLATFORM V0.1 CREDENTIALS\nName: ${acc.full_name || fullName}\nRoll No: ${acc.registration_number || regno || "N/A"}\nPassword: ${acc.password || pwd}\nSlot: ${acc.slot || batch || "A"}\nPortal URL: /login.html`;
+                    copyText(slip, "Candidate Credentials Slip");
+                };
 
-            loadCandidates();
-        } else {
-            const err = await res.json();
-            showToast(err.detail || "Account provisioning failed", true);
+                loadCandidates();
+                loadDashboardSummary();
+            } else {
+                const err = await res.json();
+                showToast(err.detail || "Account provisioning failed", true);
+            }
+        } catch (_) {
+            showToast("Error connecting to account creation service", true);
         }
-    } catch (_) {
-        showToast("Error connecting to account creation service", true);
-    }
-};
+    };
+}
 
 // --- BULK IMPORT ---
-ui.btnImport.onclick = () => { ui.modalImport.style.display = 'flex'; };
+if (ui.btnImport) {
+    ui.btnImport.onclick = () => { ui.modalImport.style.display = 'flex'; };
+}
 
-ui.formImport.onsubmit = async (e) => {
-    e.preventDefault();
-    const fileInput = document.getElementById('csv-file') as HTMLInputElement;
-    const file = fileInput.files![0];
-    if (!file) return;
+if (ui.formImport) {
+    ui.formImport.onsubmit = async (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById('csv-file') as HTMLInputElement;
+        const file = fileInput.files![0];
+        if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
+        const formData = new FormData();
+        formData.append('file', file);
 
-    const importHeaders: HeadersInit = {
-        'Authorization': `Bearer ${getAuthToken()}`,
-        'x-tenant-id': getTenantId(),
+        const importHeaders: HeadersInit = {
+            'Authorization': `Bearer ${getAuthToken()}`,
+            'x-tenant-id': getTenantId(),
+        };
+
+        const res = await fetch(`${API_BASE}/bulk-import`, { method: 'POST', headers: importHeaders, body: formData });
+        
+        if (res.ok) {
+            const data = await res.json();
+            showToast(`Successfully imported ${data.imported} candidates into Supabase`);
+            ui.modalImport.style.display = 'none';
+            ui.formImport.reset();
+            loadCandidates();
+            loadDashboardSummary();
+        } else {
+            showToast("Bulk import failed", true);
+        }
     };
-
-    ui.btnImport.textContent = "Uploading...";
-    const res = await fetch(`${API_BASE}/bulk-import`, { method: 'POST', headers: importHeaders, body: formData });
-    
-    if (res.ok) {
-        const data = await res.json();
-        showToast(`Successfully imported ${data.imported} candidates`);
-        ui.modalImport.style.display = 'none';
-        ui.formImport.reset();
-        loadCandidates();
-    } else {
-        showToast("Bulk import failed", true);
-    }
-    ui.btnImport.textContent = "Bulk Import CSV";
-};
+}
 
 // --- EXPORT CREDENTIALS CSV ---
 if (ui.btnExportCsv) {
@@ -288,7 +460,7 @@ if (ui.btnExportCsv) {
     };
 }
 
-// --- GOD MAXX CONTROLS ---
+// --- GOD MAXX EMERGENCY CONTROLS ---
 if (ui.btnExtendTime) {
     ui.btnExtendTime.onclick = async () => {
         try {
@@ -298,7 +470,7 @@ if (ui.btnExtendTime) {
             });
             if (res.ok) {
                 const data = await res.json();
-                showToast(data.message || "+15 minutes granted to active exam!");
+                showToast(data.message || "+15 minutes granted across active exam sessions!");
             }
         } catch (_) {
             showToast("Failed to extend exam time", true);
@@ -315,7 +487,7 @@ if (ui.btnUnlockSessions) {
             });
             if (res.ok) {
                 const data = await res.json();
-                showToast(data.message || "All tab locks and collisions unlocked!");
+                showToast(data.message || "All tab locks and collisions cleared!");
             }
         } catch (_) {
             showToast("Failed to unlock sessions", true);
@@ -325,7 +497,7 @@ if (ui.btnUnlockSessions) {
 
 if (ui.btnEmergencyReset) {
     ui.btnEmergencyReset.onclick = async () => {
-        if (!confirm("⚠️ WARNING: This will reset all responses and time countdowns for the active exam. Proceed with Global Exam Reset?")) {
+        if (!confirm("⚠️ WARNING: This will reset all active exam responses and timer countdowns. Proceed with Global Exam Reset?")) {
             return;
         }
         try {
@@ -335,6 +507,7 @@ if (ui.btnEmergencyReset) {
             });
             if (res.ok) {
                 showToast("Global Exam Session Reset to Initial State!");
+                loadDashboardSummary();
             }
         } catch (_) {
             showToast("Emergency reset failed", true);
@@ -342,7 +515,7 @@ if (ui.btnEmergencyReset) {
     };
 }
 
-// --- CANDIDATE ROW ACTIONS ---
+// --- ROW ACTIONS ---
 (window as any).toggleStatus = async (id: string) => {
     try {
         const res = await fetch(`${API_BASE}/${id}/toggle-status`, { 
@@ -351,8 +524,9 @@ if (ui.btnEmergencyReset) {
         });
         if (res.ok) {
             const data = await res.json();
-            showToast(data.message || "Status updated");
+            showToast(data.message || "Status updated in Supabase");
             loadCandidates();
+            loadDashboardSummary();
         } else {
             showToast("Failed to update candidate status", true);
         }
@@ -370,6 +544,7 @@ if (ui.btnEmergencyReset) {
         });
         if (res.ok) {
             showToast("Attempt wiped! Candidate can now restart exam cleanly.");
+            loadDashboardSummary();
         } else {
             showToast("Failed to reset attempt", true);
         }
@@ -379,40 +554,49 @@ if (ui.btnEmergencyReset) {
 };
 
 // --- SELECTION LOGIC ---
-function bindCheckboxes() {
+function bindCheckboxes(): void {
     const rowChecks = document.querySelectorAll('.row-check') as NodeListOf<HTMLInputElement>;
     rowChecks.forEach(chk => {
         chk.addEventListener('change', () => {
             const checkedCount = document.querySelectorAll('.row-check:checked').length;
-            ui.btnAssign.disabled = checkedCount === 0;
-            ui.btnAssign.textContent = checkedCount > 0 ? `Assign to Exam (${checkedCount})` : "Assign to Exam";
+            if (ui.btnAssign) {
+                ui.btnAssign.disabled = checkedCount === 0;
+                ui.btnAssign.textContent = checkedCount > 0 ? `Assign to Exam (${checkedCount})` : "Assign to Exam";
+            }
         });
     });
 }
 
-ui.checkAll.addEventListener('change', (e) => {
-    const isChecked = (e.target as HTMLInputElement).checked;
-    const rowChecks = document.querySelectorAll('.row-check') as NodeListOf<HTMLInputElement>;
-    rowChecks.forEach(chk => chk.checked = isChecked);
-    ui.btnAssign.disabled = !isChecked;
-    ui.btnAssign.textContent = isChecked ? `Assign to Exam (${rowChecks.length})` : "Assign to Exam";
-});
-
-ui.btnAssign.onclick = async () => {
-    const selected = Array.from(document.querySelectorAll('.row-check:checked')).map((c: any) => c.value);
-    const res = await fetch(`${API_BASE}/bulk-assign`, { 
-        method: 'POST', 
-        headers: getHeaders(), 
-        body: JSON.stringify({candidate_ids: selected, exam_id: "EX-1001"}) 
+if (ui.checkAll) {
+    ui.checkAll.addEventListener('change', (e) => {
+        const isChecked = (e.target as HTMLInputElement).checked;
+        const rowChecks = document.querySelectorAll('.row-check') as NodeListOf<HTMLInputElement>;
+        rowChecks.forEach(chk => chk.checked = isChecked);
+        if (ui.btnAssign) {
+            ui.btnAssign.disabled = !isChecked;
+            ui.btnAssign.textContent = isChecked ? `Assign to Exam (${rowChecks.length})` : "Assign to Exam";
+        }
     });
-    if (res.ok) {
-        showToast(`Assigned ${selected.length} candidates to exam.`);
-        ui.checkAll.checked = false;
-        bindCheckboxes();
-    }
-};
+}
 
-// --- REAL-TIME PROCTORING WEBSOCKET CLIENT ---
+if (ui.btnAssign) {
+    ui.btnAssign.onclick = async () => {
+        const selected = Array.from(document.querySelectorAll('.row-check:checked')).map((c: any) => c.value);
+        const res = await fetch(`${API_BASE}/bulk-assign`, { 
+            method: 'POST', 
+            headers: getHeaders(), 
+            body: JSON.stringify({ candidate_ids: selected, exam_id: "EX-1001" }) 
+        });
+        if (res.ok) {
+            showToast(`Assigned ${selected.length} candidates to exam.`);
+            if (ui.checkAll) ui.checkAll.checked = false;
+            bindCheckboxes();
+            loadDashboardSummary();
+        }
+    };
+}
+
+// --- REAL-TIME WEBSOCKET FEED ---
 let adminSocket: WebSocket | null = null;
 let adminPingTimer: any = null;
 
@@ -445,33 +629,24 @@ function initAdminWebSocket(): void {
             try {
                 const msg = JSON.parse(event.data);
                 if (msg.type === 'CANDIDATE_RESPONSE') {
-                    showToast(`🟢 Live Response: Candidate ${msg.candidate_name || 'NARESH S'} - Q${msg.question_id || '3'} (${msg.status})`);
+                    showToast(`🟢 Live Response: Candidate ${msg.candidate_name || 'Candidate'} - Q${msg.question_id || '1'}`);
                 } else if (msg.type === 'CANDIDATE_SUBMITTED') {
-                    showToast(`🏆 Candidate ${msg.candidate_name || 'NARESH S'} submitted! Score: ${msg.score}/${msg.max_possible} (${msg.percentile}th %ile)`);
+                    showToast(`🏆 Candidate submitted: Score ${msg.score}/${msg.max_possible}`);
                     loadCandidates();
+                    loadDashboardSummary();
                 } else if (msg.type === 'CANDIDATE_CREATED') {
                     showToast(`👤 Candidate created: ${msg.candidate?.full_name || ''}`);
                     loadCandidates();
+                    loadDashboardSummary();
                 } else if (msg.type === 'CANDIDATE_STATUS_CHANGED') {
                     showToast(`🔄 Candidate status updated: ${msg.status}`);
                     loadCandidates();
-                } else if (msg.type === 'QUESTION_UPDATED') {
-                    showToast(`✏️ Question updated live in database`);
-                } else if (msg.type === 'TIME_EXTENDED') {
-                    showToast(`⏱️ Extra +${msg.extra_minutes} minutes extended across active exams`);
+                    loadDashboardSummary();
                 }
             } catch (_) {}
         };
 
         adminSocket.onclose = () => {
-            console.warn('[WebSocket] Admin feed disconnected. Reconnecting in 3s...');
-            const statusEl = document.getElementById('ws-admin-status');
-            const dotEl = document.getElementById('ws-admin-dot');
-            if (statusEl) statusEl.textContent = 'Feed Reconnecting...';
-            if (dotEl) {
-                dotEl.style.backgroundColor = '#f59e0b';
-                dotEl.style.boxShadow = '0 0 8px #f59e0b';
-            }
             if (adminPingTimer) clearInterval(adminPingTimer);
             setTimeout(initAdminWebSocket, 3000);
         };
@@ -480,20 +655,32 @@ function initAdminWebSocket(): void {
             if (adminSocket) adminSocket.close();
         };
     } catch (e) {
-        console.warn('[WebSocket] Admin connection failed:', e);
         setTimeout(initAdminWebSocket, 5000);
     }
 }
 
-// Search debouncing
+// Search debounce
 let timeout: any;
-ui.searchInput.addEventListener('input', (e) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-        loadCandidates((e.target as HTMLInputElement).value);
-    }, 300);
-});
+if (ui.searchInput) {
+    ui.searchInput.addEventListener('input', (e) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            loadCandidates((e.target as HTMLInputElement).value);
+        }, 300);
+    });
+}
 
-// Init
+if (ui.topSearchInput) {
+    ui.topSearchInput.addEventListener('input', (e) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            loadCandidates((e.target as HTMLInputElement).value);
+        }, 300);
+    });
+}
+
+// Initialize on page ready
+initTheme();
+loadDashboardSummary();
 loadCandidates();
 initAdminWebSocket();

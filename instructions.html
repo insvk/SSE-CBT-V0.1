@@ -80,11 +80,17 @@
     
     <div class="instructions-container">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
-        <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear();" style="color: #ef4444; font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-          &larr; Exit to Login
-        </a>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <a href="/candidate_dashboard.html" style="color: #2563eb; font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            &larr; Back to Dashboard
+          </a>
+          <span style="color: #cbd5e1;">|</span>
+          <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear();" style="color: #ef4444; font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            Exit to Login
+          </a>
+        </div>
         <div style="font-size: 0.825rem; color: #64748b; font-weight: 600;">
-          Candidate: <span id="inst-cand-name" style="color: #1e3a8a; font-weight: 700;">NARESH S</span> &bull; Terminal: <code style="color: #0284c7;">C-042</code>
+          Candidate: <span id="inst-cand-name" style="color: #1e3a8a; font-weight: 700;">Registered Candidate</span> &bull; Terminal: <code style="color: #0284c7;">C-042</code>
         </div>
       </div>
 

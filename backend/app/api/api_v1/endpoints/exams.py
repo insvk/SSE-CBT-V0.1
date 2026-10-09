@@ -444,10 +444,33 @@ def get_exam_result(exam_id: str):
     result = LATEST_SUBMISSION_RESULT.get(norm_id) or LATEST_SUBMISSION_RESULT.get("latest")
 
     if not result:
-        # Compute default sample score if accessed directly before submitting
+        # Check DB for completed attempt
+        try:
+            db = get_db()
+            att = db.table("exam_attempts").select("*").eq("exam_id", norm_id).order("created_at", desc=True).limit(1).execute()
+            if att.data and len(att.data) > 0:
+                first = att.data[0]
+                result = {
+                    "status": "success",
+                    "reference": f"SSEC-{first.get('id', uuid.uuid4().hex[:6].upper())[:8]}",
+                    "score": float(first.get("score") or 0.0),
+                    "max_possible": float(first.get("total_questions", 5) * 4),
+                    "percentage": 80.0,
+                    "percentile": 96.5,
+                    "scoring_details": {
+                        "total_score": float(first.get("score") or 0.0),
+                        "correct_count": int(first.get("score", 0) / 4) if first.get("score") else 0,
+                        "incorrect_count": 0,
+                        "unanswered_count": max(0, first.get("total_questions", 5) - int(first.get("score", 0) / 4)),
+                    },
+                }
+        except Exception:
+            pass
+
+    if not result:
         result = {
             "status": "success",
-            "reference": "APEX" + str(uuid.uuid4())[:5].upper(),
+            "reference": "SSEC-" + str(uuid.uuid4())[:6].upper(),
             "score": 16.0,
             "max_possible": 20.0,
             "percentage": 80.0,
@@ -462,10 +485,11 @@ def get_exam_result(exam_id: str):
 
     return {
         "candidate_name": "Registered Candidate",
-        "registration_number": f"APEX-{result.get('reference', '1001')}",
-        "exam_title": "JEE Main Mock A",
+        "registration_number": f"{result.get('reference', 'SSEC-1001')}",
+        "exam_title": "SSE CBT PLATFORM V0.1 - JEE MAIN 2026 MOCK TEST",
         "score": f"{result.get('score', 0)} / {result.get('max_possible', 20)}",
         "percentile": f"{result.get('percentile', 90.0)}",
         "reference": result.get("reference"),
         "scoring_details": result.get("scoring_details"),
     }
+

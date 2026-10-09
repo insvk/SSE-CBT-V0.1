@@ -160,7 +160,7 @@
         align-items: center;
       }
     </style>
-    <script type="module" crossorigin src="/assets/scorecard-04635b89.js"></script>
+    <script type="module" crossorigin src="/assets/scorecard-1ffafedf.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
     <link rel="stylesheet" href="/assets/style-f56c3c3d.css">
   </head>
@@ -295,10 +295,10 @@
 
       <!-- ACTIONS -->
       <div class="doc-actions">
-        <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear();" class="btn btn-outline">&larr; Return to Login</a>
+        <a href="javascript:void(0)" onclick="const role = localStorage.getItem('user_role'); window.location.href = (role === 'super_admin' ? '/admin.html' : '/candidate_dashboard.html');" class="btn btn-primary">&larr; Return to Dashboard</a>
         <div style="display: flex; gap: 0.75rem;">
-          <a href="/admin.html" class="btn btn-outline">Command Centre</a>
-          <button class="btn btn-primary" onclick="window.print()">Print Official Score Card</button>
+          <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear();" class="btn btn-outline">Sign Out</a>
+          <button class="btn btn-outline" onclick="window.print()">🖨️ Print Score Card</button>
         </div>
       </div>
     </div>

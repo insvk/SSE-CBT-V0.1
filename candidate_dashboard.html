@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Candidate Portal | SSE CBT PLATFORM V0.1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+        
+        /* Light Theme (Default) */
+        --bg-body: #ebedef;
+        --bg-card: #ffffff;
+        --bg-header: #ffffff;
+        --bg-sidebar: #ffffff;
+        --sidebar-border: #d8dbe0;
+        --text-main: #2c384a;
+        --text-heading: #1e293b;
+        --text-muted: #8a99b5;
+        --border-color: #d8dbe0;
+        --card-border: #e4e7ea;
+        --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        
+        --brand-blue: #321fdb;
+        --brand-blue-hover: #2a1ab9;
+        --brand-purple: #4f46e5;
+        --brand-yellow: #f59e0b;
+        --brand-green: #10b981;
+        --brand-red: #e55353;
+
+        --topbar-height: 64px;
+        --sidebar-width: 260px;
+        --radius: 8px;
+        --radius-lg: 12px;
+      }
+
+      [data-theme="dark"] {
+        /* Dark Theme */
+        --bg-body: #181924;
+        --bg-card: #212338;
+        --bg-header: #1f2033;
+        --bg-sidebar: #1b1c2d;
+        --sidebar-border: #2e324d;
+        --text-main: #e2e8f0;
+        --text-heading: #ffffff;
+        --text-muted: #8e9bb0;
+        --border-color: #2e324d;
+        --card-border: #2e324d;
+        --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+
+        --brand-blue: #6366f1;
+        --brand-blue-hover: #4f46e5;
+        --brand-purple: #4f46e5;
+        --brand-yellow: #d97706;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        min-height: 100vh;
+        overflow-x: hidden;
+        transition: background-color 0.25s ease, color 0.25s ease;
+      }
+
+      .app-layout {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: var(--sidebar-width);
+        background: var(--bg-sidebar);
+        border-right: 1px solid var(--sidebar-border);
+        display: flex;
+        flex-direction: column;
+        transition: width 0.25s ease, background 0.25s ease;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        z-index: 100;
+        overflow-y: auto;
+      }
+
+      .sidebar.collapsed {
+        width: 72px;
+      }
+
+      .sidebar.collapsed .nav-text,
+      .sidebar.collapsed .sidebar-header-title,
+      .sidebar.collapsed .badge-pill,
+      .sidebar.collapsed .cand-chip-text {
+        display: none !important;
+      }
+
+      .sidebar-brand {
+        height: var(--topbar-height);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0 1.5rem;
+        border-bottom: 1px solid var(--sidebar-border);
+      }
+
+      .brand-badge {
+        background: linear-gradient(135deg, #321fdb, #6366f1);
+        color: white;
+        font-weight: 800;
+        font-size: 0.95rem;
+        padding: 0.4rem 0.65rem;
+        border-radius: 6px;
+        letter-spacing: -0.02em;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        box-shadow: 0 2px 8px rgba(50, 31, 219, 0.35);
+      }
+
+      .brand-title-wrap {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+      }
+
+      .brand-title {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: var(--text-heading);
+      }
+
+      .brand-subtitle {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #321fdb;
+        letter-spacing: 0.08em;
+      }
+
+      [data-theme="dark"] .brand-subtitle {
+        color: #818cf8;
+      }
+
+      .cand-chip {
+        margin: 1rem 1.25rem 0.5rem 1.25rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: var(--radius);
+        background: rgba(50, 31, 219, 0.08);
+        border: 1px solid rgba(50, 31, 219, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+
+      [data-theme="dark"] .cand-chip {
+        background: rgba(99, 102, 241, 0.12);
+        border-color: rgba(99, 102, 241, 0.3);
+      }
+
+      .cand-chip-text {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .cand-chip-title {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: var(--brand-blue);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .cand-chip-sub {
+        font-size: 0.72rem;
+        font-family: var(--font-mono);
+        color: var(--text-main);
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 140px;
+      }
+
+      /* Sidebar Navigation */
+      .sidebar-nav {
+        padding: 1rem 0;
+        list-style: none;
+        flex: 1;
+      }
+
+      .nav-group-title {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 1rem 1.5rem 0.4rem 1.5rem;
+      }
+
+      .nav-item {
+        margin: 2px 0.75rem;
+      }
+
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 0.65rem 0.85rem;
+        color: var(--text-main);
+        text-decoration: none;
+        font-size: 0.86rem;
+        font-weight: 600;
+        border-radius: var(--radius);
+        transition: all 0.15s ease;
+      }
+
+      .nav-link:hover {
+        background: rgba(50, 31, 219, 0.08);
+        color: var(--brand-blue);
+      }
+
+      [data-theme="dark"] .nav-link:hover {
+        background: rgba(99, 102, 241, 0.15);
+        color: #a5b4fc;
+      }
+
+      .nav-link.active {
+        background: var(--brand-blue);
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(50, 31, 219, 0.3);
+      }
+
+      .nav-icon {
+        font-size: 1.1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+      }
+
+      .nav-text {
+        flex: 1;
+      }
+
+      .badge-pill {
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 0.15rem 0.45rem;
+        border-radius: 9999px;
+      }
+
+      .badge-live {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .sidebar-footer {
+        padding: 1rem 1.25rem;
+        border-top: 1px solid var(--sidebar-border);
+      }
+
+      /* Main Content View */
+      .main-view {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      /* Top Header */
+      .top-header {
+        height: var(--topbar-height);
+        background: var(--bg-header);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 2rem;
+        position: sticky;
+        top: 0;
+        z-index: 90;
+        transition: background 0.25s ease, border-color 0.25s ease;
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+      }
+
+      .icon-btn {
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--text-main);
+        cursor: pointer;
+        padding: 0.45rem;
+        border-radius: var(--radius);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        transition: all 0.2s ease;
+        position: relative;
+      }
+
+      .icon-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+        border-color: var(--border-color);
+      }
+
+      [data-theme="dark"] .icon-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .header-search {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .header-search input {
+        width: 280px;
+        height: 38px;
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 0 1rem 0 2.25rem;
+        font-size: 0.85rem;
+        color: var(--text-heading);
+        outline: none;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+
+      .header-search input:focus {
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 3px rgba(50, 31, 219, 0.15);
+      }
+
+      .header-search .search-icon {
+        position: absolute;
+        left: 0.75rem;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        pointer-events: none;
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+      }
+
+      .user-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 9999px;
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+      }
+
+      .user-avatar-wrap {
+        position: relative;
+        width: 34px;
+        height: 34px;
+      }
+
+      .user-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+      }
+
+      .online-dot {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #10b981;
+        border: 2px solid var(--bg-card);
+      }
+
+      .user-meta {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+      }
+
+      .user-name {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-heading);
+      }
+
+      .user-role {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: #10b981;
+      }
+
+      /* Content Area */
+      .page-body {
+        padding: 1.75rem 2.25rem;
+        flex: 1;
+      }
+
+      .breadcrumb-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .breadcrumb-title h1 {
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: var(--text-heading);
+        letter-spacing: -0.02em;
+      }
+
+      .breadcrumb-path {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 0.2rem;
+        font-weight: 500;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 1rem;
+        border-radius: var(--radius);
+        font-size: 0.825rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+        font-family: inherit;
+      }
+
+      .btn-primary {
+        background: var(--brand-blue);
+        color: white;
+        border-color: var(--brand-blue);
+      }
+
+      .btn-primary:hover {
+        background: var(--brand-blue-hover);
+      }
+
+      .btn-outline {
+        background: var(--bg-card);
+        color: var(--text-heading);
+        border-color: var(--border-color);
+      }
+
+      .btn-outline:hover {
+        background: rgba(0, 0, 0, 0.03);
+      }
+
+      .btn-sm {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.75rem;
+      }
+
+      /* Dashboard Grid */
+      .dashboard-top-grid {
+        display: grid;
+        grid-template-columns: 1.25fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .dash-card {
+        background: var(--bg-card);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--card-shadow);
+        padding: 1.5rem;
+        transition: background 0.25s ease, border-color 0.25s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card-header-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+      }
+
+      .card-title-group h3 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-heading);
+      }
+
+      .card-title-group p {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 0.15rem;
+      }
+
+      /* Middle Dual Stat Cards */
+      .stats-duo-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .stat-mini-card {
+        background: var(--bg-card);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--card-shadow);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .stat-mini-info .label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .stat-mini-info .value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--text-heading);
+        margin: 0.25rem 0;
+      }
+
+      .stat-icon-wrap {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(50, 31, 219, 0.1);
+        color: var(--brand-blue);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.45rem;
+      }
+
+      /* Bottom Row Grid (Table + 2 Stacked Cards) */
+      .dashboard-bottom-grid {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 1.5rem;
+      }
+
+      .table-card-box {
+        background: var(--bg-card);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+      }
+
+      .table-header-bar {
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th {
+        padding: 0.85rem 1.25rem;
+        background: var(--bg-body);
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      td {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.85rem;
+        color: var(--text-main);
+        vertical-align: middle;
+      }
+
+      .stacked-cards-box {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .solid-card {
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 165px;
+      }
+
+      .purple-card {
+        background: linear-gradient(135deg, #4f46e5, #3730a3);
+      }
+
+      .yellow-card {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+      }
+
+      .solid-card-val {
+        font-size: 1.75rem;
+        font-weight: 800;
+      }
+
+      .solid-card-sub {
+        font-size: 0.85rem;
+        opacity: 0.85;
+        font-weight: 600;
+        margin-top: 0.2rem;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0.2rem 0.55rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .status-active {
+        background: #ecfdf5;
+        color: #047857;
+      }
+
+      [data-theme="dark"] .status-active {
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+      }
+
+      #toast {
+        visibility: hidden;
+        min-width: 280px;
+        background-color: var(--brand-blue);
+        color: #fff;
+        text-align: center;
+        border-radius: var(--radius);
+        padding: 14px 20px;
+        position: fixed;
+        z-index: 2000;
+        right: 30px;
+        bottom: 30px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+        opacity: 0;
+        transition: opacity 0.3s, visibility 0.3s;
+      }
+
+      #toast.show {
+        visibility: visible;
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-layout">
+      
+      <!-- CANDIDATE SIDEBAR -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-badge" style="background: linear-gradient(135deg, #059669, #10b981);">CBT</div>
+          <div class="brand-title-wrap">
+            <span class="brand-title">SSE CBT PLATFORM</span>
+            <span class="brand-subtitle" style="color: #10b981;">STUDENT PORTAL V0.1</span>
+          </div>
+        </div>
+
+        <div class="cand-chip">
+          <span style="font-size: 1.25rem;">🎓</span>
+          <div class="cand-chip-text">
+            <span class="cand-chip-title">CANDIDATE SESSION</span>
+            <span class="cand-chip-sub" id="sidebar-cand-regno">Loading...</span>
+          </div>
+        </div>
+
+        <ul class="sidebar-nav">
+          <li class="nav-item">
+            <a href="/candidate_dashboard.html" class="nav-link active">
+              <span class="nav-icon">📊</span>
+              <span class="nav-text">Student Dashboard</span>
+            </a>
+          </li>
+
+          <li class="nav-group-title">Examination</li>
+          <li class="nav-item">
+            <a href="/instructions.html" class="nav-link">
+              <span class="nav-icon">💻</span>
+              <span class="nav-text">Mock Exam Console</span>
+              <span class="badge-pill badge-live">LIVE</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/question_bank.html" class="nav-link">
+              <span class="nav-icon">📚</span>
+              <span class="nav-text">Question Bank Preview</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/scorecard.html" class="nav-link">
+              <span class="nav-icon">🏆</span>
+              <span class="nav-text">Official Scorecard</span>
+            </a>
+          </li>
+
+          <li class="nav-group-title">Preferences</li>
+          <li class="nav-item">
+            <a href="javascript:void(0)" id="sidebar-theme-toggle" class="nav-link">
+              <span class="nav-icon">🌓</span>
+              <span class="nav-text">Toggle Theme (Light/Dark)</span>
+            </a>
+          </li>
+        </ul>
+
+        <div class="sidebar-footer">
+          <div style="display:flex; align-items:center; gap:6px; font-size:0.75rem; color:#10b981; font-weight:700; margin-bottom:0.75rem;">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 6px #10b981;"></span>
+            <span>Cloud Sync: Active</span>
+          </div>
+          <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear(); window.location.href='/login.html'; return false;" style="color: #ef4444; font-size: 0.8rem; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+            <span>🚪 Sign Out</span>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN WORKSPACE -->
+      <div class="main-view">
+        
+        <!-- TOPBAR -->
+        <header class="top-header">
+          <div class="header-left">
+            <button class="icon-btn" id="sidebar-toggle-btn" title="Toggle Sidebar">
+              <span>◀</span>
+            </button>
+            <div class="header-search">
+              <span class="search-icon">🔍</span>
+              <input type="text" placeholder="Search exams, subjects, syllabus..." />
+            </div>
+          </div>
+
+          <div class="header-right">
+            <button class="icon-btn" title="Notifications">
+              <span>🔔</span>
+            </button>
+            <button class="icon-btn" title="Checklist">
+              <span>📋</span>
+            </button>
+            <button class="icon-btn" id="theme-toggle-btn" title="Toggle Theme">
+              <span id="theme-icon">🌓</span>
+            </button>
+
+            <!-- Candidate Profile Pill -->
+            <div class="user-pill" title="Candidate Profile">
+              <div class="user-avatar-wrap">
+                <div class="user-avatar" id="header-cand-avatar">CD</div>
+                <div class="online-dot"></div>
+              </div>
+              <div class="user-meta">
+                <span class="user-name" id="header-cand-name">Candidate</span>
+                <span class="user-role" id="header-cand-role">STUDENT</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- PAGE BODY -->
+        <main class="page-body">
+          <div class="breadcrumb-row">
+            <div class="breadcrumb-title">
+              <h1>Candidate Dashboard</h1>
+              <div class="breadcrumb-path">
+                <a href="/candidate_dashboard.html">Candidate Portal</a> / Dashboard
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+              <a href="/instructions.html" class="btn btn-primary" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-size: 0.9rem; padding: 0.65rem 1.25rem;">
+                🚀 Launch Exam Console &rarr;
+              </a>
+            </div>
+          </div>
+
+          <!-- TOP 2 CARDS -->
+          <div class="dashboard-top-grid">
+            
+            <!-- CARD 1: ACTIVE EXAM CARD -->
+            <div class="dash-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3>Enrolled Examination</h3>
+                  <p>National Testing Agency Pattern &bull; Computer Based Test (CBT)</p>
+                </div>
+                <span class="status-pill status-active">Active Enrollment</span>
+              </div>
+
+              <div style="margin: 1.25rem 0;">
+                <div style="font-size: 1.5rem; font-weight: 800; color: var(--brand-blue); margin-bottom: 0.25rem;">
+                  SSE CBT PLATFORM - JEE MAIN 2026 MOCK TEST
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                  Sections: Physics, Chemistry &amp; Mathematics &bull; 180 Minutes (3 Hours) &bull; +4 Correct / -1 Incorrect
+                </p>
+              </div>
+
+              <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1.5rem;">
+                <a href="/instructions.html" class="btn btn-primary" style="font-size: 0.875rem;">
+                  🚀 Start Official Mock Test
+                </a>
+                <a href="/question_bank.html" class="btn btn-outline" style="font-size: 0.875rem;">
+                  📖 View Syllabus &amp; Blueprint
+                </a>
+              </div>
+            </div>
+
+            <!-- CARD 2: SYSTEM READINESS -->
+            <div class="dash-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3>Environment &amp; Proctor Health</h3>
+                  <p>Automated Hardware &amp; Security Pre-flight Check</p>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 700; color: #10b981;">100% READY</span>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                  <span>📷 Webcam &amp; Facial Proctoring</span>
+                  <span style="color: #10b981; font-weight: 700;">VERIFIED</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                  <span>🖥️ Fullscreen Lockdown Protocol</span>
+                  <span style="color: #10b981; font-weight: 700;">SUPPORTED</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                  <span>⚡ Cloud DB Sync &amp; Low Latency</span>
+                  <span style="color: #10b981; font-weight: 700;">LIVE FEED ACTIVE</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- MIDDLE DUAL STATS -->
+          <div class="stats-duo-grid">
+            <div class="stat-mini-card">
+              <div class="stat-mini-info">
+                <div class="label">Assigned Questions</div>
+                <div class="value" id="cand-stat-q-count">--</div>
+                <div style="font-size: 0.75rem; color: #10b981; font-weight: 700;">Physics, Chemistry &amp; Mathematics</div>
+              </div>
+              <div class="stat-icon-wrap">
+                <span>📚</span>
+              </div>
+            </div>
+
+            <div class="stat-mini-card">
+              <div class="stat-mini-info">
+                <div class="label">My Session Status</div>
+                <div class="value" id="cand-stat-status" style="font-size: 1.45rem;">Active</div>
+                <div style="font-size: 0.75rem; color: #10b981; font-weight: 700;">Authenticated via Supabase</div>
+              </div>
+              <div class="stat-icon-wrap" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">
+                <span>✅</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOTTOM GRID -->
+          <div class="dashboard-bottom-grid">
+            
+            <!-- ATTEMPTS TABLE -->
+            <div class="table-card-box">
+              <div class="table-header-bar">
+                <div>
+                  <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-heading);">My Examination Attempts</h3>
+                  <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">Live records retrieved from database</p>
+                </div>
+                <a href="/instructions.html" class="btn btn-primary btn-sm">+ Take New Attempt</a>
+              </div>
+
+              <div style="overflow-x: auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Exam Code</th>
+                      <th>Cycle / Title</th>
+                      <th>Slot</th>
+                      <th>Status</th>
+                      <th style="text-align: right;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cand-attempts-body">
+                    <tr>
+                      <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">EX-1001</td>
+                      <td><strong>JEE MAIN 2026 MOCK TEST</strong></td>
+                      <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Slot A</span></td>
+                      <td><span class="status-pill status-active">Ready to Launch</span></td>
+                      <td style="text-align: right;">
+                        <a href="/instructions.html" class="btn btn-primary btn-sm">Start &rarr;</a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- STACKED CARDS -->
+            <div class="stacked-cards-box">
+              
+              <!-- CARD A: SCORECARD QUICK ACCESS -->
+              <div class="solid-card purple-card">
+                <div>
+                  <div class="solid-card-val">Scorecard</div>
+                  <div class="solid-card-sub">NTA Official Results &amp; Percentile</div>
+                </div>
+                <div style="margin-top: 1rem;">
+                  <a href="/scorecard.html" class="btn" style="background: white; color: #4f46e5; font-weight: 700; width: 100%; justify-content: center;">
+                    View My Scorecard &rarr;
+                  </a>
+                </div>
+              </div>
+
+              <!-- CARD B: INSTRUCTIONS REMINDER -->
+              <div class="solid-card yellow-card">
+                <div>
+                  <div class="solid-card-val">Exam Rules</div>
+                  <div class="solid-card-sub">Read instructions before starting</div>
+                </div>
+                <div style="margin-top: 1rem;">
+                  <a href="/instructions.html" class="btn" style="background: white; color: #d97706; font-weight: 700; width: 100%; justify-content: center;">
+                    Review Instructions &rarr;
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </main>
+      </div>
+
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast">Operation successful</div>
+
+    <script type="module" src="/src/candidate_dashboard.ts"></script>
+  </body>
+</html>

@@ -1,363 +1,912 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Administrator Command Centre | SSE CBT PLATFORM V0.1</title>
-    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
-      .admin-layout {
-        display: grid;
-        grid-template-columns: 280px 1fr;
-        height: 100vh;
-        overflow: hidden;
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
+
+      :root {
+        --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+        
+        /* Light Theme (Default - Left Side of Ref) */
+        --bg-body: #ebedef;
+        --bg-card: #ffffff;
+        --bg-header: #ffffff;
+        --bg-sidebar: #ffffff;
+        --sidebar-border: #d8dbe0;
+        --text-main: #2c384a;
+        --text-heading: #1e293b;
+        --text-muted: #8a99b5;
+        --border-color: #d8dbe0;
+        --card-border: #e4e7ea;
+        --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        
+        --brand-blue: #321fdb;
+        --brand-blue-hover: #2a1ab9;
+        --brand-purple: #4f46e5;
+        --brand-yellow: #f59e0b;
+        --brand-yellow-dark: #d97706;
+        --brand-green: #10b981;
+        --brand-red: #e55353;
+        --brand-cyan: #39f;
+
+        --topbar-height: 64px;
+        --sidebar-width: 260px;
+        --radius: 8px;
+        --radius-lg: 12px;
+      }
+
+      [data-theme="dark"] {
+        /* Dark Theme (Right Side of Ref) */
+        --bg-body: #181924;
+        --bg-card: #212338;
+        --bg-header: #1f2033;
+        --bg-sidebar: #1b1c2d;
+        --sidebar-border: #2e324d;
+        --text-main: #e2e8f0;
+        --text-heading: #ffffff;
+        --text-muted: #8e9bb0;
+        --border-color: #2e324d;
+        --card-border: #2e324d;
+        --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+
+        --brand-blue: #6366f1;
+        --brand-blue-hover: #4f46e5;
+        --brand-purple: #4f46e5;
+        --brand-yellow: #d97706;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        min-height: 100vh;
+        overflow-x: hidden;
+        transition: background-color 0.25s ease, color 0.25s ease;
+      }
+
+      /* Core Layout */
+      .app-layout {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* Sidebar */
       .sidebar {
-        background: #0f172a;
-        color: #f8fafc;
-        padding: 1.75rem 1.25rem;
+        width: var(--sidebar-width);
+        background: var(--bg-sidebar);
+        border-right: 1px solid var(--sidebar-border);
         display: flex;
         flex-direction: column;
-        border-right: 1px solid #1e293b;
+        transition: width 0.25s ease, background 0.25s ease;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        z-index: 100;
+        overflow-y: auto;
       }
+
+      .sidebar.collapsed {
+        width: 72px;
+      }
+
+      .sidebar.collapsed .nav-text,
+      .sidebar.collapsed .sidebar-header-title,
+      .sidebar.collapsed .badge-pill,
+      .sidebar.collapsed .god-chip-text {
+        display: none !important;
+      }
+
+      .sidebar.collapsed .sidebar-brand {
+        padding: 0 1rem;
+        justify-content: center;
+      }
+
       .sidebar-brand {
+        height: var(--topbar-height);
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        margin-bottom: 1.75rem;
-        padding: 0 0.5rem;
+        padding: 0 1.5rem;
+        border-bottom: 1px solid var(--sidebar-border);
       }
-      .brand-icon {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, #2563eb, #06b6d4);
-        border-radius: var(--radius);
-        display: flex;
+
+      .brand-badge {
+        background: linear-gradient(135deg, #321fdb, #6366f1);
+        color: white;
+        font-weight: 800;
+        font-size: 0.95rem;
+        padding: 0.4rem 0.65rem;
+        border-radius: 6px;
+        letter-spacing: -0.02em;
+        display: inline-flex;
         align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 800;
-        font-size: 1.2rem;
-        box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+        gap: 4px;
+        box-shadow: 0 2px 8px rgba(50, 31, 219, 0.35);
       }
-      .brand-text h2 {
-        font-size: 1.1rem;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-        color: white;
+
+      .brand-title-wrap {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
       }
-      .brand-text span {
-        font-size: 0.7rem;
-        color: #38bdf8;
+
+      .brand-title {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: var(--text-heading);
+        letter-spacing: -0.02em;
+      }
+
+      .brand-subtitle {
+        font-size: 0.65rem;
         font-weight: 700;
+        color: #321fdb;
         letter-spacing: 0.08em;
       }
 
-      /* God MAXX Mode Pill */
-      .god-mode-pill {
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.25));
-        border: 1.5px solid rgba(245, 158, 11, 0.4);
-        border-radius: var(--radius);
-        padding: 0.75rem 1rem;
-        margin-bottom: 1.75rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);
-      }
-      .god-mode-icon {
-        font-size: 1.35rem;
-        animation: pulse-glow 2s infinite;
-      }
-      @keyframes pulse-glow {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.1); opacity: 0.8; }
-      }
-      .god-mode-info .title {
-        font-size: 0.75rem;
-        font-weight: 800;
-        letter-spacing: 0.05em;
-        color: #fbbf24;
-        text-transform: uppercase;
-      }
-      .god-mode-info .account {
-        font-size: 0.7rem;
-        color: #fde68a;
-        font-family: var(--font-mono);
-        word-break: break-all;
+      [data-theme="dark"] .brand-subtitle {
+        color: #818cf8;
       }
 
-      .nav-menu {
-        list-style: none;
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
-        flex: 1;
-      }
-      .nav-item a {
+      /* God MAXX Strip in Sidebar */
+      .god-chip {
+        margin: 1rem 1.25rem 0.5rem 1.25rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: var(--radius);
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.2));
+        border: 1px solid rgba(245, 158, 11, 0.35);
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem 1rem;
-        border-radius: var(--radius);
-        color: #94a3b8;
-        text-decoration: none;
-        font-size: 0.875rem;
+        gap: 0.65rem;
+      }
+
+      .god-chip-text {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .god-chip-title {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: #d97706;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .god-chip-sub {
+        font-size: 0.72rem;
+        font-family: var(--font-mono);
+        color: var(--text-main);
         font-weight: 600;
-        transition: var(--transition);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 140px;
       }
-      .nav-item a:hover {
-        color: white;
-        background: #1e293b;
+
+      /* Sidebar Navigation */
+      .sidebar-nav {
+        padding: 1rem 0;
+        list-style: none;
+        flex: 1;
       }
-      .nav-item.active a {
-        color: white;
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+
+      .nav-group-title {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 1rem 1.5rem 0.4rem 1.5rem;
       }
+
+      .nav-item {
+        margin: 2px 0.75rem;
+      }
+
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 0.65rem 0.85rem;
+        color: var(--text-main);
+        text-decoration: none;
+        font-size: 0.86rem;
+        font-weight: 600;
+        border-radius: var(--radius);
+        transition: all 0.15s ease;
+      }
+
+      .nav-link:hover {
+        background: rgba(50, 31, 219, 0.08);
+        color: var(--brand-blue);
+      }
+
+      [data-theme="dark"] .nav-link:hover {
+        background: rgba(99, 102, 241, 0.15);
+        color: #a5b4fc;
+      }
+
+      .nav-link.active {
+        background: var(--brand-blue);
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(50, 31, 219, 0.3);
+      }
+
+      .nav-icon {
+        font-size: 1.1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+      }
+
+      .nav-text {
+        flex: 1;
+      }
+
+      .badge-pill {
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 0.15rem 0.45rem;
+        border-radius: 9999px;
+        letter-spacing: 0.03em;
+      }
+
+      .badge-new {
+        background: #e0e7ff;
+        color: #3730a3;
+      }
+
+      .badge-pro {
+        background: #fce7f3;
+        color: #9d174d;
+      }
+
+      .badge-live {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      /* Sidebar Footer */
       .sidebar-footer {
-        padding: 1rem 0.5rem;
-        border-top: 1px solid #1e293b;
+        padding: 1rem 1.25rem;
+        border-top: 1px solid var(--sidebar-border);
       }
-      .system-pulse {
+
+      /* Main Content View */
+      .main-view {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      /* Top Header */
+      .top-header {
+        height: var(--topbar-height);
+        background: var(--bg-header);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 2rem;
+        position: sticky;
+        top: 0;
+        z-index: 90;
+        transition: background 0.25s ease, border-color 0.25s ease;
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+      }
+
+      .icon-btn {
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--text-main);
+        cursor: pointer;
+        padding: 0.45rem;
+        border-radius: var(--radius);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        transition: all 0.2s ease;
+        position: relative;
+      }
+
+      .icon-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+        border-color: var(--border-color);
+      }
+
+      [data-theme="dark"] .icon-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .notification-dot {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 8px;
+        height: 8px;
+        background: #ef4444;
+        border-radius: 50%;
+        border: 2px solid var(--bg-header);
+      }
+
+      .header-search {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .header-search input {
+        width: 280px;
+        height: 38px;
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 0 1rem 0 2.25rem;
+        font-size: 0.85rem;
+        color: var(--text-heading);
+        outline: none;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+
+      .header-search input:focus {
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 3px rgba(50, 31, 219, 0.15);
+      }
+
+      .header-search .search-icon {
+        position: absolute;
+        left: 0.75rem;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        pointer-events: none;
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+      }
+
+      .user-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 9999px;
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+      }
+
+      .user-avatar-wrap {
+        position: relative;
+        width: 34px;
+        height: 34px;
+      }
+
+      .user-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #321fdb, #818cf8);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+      }
+
+      .online-dot {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #10b981;
+        border: 2px solid var(--bg-card);
+      }
+
+      .user-meta {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+      }
+
+      .user-name {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-heading);
+      }
+
+      .user-role {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: #d97706;
+      }
+
+      /* Content Area */
+      .page-body {
+        padding: 1.75rem 2.25rem;
+        flex: 1;
+      }
+
+      .breadcrumb-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .breadcrumb-title h1 {
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: var(--text-heading);
+        letter-spacing: -0.02em;
+      }
+
+      .breadcrumb-path {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 0.2rem;
+        font-weight: 500;
+      }
+
+      .breadcrumb-path a {
+        color: var(--brand-blue);
+        text-decoration: none;
+      }
+
+      /* Action Strip */
+      .action-toolbar {
+        display: flex;
+        gap: 0.65rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 1rem;
+        border-radius: var(--radius);
+        font-size: 0.825rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+        font-family: inherit;
+      }
+
+      .btn-primary {
+        background: var(--brand-blue);
+        color: white;
+        border-color: var(--brand-blue);
+      }
+
+      .btn-primary:hover {
+        background: var(--brand-blue-hover);
+      }
+
+      .btn-outline {
+        background: var(--bg-card);
+        color: var(--text-heading);
+        border-color: var(--border-color);
+      }
+
+      .btn-outline:hover {
+        background: rgba(0, 0, 0, 0.03);
+      }
+
+      [data-theme="dark"] .btn-outline:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .btn-sm {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.75rem;
+      }
+
+      /* God MAXX Controls Bar */
+      .emergency-strip {
+        background: var(--bg-card);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-lg);
+        padding: 0.85rem 1.25rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: var(--card-shadow);
+      }
+
+      .pulse-chip {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 700;
         color: #10b981;
-        font-weight: 600;
       }
+
       .pulse-dot {
         width: 8px;
         height: 8px;
         border-radius: 50%;
         background: #10b981;
         box-shadow: 0 0 8px #10b981;
-        animation: pulse-green 2s infinite;
+        animation: pulse-ring 2s infinite;
       }
-      @keyframes pulse-green {
+
+      @keyframes pulse-ring {
         0%, 100% { opacity: 1; transform: scale(1); }
         50% { opacity: 0.4; transform: scale(0.85); }
       }
 
-      /* Main Content */
-      .main-content {
-        padding: 2rem 2.5rem;
-        overflow-y: auto;
-        background: #f8fafc;
-      }
-      .header-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+      /* Dashboard Grid Structure */
+      .dashboard-top-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.25fr;
+        gap: 1.5rem;
         margin-bottom: 1.5rem;
       }
-      .header-title h1 {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: var(--text-main);
-        letter-spacing: -0.02em;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-      }
-      .header-title p {
-        color: var(--text-muted);
-        font-size: 0.9rem;
-        margin-top: 0.25rem;
+
+      .dash-card {
+        background: var(--bg-card);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--card-shadow);
+        padding: 1.5rem;
+        transition: background 0.25s ease, border-color 0.25s ease;
+        position: relative;
+        overflow: hidden;
       }
 
-      /* God MAXX Action Strip */
-      .action-strip {
-        background: white;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-lg);
-        padding: 1rem 1.25rem;
-        margin-bottom: 1.75rem;
+      .card-header-flex {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        box-shadow: var(--shadow-sm);
-      }
-      .action-strip-label {
-        font-size: 0.8rem;
-        font-weight: 800;
-        color: #b45309;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-      .action-strip-btns {
-        display: flex;
-        gap: 0.65rem;
-        flex-wrap: wrap;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
       }
 
-      /* Metric Cards */
-      .stats-grid {
+      .card-title-group h3 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-heading);
+      }
+
+      .card-title-group p {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 0.15rem;
+      }
+
+      .card-big-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--brand-blue);
+        letter-spacing: -0.02em;
+      }
+
+      [data-theme="dark"] .card-big-value {
+        color: #818cf8;
+      }
+
+      /* Middle Dual Stat Cards */
+      .stats-duo-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1.25rem;
-        margin-bottom: 2rem;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
       }
-      .stat-card {
-        background: white;
-        border: 1px solid var(--border-color);
-        padding: 1.5rem;
+
+      .stat-mini-card {
+        background: var(--bg-card);
+        border: 1px solid var(--card-border);
         border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-sm);
-        transition: var(--transition);
+        box-shadow: var(--card-shadow);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
       }
-      .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow);
-      }
-      .stat-label {
-        font-size: 0.8rem;
+
+      .stat-mini-info .label {
+        font-size: 0.78rem;
         font-weight: 700;
         color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.05em;
       }
-      .stat-value {
-        font-size: 2rem;
+
+      .stat-mini-info .value {
+        font-size: 1.75rem;
         font-weight: 800;
-        color: var(--text-main);
-        margin: 0.5rem 0 0.25rem 0;
-        font-family: var(--font-sans);
-      }
-      .stat-desc {
-        font-size: 0.8rem;
-        color: #10b981;
-        font-weight: 600;
+        color: var(--text-heading);
+        margin: 0.25rem 0;
       }
 
-      /* Table Styles */
-      .table-card {
-        background: white;
-        border: 1px solid var(--border-color);
+      .trend-tag {
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+      }
+
+      .trend-up {
+        color: #10b981;
+      }
+
+      .trend-down {
+        color: #ef4444;
+      }
+
+      .stat-icon-wrap {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(50, 31, 219, 0.1);
+        color: var(--brand-blue);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.45rem;
+      }
+
+      [data-theme="dark"] .stat-icon-wrap {
+        background: rgba(99, 102, 241, 0.18);
+        color: #a5b4fc;
+      }
+
+      /* Bottom Row Grid (Table + 2 Stacked Cards) */
+      .dashboard-bottom-grid {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 1.5rem;
+      }
+
+      /* Candidate Table Card */
+      .table-card-box {
+        background: var(--bg-card);
+        border: 1px solid var(--card-border);
         border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--card-shadow);
         overflow: hidden;
       }
-      .table-toolbar {
+
+      .table-header-bar {
         padding: 1.25rem 1.5rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
         border-bottom: 1px solid var(--border-color);
-        background: #ffffff;
       }
-      .search-box {
-        padding: 0.65rem 1rem;
+
+      .table-title-area h3 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-heading);
+      }
+
+      .table-title-area p {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 0.15rem;
+      }
+
+      .table-actions-area {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+      }
+
+      .table-search-input {
+        width: 240px;
+        height: 36px;
         border-radius: var(--radius);
-        border: 1.5px solid var(--border-color);
-        width: 320px;
-        font-size: 0.9rem;
-        font-family: inherit;
-        transition: var(--transition);
-      }
-      .search-box:focus {
+        border: 1px solid var(--border-color);
+        background: var(--bg-body);
+        color: var(--text-heading);
+        padding: 0 0.85rem;
+        font-size: 0.8rem;
         outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px var(--primary-glow);
       }
+
+      .table-search-input:focus {
+        border-color: var(--brand-blue);
+      }
+
       table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.9rem;
       }
+
       th {
-        background: #f8fafc;
-        padding: 1rem 1.25rem;
-        text-align: left;
-        font-weight: 700;
-        color: #475569;
-        border-bottom: 1px solid var(--border-color);
-        font-size: 0.8rem;
+        padding: 0.85rem 1.25rem;
+        background: var(--bg-body);
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.06em;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
       }
+
       td {
         padding: 1rem 1.25rem;
         border-bottom: 1px solid var(--border-color);
-        color: #1e293b;
+        font-size: 0.85rem;
+        color: var(--text-main);
         vertical-align: middle;
       }
+
       tr:hover td {
-        background: #f8fafc;
+        background: rgba(0, 0, 0, 0.015);
       }
-      .cand-avatar-pill {
-        display: inline-flex;
+
+      [data-theme="dark"] tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .user-cell {
+        display: flex;
         align-items: center;
         gap: 0.75rem;
       }
-      .avatar-circle {
-        width: 34px;
-        height: 34px;
+
+      .user-cell-avatar {
+        width: 38px;
+        height: 38px;
         border-radius: 50%;
-        background: #e0f2fe;
-        color: #0369a1;
+        background: linear-gradient(135deg, #321fdb, #818cf8);
+        color: white;
         font-weight: 700;
         font-size: 0.8rem;
         display: flex;
         align-items: center;
         justify-content: center;
       }
-      .pwd-badge {
-        font-family: var(--font-mono);
-        font-size: 0.85rem;
+
+      .user-cell-info {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .user-cell-name {
         font-weight: 700;
-        background: #f1f5f9;
-        padding: 0.25rem 0.55rem;
-        border-radius: var(--radius-sm);
-        border: 1px solid #cbd5e1;
+        color: var(--text-heading);
+      }
+
+      .user-cell-sub {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+      }
+
+      .progress-bar-wrap {
+        width: 120px;
+        height: 6px;
+        background: var(--border-color);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 4px;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        background: var(--brand-blue);
+        border-radius: 3px;
+      }
+
+      .status-pill {
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
-      }
-      .pwd-copy-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-size: 0.8rem;
-        opacity: 0.7;
-        transition: var(--transition);
-      }
-      .pwd-copy-btn:hover {
-        opacity: 1;
-        transform: scale(1.15);
-      }
-      .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.2rem 0.65rem;
-        border-radius: var(--radius-full);
-        font-size: 0.75rem;
+        gap: 4px;
+        padding: 0.2rem 0.55rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
         font-weight: 700;
         text-transform: uppercase;
       }
-      .status-badge.active {
+
+      .status-active {
         background: #ecfdf5;
         color: #047857;
-        border: 1px solid #a7f3d0;
-      }
-      .status-badge.suspended {
-        background: #fef2f2;
-        color: #b91c1c;
-        border: 1px solid #fecaca;
       }
 
-      /* Modal Enhancement */
-      .modal-overlay {
+      [data-theme="dark"] .status-active {
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+      }
+
+      .status-suspended {
+        background: #fef2f2;
+        color: #b91c1c;
+      }
+
+      /* Stacked Solid Color Cards (Reference: Purple & Yellow) */
+      .stacked-cards-box {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .solid-card {
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+        min-height: 165px;
+      }
+
+      .purple-card {
+        background: linear-gradient(135deg, #4f46e5, #3730a3);
+      }
+
+      .yellow-card {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+      }
+
+      .solid-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+
+      .solid-card-val {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+      }
+
+      .solid-card-sub {
+        font-size: 0.85rem;
+        opacity: 0.85;
+        font-weight: 600;
+        margin-top: 0.2rem;
+      }
+
+      .sparkline-svg {
+        width: 100%;
+        height: 48px;
+        margin-top: 0.5rem;
+      }
+
+      /* Modal Styling */
+      .modal-backdrop {
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        inset: 0;
         background: rgba(15, 23, 42, 0.7);
         backdrop-filter: blur(4px);
         display: none;
@@ -365,281 +914,531 @@
         justify-content: center;
         z-index: 1000;
       }
-      .modal-content {
-        background: white;
+
+      .modal-box {
+        background: var(--bg-card);
+        color: var(--text-heading);
+        border: 1px solid var(--border-color);
         border-radius: var(--radius-lg);
         width: 100%;
-        max-width: 580px;
-        padding: 2.25rem;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        max-width: 560px;
+        padding: 2rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+      }
+
+      .modal-box h2 {
+        font-size: 1.35rem;
+        font-weight: 800;
+        margin-bottom: 0.35rem;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin: 1.25rem 0;
+      }
+
+      .form-group-full {
+        grid-column: span 2;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-bottom: 0.35rem;
+      }
+
+      .form-input-ctrl {
+        width: 100%;
+        height: 40px;
+        background: var(--bg-body);
         border: 1px solid var(--border-color);
-      }
-      .credentials-issued-box {
-        background: #f0fdf4;
-        border: 1.5px solid #86efac;
         border-radius: var(--radius);
-        padding: 1.25rem;
-        margin-top: 1.25rem;
-        display: none;
+        padding: 0 0.85rem;
+        font-size: 0.85rem;
+        color: var(--text-heading);
+        outline: none;
+        font-family: inherit;
       }
-      .cred-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.45rem;
+
+      .form-input-ctrl:focus {
+        border-color: var(--brand-blue);
+      }
+
+      /* Toast Notification */
+      #toast {
+        visibility: hidden;
+        min-width: 280px;
+        background-color: var(--brand-blue);
+        color: #fff;
+        text-align: center;
+        border-radius: var(--radius);
+        padding: 14px 20px;
+        position: fixed;
+        z-index: 2000;
+        right: 30px;
+        bottom: 30px;
         font-size: 0.875rem;
+        font-weight: 600;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+        opacity: 0;
+        transition: opacity 0.3s, visibility 0.3s;
       }
-      .cred-row span:first-child { color: #475569; font-weight: 600; }
-      .cred-row span:last-child { font-family: var(--font-mono); font-weight: 700; color: #15803d; }
+
+      #toast.show {
+        visibility: visible;
+        opacity: 1;
+      }
     </style>
   </head>
   <body>
-    <div class="admin-layout">
+    <div class="app-layout">
       
-      <!-- SIDEBAR -->
-      <aside class="sidebar">
+      <!-- COREUI PRO SIDEBAR -->
+      <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-          <div class="brand-icon" style="font-size: 0.95rem;">SSE</div>
-          <div class="brand-text">
-            <h2>SSE CBT PLATFORM V0.1</h2>
-            <span>COMMAND CENTRE</span>
+          <div class="brand-badge">PRO</div>
+          <div class="brand-title-wrap">
+            <span class="brand-title">SSE CBT PLATFORM</span>
+            <span class="brand-subtitle">COMMAND CENTRE V0.1</span>
           </div>
         </div>
 
-        <!-- GOD MAXX ACCESS CHIP -->
-        <div class="god-mode-pill">
-          <span class="god-mode-icon">👑</span>
-          <div class="god-mode-info">
-            <div class="title">GOD MAXX ACCESS</div>
-            <div class="account">admin@sse.cbt.in</div>
+        <!-- GOD MAXX CHIP -->
+        <div class="god-chip">
+          <span style="font-size: 1.25rem;">👑</span>
+          <div class="god-chip-text">
+            <span class="god-chip-title">GOD MAXX ACCESS</span>
+            <span class="god-chip-sub">admin@sse.cbt.in</span>
           </div>
         </div>
 
-        <ul class="nav-menu">
-          <li class="nav-item active"><a href="/admin.html">Candidates &amp; Accounts</a></li>
-          <li class="nav-item"><a href="/question_bank.html">Question Bank</a></li>
-          <li class="nav-item"><a href="/instructions.html">Mock Exam Console</a></li>
-          <li class="nav-item"><a href="/scorecard.html">Scorecards &amp; Results</a></li>
+        <!-- NAVIGATION -->
+        <ul class="sidebar-nav">
+          <li class="nav-item">
+            <a href="/admin.html" class="nav-link active">
+              <span class="nav-icon">📊</span>
+              <span class="nav-text">Dashboard</span>
+            </a>
+          </li>
+
+          <li class="nav-group-title">Theme</li>
+          <li class="nav-item">
+            <a href="javascript:void(0)" id="sidebar-theme-toggle" class="nav-link">
+              <span class="nav-icon">🌓</span>
+              <span class="nav-text">Toggle Theme (Light/Dark)</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="javascript:void(0)" class="nav-link">
+              <span class="nav-icon">✍️</span>
+              <span class="nav-text">Typography &amp; Layout</span>
+            </a>
+          </li>
+
+          <li class="nav-group-title">Exam Management</li>
+          <li class="nav-item">
+            <a href="#candidate-section" class="nav-link">
+              <span class="nav-icon">👥</span>
+              <span class="nav-text">Candidates &amp; Batches</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/question_bank.html" class="nav-link">
+              <span class="nav-icon">📚</span>
+              <span class="nav-text">Question Bank</span>
+              <span class="badge-pill badge-new">NEW</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/instructions.html" class="nav-link">
+              <span class="nav-icon">💻</span>
+              <span class="nav-text">Mock Exam Console</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/scorecard.html" class="nav-link">
+              <span class="nav-icon">🏆</span>
+              <span class="nav-text">Scorecards &amp; Results</span>
+            </a>
+          </li>
+
+          <li class="nav-group-title">Plugins &amp; God MAXX</li>
+          <li class="nav-item">
+            <a href="javascript:void(0)" id="btn-quick-provision-nav" class="nav-link">
+              <span class="nav-icon">⚡</span>
+              <span class="nav-text">Provision Account</span>
+              <span class="badge-pill badge-pro">GOD</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="javascript:void(0)" class="nav-link">
+              <span class="nav-icon">📡</span>
+              <span class="nav-text">Live Proctoring</span>
+              <span class="badge-pill badge-live">LIVE</span>
+            </a>
+          </li>
         </ul>
 
         <div class="sidebar-footer">
-          <div class="system-pulse">
+          <div class="pulse-chip" style="margin-bottom: 0.75rem;">
             <span class="pulse-dot"></span>
-            <span>Supabase DB: Online</span>
+            <span style="font-size: 0.72rem; color: var(--text-main);">Supabase DB: Online</span>
           </div>
-          <div style="margin-top: 1rem;">
-            <a href="/login.html" id="btn-admin-logout" onclick="localStorage.clear(); sessionStorage.clear(); window.location.href='/login.html'; return false;" style="color: #ef4444; font-size: 0.8rem; text-decoration: none; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-              <span>🚪 Sign Out</span>
-            </a>
-          </div>
+          <a href="/login.html" id="btn-admin-logout" onclick="localStorage.clear(); sessionStorage.clear(); window.location.href='/login.html'; return false;" style="color: #ef4444; font-size: 0.8rem; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+            <span>🚪 Sign Out</span>
+          </a>
         </div>
       </aside>
 
       <!-- MAIN WORKSPACE -->
-      <main class="main-content">
-        <div class="header-row">
-          <div class="header-title">
-            <h1>Candidate &amp; Account Management</h1>
-            <p>Authoritative registration, batch assignments, credential distribution, and Supabase synchronization.</p>
-          </div>
-          <div style="display: flex; gap: 0.75rem;">
-            <button class="btn btn-outline" id="btn-export-csv">📥 Export Credentials CSV</button>
-            <button class="btn btn-outline" id="btn-import">Bulk Import CSV</button>
-            <button class="btn btn-primary" id="btn-create" style="background: linear-gradient(135deg, #1e3a8a, #2563eb);">
-              ⚡ Provision Account (God MAXX)
+      <div class="main-view">
+        
+        <!-- COREUI PRO TOPBAR -->
+        <header class="top-header">
+          <div class="header-left">
+            <button class="icon-btn" id="sidebar-toggle-btn" title="Toggle Sidebar">
+              <span>◀</span>
             </button>
-          </div>
-        </div>
-
-        <!-- GOD MAXX EMERGENCY ACTION STRIP -->
-        <div class="action-strip">
-          <div class="action-strip-label">
-            <span>⚡</span>
-            <span>God MAXX Controls</span>
-          </div>
-          <div class="action-strip-btns">
-            <button class="btn btn-outline btn-sm" id="btn-extend-time" title="Add 15 minutes to active exam session">
-              ⏱️ +15 Min Extension
-            </button>
-            <button class="btn btn-outline btn-sm" id="btn-unlock-sessions" title="Clear tab collisions and duplicate locks">
-              🔄 Clear Tab Locks
-            </button>
-            <button class="btn btn-outline btn-sm" id="btn-emergency-reset" style="color: #b91c1c; border-color: #fca5a5;" title="Reset active exam countdown and responses">
-              ⚠️ Emergency Exam Reset
-            </button>
-            <button class="btn btn-primary btn-sm" id="btn-assign" disabled>Assign to Exam</button>
-          </div>
-        </div>
-
-        <!-- METRIC CARDS -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Total Candidates</div>
-            <div class="stat-value" id="stat-total-cands">--</div>
-            <div class="stat-desc">Synchronized with PostgreSQL</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Active Batch</div>
-            <div class="stat-value">Slot A-D</div>
-            <div class="stat-desc">JEE Main Cycle 2026</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Question Bank</div>
-            <div class="stat-value" id="stat-total-questions">Live</div>
-            <div class="stat-desc">MCQ Single, Multi &amp; Numerical</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Access Level</div>
-            <div class="stat-value" style="font-size: 1.4rem; color: #d97706;">GOD MAXX</div>
-            <div class="stat-desc" style="color: #d97706;">Unrestricted Authority</div>
-          </div>
-        </div>
-
-        <!-- CANDIDATES TABLE CARD -->
-        <div class="table-card">
-          <div class="table-toolbar">
-            <input type="text" class="search-box" id="search-input" placeholder="Search by Roll No, Name or Email...">
-            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">
-              Database: <span style="color: var(--primary); font-family: var(--font-mono);">public.candidates</span>
+            <div class="header-search">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="top-search-input" placeholder="Search candidates, exams, batches..." />
             </div>
           </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 40px;"><input type="checkbox" id="check-all"></th>
-                <th>Registration ID</th>
-                <th>Candidate Name</th>
-                <th>Slot / Batch</th>
-                <th>Email</th>
-                <th>Password / PIN</th>
-                <th>Status</th>
-                <th style="text-align: right;">God Actions</th>
-              </tr>
-            </thead>
-            <tbody id="candidate-table-body">
-              <!-- Populated dynamically via JS -->
-            </tbody>
-          </table>
-        </div>
-      </main>
+          <div class="header-right">
+            <!-- Notification Bell -->
+            <button class="icon-btn" title="Notifications">
+              <span>🔔</span>
+              <span class="notification-dot"></span>
+            </button>
 
-    </div>
+            <!-- Checklist -->
+            <button class="icon-btn" title="Tasks">
+              <span>📋</span>
+            </button>
 
-    <!-- GOD MAXX ACCOUNT PROVISIONING MODAL -->
-    <div class="modal-overlay" id="modal-create">
-      <div class="modal-content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-          <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">👑 God MAXX Account Provisioning</h3>
-          <button type="button" onclick="closeModal('modal-create')" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #94a3b8;">&times;</button>
-        </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
-          Authoritative credentials written directly to Supabase PostgreSQL database.
-        </p>
+            <!-- Messages -->
+            <button class="icon-btn" title="System Logs">
+              <span>✉️</span>
+            </button>
 
-        <form id="form-create">
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem;">Account Role</label>
-            <select id="c-role" style="width: 100%; padding: 0.65rem; border: 1.5px solid var(--border-color); border-radius: var(--radius); font-size: 0.9rem; font-family: inherit;">
-              <option value="candidate" selected>Candidate (JEE Mock Exam Aspirant)</option>
-              <option value="invigilator">Invigilator / Room Proctor</option>
-              <option value="teacher">Question Setter / Examiner</option>
-              <option value="admin">System Super Admin</option>
-            </select>
-          </div>
+            <!-- Light/Dark Mode Switcher (Matching Reference Split) -->
+            <button class="icon-btn" id="theme-toggle-btn" title="Switch Light/Dark Mode">
+              <span id="theme-icon">🌓</span>
+            </button>
 
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem;">Full Name</label>
-            <input type="text" id="c-name" required placeholder="e.g. Aryan Verma" style="width: 100%; padding: 0.65rem; border: 1.5px solid var(--border-color); border-radius: var(--radius); font-size: 0.9rem; font-family: inherit;">
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem;">Slot / Batch (A, B, C, D)</label>
-              <input type="text" id="c-batch" required placeholder="e.g. A" value="A" style="width: 100%; padding: 0.65rem; border: 1.5px solid var(--border-color); border-radius: var(--radius); font-size: 0.9rem; font-family: inherit;">
-            </div>
-            <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem;">Custom Registration ID (Optional)</label>
-              <input type="text" id="c-regno" placeholder="Auto-generated if empty" style="width: 100%; padding: 0.65rem; border: 1.5px solid var(--border-color); border-radius: var(--radius); font-size: 0.9rem; font-family: var(--font-mono);">
+            <!-- User Profile Avatar Pill -->
+            <div class="user-pill" title="God MAXX Administrator">
+              <div class="user-avatar-wrap">
+                <div class="user-avatar">SA</div>
+                <div class="online-dot"></div>
+              </div>
+              <div class="user-meta">
+                <span class="user-name">Administrator</span>
+                <span class="user-role">GOD MAXX</span>
+              </div>
             </div>
           </div>
+        </header>
 
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem;">Email Address (Optional)</label>
-            <input type="email" id="c-email" placeholder="e.g. student@ssecbt.in (auto if blank)" style="width: 100%; padding: 0.65rem; border: 1.5px solid var(--border-color); border-radius: var(--radius); font-size: 0.9rem; font-family: inherit;">
-          </div>
+        <!-- PAGE BODY -->
+        <main class="page-body">
+          <div class="breadcrumb-row">
+            <div class="breadcrumb-title">
+              <h1>Dashboard</h1>
+              <div class="breadcrumb-path">
+                <a href="/admin.html">Home</a> / Dashboard
+              </div>
+            </div>
 
-          <div class="form-group" style="margin-bottom: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-              <label style="font-size: 0.85rem; font-weight: 700;">Login Password / Security PIN</label>
-              <button type="button" id="btn-gen-pwd" style="background: none; border: none; font-size: 0.75rem; color: var(--primary); font-weight: 700; cursor: pointer;">
-                🎲 Generate PIN
+            <!-- ACTION TOOLBAR -->
+            <div class="action-toolbar">
+              <button class="btn btn-outline" id="btn-export-csv">📥 Export Credentials CSV</button>
+              <button class="btn btn-outline" id="btn-import">📂 Bulk Import CSV</button>
+              <button class="btn btn-primary" id="btn-create">
+                ⚡ Provision Account (God MAXX)
               </button>
             </div>
-            <input type="text" id="c-password" required placeholder="Enter or generate PIN" style="width: 100%; padding: 0.65rem; border: 1.5px solid var(--border-color); border-radius: var(--radius); font-size: 0.9rem; font-family: var(--font-mono);">
           </div>
 
-          <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-            <button type="button" class="btn btn-outline" onclick="closeModal('modal-create')">Close</button>
-            <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #1e3a8a, #2563eb);">
-              ⚡ Commit &amp; Issue Account
+          <!-- GOD MAXX REALTIME STATUS & CONTROLS STRIP -->
+          <div class="emergency-strip">
+            <div class="pulse-chip">
+              <span class="pulse-dot" id="ws-admin-dot"></span>
+              <span id="ws-admin-status">Cloud DB &amp; Real-time Feed: Active</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn btn-outline btn-sm" id="btn-extend-time" title="Add 15 minutes to all active exams">
+                ⏱️ +15 Min Extension
+              </button>
+              <button class="btn btn-outline btn-sm" id="btn-unlock-sessions" title="Clear tab collisions and duplicate locks">
+                🔄 Clear Tab Locks
+              </button>
+              <button class="btn btn-outline btn-sm" id="btn-emergency-reset" style="color: #ef4444; border-color: #fca5a5;" title="Emergency wipe of active exam responses">
+                ⚠️ Emergency Reset
+              </button>
+              <button class="btn btn-primary btn-sm" id="btn-assign" disabled>Assign to Exam</button>
+            </div>
+          </div>
+
+          <!-- TOP ROW: CANDIDATE FLOW (SALE STYLE) & TRAFFIC CARDS -->
+          <div class="dashboard-top-grid">
+            
+            <!-- CARD 1: CANDIDATE REGISTRATION FLOW (Replicating CoreUI Sale Card) -->
+            <div class="dash-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3>Candidate Flow</h3>
+                  <p>Academic Cycle 2026 &bull; Active Registrations</p>
+                </div>
+                <div class="card-big-value" id="card-cand-flow-num">--</div>
+              </div>
+              
+              <!-- DYNAMIC SPLINE AREA CHART (ZERO DUMMY DATA) -->
+              <svg class="sparkline-svg" viewBox="0 0 500 120" preserveAspectRatio="none" style="height: 100px; width: 100%;">
+                <defs>
+                  <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.35"/>
+                    <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+                <path id="sparkline-area" d="M 0,100 L 0,60 C 100,20 180,90 280,45 C 380,10 440,70 500,30 L 500,120 L 0,120 Z" fill="url(#curveGradient)" />
+                <path id="sparkline-line" d="M 0,60 C 100,20 180,90 280,45 C 380,10 440,70 500,30" fill="none" stroke="#4f46e5" stroke-width="3" stroke-linecap="round" />
+              </svg>
+            </div>
+
+            <!-- CARD 2: EXAMINATION TRAFFIC (Replicating CoreUI Traffic Dual-Bar Chart) -->
+            <div class="dash-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3>Traffic &amp; Slot Allocation</h3>
+                  <p>Enrolled Candidates vs Completed Submissions</p>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
+                  <span style="display:inline-block; width:10px; height:10px; background:#4f46e5; border-radius:2px; margin-right:4px;"></span>Enrolled
+                  <span style="display:inline-block; width:10px; height:10px; background:#38bdf8; border-radius:2px; margin-left:10px; margin-right:4px;"></span>Completed
+                </div>
+              </div>
+
+              <!-- DYNAMIC DUAL BAR CHART -->
+              <div style="display: flex; align-items: flex-end; justify-content: space-between; height: 100px; padding-top: 10px; border-bottom: 1px solid var(--border-color);" id="traffic-bars-container">
+                <!-- Dynamically populated from real DB via JS -->
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); padding-top: 6px;" id="traffic-labels-container">
+                <span>Slot A</span><span>Slot B</span><span>Slot C</span><span>Slot D</span><span>Slot E</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- MIDDLE DUAL STAT CARDS (Replicating Customers 44.725 & Orders 385) -->
+          <div class="stats-duo-grid">
+            
+            <!-- STAT 1: ENROLLED CANDIDATES -->
+            <div class="stat-mini-card">
+              <div class="stat-mini-info">
+                <div class="label">Enrolled Candidates</div>
+                <div class="value" id="stat-total-cands">--</div>
+                <div class="trend-tag trend-up">
+                  <span>(100% Verified Database Sync)</span>
+                </div>
+              </div>
+              <div class="stat-icon-wrap">
+                <span>👥</span>
+              </div>
+            </div>
+
+            <!-- STAT 2: COMMITTED EXAM ATTEMPTS -->
+            <div class="stat-mini-card">
+              <div class="stat-mini-info">
+                <div class="label">Committed Exam Attempts</div>
+                <div class="value" id="stat-total-attempts">--</div>
+                <div class="trend-tag trend-up">
+                  <span id="stat-attempts-trend">Real-time Sessions</span>
+                </div>
+              </div>
+              <div class="stat-icon-wrap" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">
+                <span>📝</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- BOTTOM GRID: CANDIDATES TABLE & SOLID STACKED CARDS -->
+          <div class="dashboard-bottom-grid">
+            
+            <!-- BOTTOM LEFT: REGISTERED USERS TABLE -->
+            <div class="table-card-box" id="candidate-section">
+              <div class="table-header-bar">
+                <div class="table-title-area">
+                  <h3>Registered Candidates</h3>
+                  <p id="stat-registered-sub">Authoritative Postgres records &bull; Zero fake entries</p>
+                </div>
+                <div class="table-actions-area">
+                  <input type="text" class="table-search-input" id="search-input" placeholder="Search by name, roll no, email..." />
+                  <button class="btn btn-primary btn-sm" id="btn-create-sub" onclick="document.getElementById('btn-create').click()">
+                    + Add new candidate
+                  </button>
+                </div>
+              </div>
+
+              <div style="overflow-x: auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width: 40px;"><input type="checkbox" id="check-all" /></th>
+                      <th>Candidate</th>
+                      <th>Slot / Batch</th>
+                      <th>Email &amp; Roll No</th>
+                      <th>Access Key</th>
+                      <th>Status</th>
+                      <th style="text-align: right;">Authority Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="candidate-table-body">
+                    <!-- Populated dynamically via JS from Supabase -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- BOTTOM RIGHT: SOLID STACKED CARDS (Replicating Purple 26K & Yellow Conversion Cards) -->
+            <div class="stacked-cards-box">
+              
+              <!-- CARD A: PURPLE SOLID CARD (Question Bank Volume) -->
+              <div class="solid-card purple-card">
+                <div class="solid-card-top">
+                  <div>
+                    <div class="solid-card-val" id="stat-total-questions">--</div>
+                    <div class="solid-card-sub">Question Repository</div>
+                  </div>
+                  <button style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;" title="Options">⋮</button>
+                </div>
+                <svg class="sparkline-svg" viewBox="0 0 200 40" preserveAspectRatio="none">
+                  <path d="M 0,35 Q 50,5 100,25 T 200,10" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" />
+                </svg>
+              </div>
+
+              <!-- CARD B: YELLOW SOLID CARD (Completion Rate) -->
+              <div class="solid-card yellow-card">
+                <div class="solid-card-top">
+                  <div>
+                    <div class="solid-card-val" id="stat-completion-rate">0.0%</div>
+                    <div class="solid-card-sub">Exam Completion Rate</div>
+                  </div>
+                  <button style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;" title="Options">⋮</button>
+                </div>
+                <div style="font-size: 0.78rem; opacity: 0.9; margin-top: 1rem; font-weight: 600;">
+                  ⚡ Synchronized with Cloud DB
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </main>
+      </div>
+
+    </div>
+
+    <!-- PROVISION ACCOUNT MODAL -->
+    <div class="modal-backdrop" id="modal-create">
+      <div class="modal-box">
+        <h2>⚡ Provision Candidate Account</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          God MAXX Authority: Creates authenticated account immediately in Supabase.
+        </p>
+        
+        <form id="form-create">
+          <div class="form-grid">
+            <div class="form-group-full">
+              <label class="form-label">Full Name</label>
+              <input type="text" class="form-input-ctrl" id="c-name" required placeholder="e.g. NARESH S" />
+            </div>
+
+            <div>
+              <label class="form-label">Role</label>
+              <select class="form-input-ctrl" id="c-role">
+                <option value="candidate">Candidate / Student</option>
+                <option value="super_admin">Administrator</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label">Batch / Slot</label>
+              <input type="text" class="form-input-ctrl" id="c-batch" value="A" placeholder="Slot A, B, C..." />
+            </div>
+
+            <div>
+              <label class="form-label">Registration No (Optional)</label>
+              <input type="text" class="form-input-ctrl" id="c-regno" placeholder="Auto-generated if blank" />
+            </div>
+
+            <div>
+              <label class="form-label">Email Address (Optional)</label>
+              <input type="email" class="form-input-ctrl" id="c-email" placeholder="Auto-generated if blank" />
+            </div>
+
+            <div class="form-group-full">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                <label class="form-label" style="margin-bottom: 0;">Password / Passcode</label>
+                <button type="button" class="btn btn-outline btn-sm" id="btn-gen-pwd" style="padding: 2px 8px; font-size: 0.7rem;">🎲 Generate 6-Digit PIN</button>
+              </div>
+              <input type="text" class="form-input-ctrl" id="c-password" value="12345678" required />
+            </div>
+          </div>
+
+          <!-- Credential Result Box -->
+          <div id="cred-result-box" style="display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #10b981; margin-bottom: 0.5rem;">✅ Account Created in Supabase:</div>
+            <div style="font-size: 0.8rem; font-family: var(--font-mono); line-height: 1.5;">
+              <div>Reg No: <span id="res-regno" style="font-weight: 700;"></span></div>
+              <div>Name: <span id="res-name"></span></div>
+              <div>Password: <span id="res-pwd" style="font-weight: 700; color: #d97706;"></span></div>
+              <div>Slot: <span id="res-slot"></span></div>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-copy-cred" style="margin-top: 0.65rem; width: 100%;">
+              📋 Copy Candidate Credentials Slip
             </button>
           </div>
-        </form>
 
-        <!-- CREDENTIALS ISSUED RESULT BANNER -->
-        <div class="credentials-issued-box" id="cred-result-box">
-          <div style="font-weight: 800; font-size: 0.85rem; color: #15803d; margin-bottom: 0.75rem;">
-            ✅ Account Issued &amp; Saved in Supabase
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-create').style.display='none'">Cancel</button>
+            <button type="submit" class="btn btn-primary">Provision Account &rarr;</button>
           </div>
-          <div class="cred-row">
-            <span>Registration ID:</span>
-            <span id="res-regno">--</span>
-          </div>
-          <div class="cred-row">
-            <span>Candidate Name:</span>
-            <span id="res-name">--</span>
-          </div>
-          <div class="cred-row">
-            <span>Password / PIN:</span>
-            <span id="res-pwd">--</span>
-          </div>
-          <div class="cred-row">
-            <span>Slot:</span>
-            <span id="res-slot">--</span>
-          </div>
-          <button type="button" class="btn btn-sm btn-outline" id="btn-copy-cred" style="width: 100%; margin-top: 0.75rem; border-color: #86efac; color: #15803d;">
-            📋 Copy Candidate Login Slip
-          </button>
-        </div>
+        </form>
       </div>
     </div>
 
-    <!-- BULK IMPORT CSV MODAL -->
-    <div class="modal-overlay" id="modal-import">
-      <div class="modal-content">
-        <h3 style="margin-bottom: 0.5rem;">Bulk Import Candidates</h3>
+    <!-- BULK IMPORT MODAL -->
+    <div class="modal-backdrop" id="modal-import">
+      <div class="modal-box">
+        <h2>📂 Bulk Import Candidates CSV</h2>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-          Upload CSV file with columns: <strong>FullName, Slot</strong>. Registration numbers and passwords are automatically generated.
+          Upload CSV with columns: <code>full_name, batch, registration_number, email, password</code>
         </p>
+
         <form id="form-import">
-          <input type="file" id="csv-file" accept=".csv" required style="margin-bottom: 1.5rem; width: 100%;">
+          <div style="margin: 1.5rem 0;">
+            <input type="file" id="csv-file" accept=".csv" class="form-input-ctrl" style="padding: 0.5rem;" required />
+          </div>
+
           <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-            <button type="button" class="btn btn-outline" onclick="closeModal('modal-import')">Cancel</button>
-            <button type="submit" class="btn btn-primary">Upload &amp; Commit</button>
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-import').style.display='none'">Cancel</button>
+            <button type="submit" class="btn btn-primary">Start Import</button>
           </div>
         </form>
       </div>
     </div>
 
-    <div id="toast">Action Successful!</div>
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast">Operation successful</div>
 
     <script type="module" src="/src/admin.ts"></script>
-    <script>
-      function closeModal(id) { 
-        document.getElementById(id).style.display = 'none'; 
-        const resBox = document.getElementById('cred-result-box');
-        if (resBox) resBox.style.display = 'none';
-      }
-    </script>
   </body>
 </html>
