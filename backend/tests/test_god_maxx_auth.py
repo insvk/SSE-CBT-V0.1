@@ -10,19 +10,19 @@ client = TestClient(app)
 def test_god_maxx_admin_hardcoded_login():
     """
     Validates that the single authoritative God MAXX Super Admin account:
-    admin@sse,cbt.in with password Admin@sse
+    admin@sse.cbt.in with password Admin.sse@123
     is strictly authenticated and issued unrestricted god_mode privileges.
     """
     res = client.post(
         "/api/v1/auth/login",
-        json={"username_or_email": "admin@sse,cbt.in", "password": "Admin@sse"},
+        json={"username_or_email": "admin@sse.cbt.in", "password": "Admin.sse@123"},
     )
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "success"
     assert "access_token" in data
     user = data["user"]
-    assert user["email"] == "admin@sse,cbt.in"
+    assert user["email"] == "admin@sse.cbt.in"
     assert user["role"] == "super_admin"
     assert user["god_mode"] is True
     assert "*" in user["permissions"]
@@ -45,7 +45,7 @@ def test_god_maxx_rejects_wrong_password():
     """Validates that incorrect admin passwords or unauthorized accounts are rejected with 401."""
     res = client.post(
         "/api/v1/auth/login",
-        json={"username_or_email": "admin@sse,cbt.in", "password": "WrongPassword123"},
+        json={"username_or_email": "admin@sse.cbt.in", "password": "WrongPassword123"},
     )
     assert res.status_code == 401
 
@@ -58,7 +58,7 @@ def test_god_maxx_create_and_authenticate_candidate_account():
     # 1. Login as God MAXX Admin
     admin_login = client.post(
         "/api/v1/auth/login",
-        json={"username_or_email": "admin@sse,cbt.in", "password": "Admin@sse"},
+        json={"username_or_email": "admin@sse.cbt.in", "password": "Admin.sse@123"},
     )
     admin_token = admin_login.json()["access_token"]
 

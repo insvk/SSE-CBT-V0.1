@@ -15,13 +15,13 @@ router = APIRouter()
 
 # Authoritative Hardcoded Super Admin Credentials (GOD MAXX MODE)
 GOD_ADMIN_EMAILS = [
+    "admin@sse.cbt.in",
     "admin@sse,cbt.in",
     "admin@ssecbt.in",
-    "admin@sse.cbt.in",
     "admin@cbt.in",
     "admin"
 ]
-GOD_ADMIN_PASSWORD = "Admin@sse"
+GOD_ADMIN_PASSWORD = "Admin.sse@123"
 GOD_ADMIN_USER_ID = "00000000-0000-0000-0000-000000000001"
 
 
@@ -58,8 +58,8 @@ def login(payload: LoginRequest):
     """
     Authoritative Login Endpoint.
     Validates credentials including the GOD MAXX Administrator Account:
-    Username/Email: admin@sse,cbt.in (also accepts admin@ssecbt.in)
-    Password: Admin@sse
+    Username/Email: admin@sse.cbt.in
+    Password: Admin.sse@123
     """
     ident = payload.username_or_email.strip().lower()
     pwd = payload.password.strip()
@@ -69,7 +69,7 @@ def login(payload: LoginRequest):
     if is_god_admin_email and pwd == GOD_ADMIN_PASSWORD:
         token = generate_jwt_token(
             user_id=GOD_ADMIN_USER_ID,
-            email="admin@sse,cbt.in",
+            email="admin@sse.cbt.in",
             role="super_admin",
             god_mode=True
         )
@@ -79,7 +79,7 @@ def login(payload: LoginRequest):
             "token_type": "bearer",
             "user": {
                 "id": GOD_ADMIN_USER_ID,
-                "email": "admin@sse,cbt.in",
+                "email": "admin@sse.cbt.in",
                 "full_name": "God MAXX Administrator",
                 "role": "super_admin",
                 "god_mode": True,
