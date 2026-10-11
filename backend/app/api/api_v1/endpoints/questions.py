@@ -623,6 +623,26 @@ def export_question_bank_csv(user_context: dict = Depends(require_admin_user)):
     )
 
 
+def _cascade_delete_responses_for_question(db, question_id: str) -> None:
+    """Safely cascades deletion of any candidate responses referencing question_id to satisfy foreign key constraints."""
+    try:
+        db.table("responses").delete().eq("question_id", question_id).execute()
+    except Exception as e:
+        logger.warning("Failed to cascade delete responses for question %s: %s", question_id, e)
+
+
+def _cascade_delete_responses_for_questions(db, question_ids: list) -> None:
+    """Batch cascades deletion of candidate responses referencing any of the provided question IDs."""
+    if not question_ids:
+        return
+    for i in range(0, len(question_ids), 40):
+        chunk = question_ids[i:i + 40]
+        try:
+            db.table("responses").delete().in_("question_id", chunk).execute()
+        except Exception as e:
+            logger.warning("Batch cascade delete of responses failed: %s", e)
+
+
 @router.delete("/purge/seeds")
 def purge_seed_questions(user_context: dict = Depends(require_admin_user)):
     """
@@ -640,6 +660,7 @@ def purge_seed_questions(user_context: dict = Depends(require_admin_user)):
             qid = str(q.get("id", ""))
             content_str = str(q.get("content", ""))
             if qid.startswith("00000000-0000-0000-0000-0000000000") or "balloon with constant acceleration" in content_str:
+                _cascade_delete_responses_for_question(db, qid)
                 db.table("question_bank").delete().eq("id", qid).execute()
                 deleted_ids.append(qid)
 
@@ -664,14 +685,53 @@ def purge_all_questions(user_context: dict = Depends(require_admin_user)):
     ensure_tenant_exists(db, tid)
 
     try:
+        # 1. Fetch all question IDs for this tenant
+        q_res = db.table("question_bank").select("id").eq("tenant_id", tid).execute()
+        all_q_ids = [str(q["id"]) for q in (q_res.data or []) if q.get("id")]
+
+        # 2. Cascade delete all responses referencing these questions
+        if all_q_ids:
+            _cascade_delete_responses_for_questions(db, all_q_ids)
+
+        # 3. Also cascade delete responses for any exam attempts under this tenant
+        try:
+            att_res = db.table("exam_attempts").select("id").eq("tenant_id", tid).execute()
+            att_ids = [str(a["id"]) for a in (att_res.data or []) if a.get("id")]
+            for i in range(0, len(att_ids), 40):
+                chunk = att_ids[i:i + 40]
+                db.table("responses").delete().in_("attempt_id", chunk).execute()
+        except Exception as att_err:
+            logger.warning("Attempt response cleanup error: %s", att_err)
+
+        # 4. Perform question bank deletion
         res = db.table("question_bank").delete().eq("tenant_id", tid).execute()
-        count = len(res.data) if res.data else 0
+        count = len(res.data) if res.data else len(all_q_ids)
         return {
             "status": "success",
             "message": f"Question bank completely purged for tenant {tid}.",
             "purged_count": count,
         }
     except Exception as e:
+        err_msg = str(e)
+        # Automatic recovery if any residual foreign key constraint is encountered
+        if "responses_question_id_fkey" in err_msg or "23503" in err_msg:
+            try:
+                import re
+                match = re.search(r"Key \(id\)=\(([^)]+)\)", err_msg)
+                if match:
+                    bad_id = match.group(1)
+                    _cascade_delete_responses_for_question(db, bad_id)
+                # Retry deletion
+                res = db.table("question_bank").delete().eq("tenant_id", tid).execute()
+                count = len(res.data) if res.data else 0
+                return {
+                    "status": "success",
+                    "message": f"Question bank completely purged for tenant {tid}.",
+                    "purged_count": count,
+                }
+            except Exception as retry_err:
+                logger.error("Retry purge failed: %s", retry_err)
+
         logger.error("Failed to purge all questions: %s", e)
         raise HTTPException(status_code=500, detail=f"Database purge error: {str(e)}")
 
@@ -684,12 +744,26 @@ def delete_question(question_id: str, user_context: dict = Depends(require_admin
     ensure_tenant_exists(db, tid)
 
     try:
+        # Pre-emptively cascade any candidate responses referencing this question
+        _cascade_delete_responses_for_question(db, question_id)
+
         res = db.table("question_bank").delete().eq("id", question_id).execute()
         return {
             "status": "success",
             "message": f"Question {question_id} deleted successfully from Cloud DB.",
         }
     except Exception as e:
+        if "responses_question_id_fkey" in str(e) or "23503" in str(e):
+            try:
+                _cascade_delete_responses_for_question(db, question_id)
+                res = db.table("question_bank").delete().eq("id", question_id).execute()
+                return {
+                    "status": "success",
+                    "message": f"Question {question_id} deleted successfully from Cloud DB.",
+                }
+            except Exception as retry_e:
+                logger.error("Retry delete failed for question %s: %s", question_id, retry_e)
+
         logger.error("Failed to delete question %s: %s", question_id, e)
         raise HTTPException(status_code=500, detail=f"Database delete error: {str(e)}")
 

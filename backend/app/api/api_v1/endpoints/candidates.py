@@ -944,11 +944,16 @@ async def delete_candidate(candidate_id: str, user_context: dict = Depends(requi
         cand_name = cand.get("full_name", "")
         reg_no = cand.get("registration_number", "")
 
-        # Cascade delete attempts
+        # Cascade delete attempts and responses
         try:
+            att_res = db.table("exam_attempts").select("id").eq("candidate_id", actual_id).execute()
+            att_ids = [str(a["id"]) for a in (att_res.data or []) if a.get("id")]
+            for i in range(0, len(att_ids), 40):
+                chunk = att_ids[i:i + 40]
+                db.table("responses").delete().in_("attempt_id", chunk).execute()
             db.table("exam_attempts").delete().eq("candidate_id", actual_id).execute()
         except Exception as e:
-            logger.warning(f"Failed to cascade delete attempts for {actual_id}: {e}")
+            logger.warning(f"Failed to cascade delete attempts/responses for {actual_id}: {e}")
 
         # Delete candidate
         db.table("candidates").delete().eq("id", actual_id).execute()

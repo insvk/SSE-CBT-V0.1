@@ -137,3 +137,49 @@ def test_bulk_json_import():
     data = res.json()
     assert data["status"] == "success"
     assert data["count"] == 1
+
+    # Cleanup question created in test
+    for q in data.get("questions", []):
+        client.delete(f"/api/v1/questions/{q['id']}", headers=get_auth_headers())
+
+
+def test_question_delete_cascades_foreign_key_responses():
+    """Verify that deleting a question or purging questions cascades foreign key references in responses table without error 23503."""
+    from app.core.db import get_db
+    import uuid
+
+    # 1. Create a question
+    payload = {
+        "statement": "Foreign key cascade test question?",
+        "options": ["Opt 1", "Opt 2", "Opt 3", "Opt 4"],
+        "correct_answer": "B",
+        "subject": "Physics"
+    }
+    create_res = client.post("/api/v1/questions/", json=payload, headers=get_auth_headers())
+    assert create_res.status_code in [200, 201]
+    q_data = create_res.json()
+    qid = q_data["id"]
+
+    # 2. Insert a dependent record into responses referencing this question
+    db = get_db()
+    # Find or use an existing attempt
+    att_res = db.table("exam_attempts").select("id").limit(1).execute()
+    if att_res.data:
+        attempt_id = att_res.data[0]["id"]
+        # Insert a response
+        db.table("responses").upsert({
+            "attempt_id": attempt_id,
+            "question_id": qid,
+            "response_data": {"answer": 1},
+            "status": "answered",
+            "idempotency_key": f"fk_test_{uuid.uuid4()}"
+        }, on_conflict="attempt_id,question_id").execute()
+
+    # 3. Delete the question: must cascade responses and return 200 without foreign key 23503 error
+    del_res = client.delete(f"/api/v1/questions/{qid}", headers=get_auth_headers())
+    assert del_res.status_code == 200
+    assert del_res.json()["status"] == "success"
+
+    # Verify responses referencing qid no longer exist
+    chk_res = db.table("responses").select("id").eq("question_id", qid).execute()
+    assert len(chk_res.data or []) == 0

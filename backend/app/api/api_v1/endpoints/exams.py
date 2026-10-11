@@ -703,6 +703,17 @@ async def delete_exam(exam_id: str):
         raise HTTPException(status_code=400, detail="Cannot delete default National Assessment Exam blueprint.")
 
     try:
+        # Cascade delete dependent attempts and responses first
+        try:
+            att_res = db.table("exam_attempts").select("id").eq("exam_id", norm_id).execute()
+            att_ids = [str(a["id"]) for a in (att_res.data or []) if a.get("id")]
+            for i in range(0, len(att_ids), 40):
+                chunk = att_ids[i:i + 40]
+                db.table("responses").delete().in_("attempt_id", chunk).execute()
+            db.table("exam_attempts").delete().eq("exam_id", norm_id).execute()
+        except Exception as cascade_err:
+            logger.warning(f"Pre-cascade cleanup for exam {norm_id}: {cascade_err}")
+
         db.table("exams").delete().eq("id", norm_id).execute()
         ACTIVE_EXAM_SESSIONS.pop(norm_id, None)
         return {"status": "success", "message": f"Exam '{exam_id}' deleted successfully from Cloud DB."}
