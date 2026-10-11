@@ -312,7 +312,8 @@ class ExamCreateAdvanced(BaseModel):
     question_ids: Optional[List[str]] = []
     correct_marks: float = 4.0
     negative_marks: float = 1.0
-    sections: Optional[List[str]] = ["Physics", "Chemistry", "Mathematics", "General"]
+    ai_camera_enabled: Optional[bool] = True
+    sections: Optional[Union[List[str], List[Dict[str, Any]]]] = None
     assigned_candidate_ids: Optional[List[str]] = []
     assigned_batches: Optional[List[str]] = []
     config: Optional[Dict[str, Any]] = None
@@ -332,7 +333,8 @@ class ExamUpdateAdvanced(BaseModel):
     question_ids: Optional[List[str]] = None
     correct_marks: Optional[float] = None
     negative_marks: Optional[float] = None
-    sections: Optional[List[str]] = None
+    ai_camera_enabled: Optional[bool] = None
+    sections: Optional[Union[List[str], List[Dict[str, Any]]]] = None
     assigned_candidate_ids: Optional[List[str]] = None
     assigned_batches: Optional[List[str]] = None
     config: Optional[Dict[str, Any]] = None

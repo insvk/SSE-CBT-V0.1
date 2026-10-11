@@ -161,3 +161,71 @@ def test_pearson_telemetry_radar():
     assert radar["rapid_guessing_velocity"]["status"] == "NORMAL"
     assert radar["node_disconnections"]["status"] == "HEALTHY"
     assert radar["security_index_pct"] >= 99.0
+
+
+def test_ai_camera_toggle_and_config():
+    """Verify Admin can dynamically turn AI Camera ON and OFF with Cloud DB sync."""
+    # 1. Turn AI Camera OFF
+    off_res = client.post(
+        f"/api/v1/exams/{EXAM_ID}/toggle-ai-camera",
+        headers=ADMIN_HEADERS,
+        json={"ai_camera_enabled": False},
+    )
+    assert off_res.status_code == 200
+    assert off_res.json()["ai_camera_enabled"] is False
+
+    # Check exam details reflects AI Camera OFF
+    get_res = client.get(f"/api/v1/exams/{EXAM_ID}", headers=ADMIN_HEADERS)
+    assert get_res.status_code == 200
+    assert get_res.json()["ai_camera_enabled"] is False
+
+    # 2. Toggle AI Camera back ON
+    on_res = client.post(
+        f"/api/v1/exams/{EXAM_ID}/toggle-ai-camera",
+        headers=ADMIN_HEADERS,
+    )
+    assert on_res.status_code == 200
+    assert on_res.json()["ai_camera_enabled"] is True
+
+    # Verify reflected in detail
+    get_res2 = client.get(f"/api/v1/exams/{EXAM_ID}", headers=ADMIN_HEADERS)
+    assert get_res2.status_code == 200
+    assert get_res2.json()["ai_camera_enabled"] is True
+
+
+def test_sections_customization_and_question_mapping():
+    """Verify Section Headers (MATH-1, MATH-2) are editable, toggleable, and sync to Cloud DB."""
+    test_sections = [
+        {"name": "MATH-1", "enabled": True},
+        {"name": "MATH-2", "enabled": True},
+        {"name": "PHYSICS", "enabled": True},
+        {"name": "CHEMISTRY", "enabled": False},
+    ]
+
+    sec_res = client.post(
+        f"/api/v1/exams/{EXAM_ID}/sections",
+        headers=ADMIN_HEADERS,
+        json={"sections": test_sections},
+    )
+    assert sec_res.status_code == 200
+    sec_data = sec_res.json()
+    assert sec_data["status"] == "success"
+    assert len(sec_data["sections"]) == 4
+
+    # Verify GET detail reflects sections
+    det_res = client.get(f"/api/v1/exams/{EXAM_ID}", headers=ADMIN_HEADERS)
+    assert det_res.status_code == 200
+    det_sections = det_res.json().get("sections", [])
+    names = [s["name"] for s in det_sections]
+    assert "MATH-1" in names
+    assert "MATH-2" in names
+
+    # Verify questions endpoint maps to enabled sections
+    q_res = client.get(f"/api/v1/exams/{EXAM_ID}/questions", headers=ADMIN_HEADERS)
+    assert q_res.status_code == 200
+    questions = q_res.json()
+    assert len(questions) > 0
+    # Every question must map to an enabled section
+    for q in questions:
+        assert q["section"] in ["MATH-1", "MATH-2", "PHYSICS"]
+        assert q["section"] != "CHEMISTRY"

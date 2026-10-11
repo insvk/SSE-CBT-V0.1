@@ -184,6 +184,37 @@ def _format_exam_item(e: dict, total_candidates: int = 1) -> dict:
     if exam_id_str == DEFAULT_EXAM_UUID:
         code = "EX-1001"
 
+    # Normalize sections so each entry is {"name": str, "enabled": bool}
+    raw_sections = cfg.get("sections")
+    normalized_sections = []
+    if raw_sections and isinstance(raw_sections, list):
+        for s in raw_sections:
+            if isinstance(s, dict):
+                name = str(s.get("name", "")).strip()
+                if name:
+                    normalized_sections.append({
+                        "name": name,
+                        "enabled": bool(s.get("enabled", True))
+                    })
+            elif isinstance(s, str) and s.strip():
+                normalized_sections.append({
+                    "name": s.strip(),
+                    "enabled": True
+                })
+    if not normalized_sections:
+        normalized_sections = [
+            {"name": "MATH-1", "enabled": True},
+            {"name": "MATH-2", "enabled": True},
+            {"name": "PHYSICS", "enabled": True},
+            {"name": "CHEMISTRY", "enabled": True}
+        ]
+
+    ai_cam_enabled = cfg.get("ai_camera_enabled")
+    if ai_cam_enabled is None:
+        ai_cam_enabled = True
+    else:
+        ai_cam_enabled = bool(ai_cam_enabled)
+
     return {
         "id": exam_id_str,
         "code": code,
@@ -198,6 +229,8 @@ def _format_exam_item(e: dict, total_candidates: int = 1) -> dict:
         "start_time_ist": st_ist,
         "end_time_ist": et_ist,
         "config": cfg,
+        "ai_camera_enabled": ai_cam_enabled,
+        "sections": normalized_sections,
         "question_count": question_count,
         "enrolled_count": total_candidates,
         "candidate_count": total_candidates,
@@ -312,6 +345,26 @@ async def create_exam(payload: ExamCreateAdvanced):
     if st_dt and et_dt and dur_mins <= 0:
         dur_mins = max(15, int((et_dt - st_dt).total_seconds() / 60))
 
+    ai_cam = payload.ai_camera_enabled if payload.ai_camera_enabled is not None else cfg_in.get("ai_camera_enabled", True)
+
+    raw_sec = payload.sections if payload.sections is not None else cfg_in.get("sections")
+    normalized_sections = []
+    if raw_sec and isinstance(raw_sec, list):
+        for s in raw_sec:
+            if isinstance(s, dict):
+                name = str(s.get("name", "")).strip()
+                if name:
+                    normalized_sections.append({"name": name, "enabled": bool(s.get("enabled", True))})
+            elif isinstance(s, str) and s.strip():
+                normalized_sections.append({"name": s.strip(), "enabled": True})
+    if not normalized_sections:
+        normalized_sections = [
+            {"name": "MATH-1", "enabled": True},
+            {"name": "MATH-2", "enabled": True},
+            {"name": "PHYSICS", "enabled": True},
+            {"name": "CHEMISTRY", "enabled": True}
+        ]
+
     cfg = {
         "exam_code": code,
         "description": payload.description or cfg_in.get("description", ""),
@@ -321,7 +374,8 @@ async def create_exam(payload: ExamCreateAdvanced):
         "question_ids": q_ids,
         "correct_marks": correct_m,
         "negative_marks": negative_m,
-        "sections": payload.sections or cfg_in.get("sections", ["Physics", "Chemistry", "Mathematics", "General"]),
+        "ai_camera_enabled": bool(ai_cam),
+        "sections": normalized_sections,
         "assigned_batches": payload.assigned_batches or cfg_in.get("assigned_batches", ["A", "B", "C", "D"]),
         "assigned_candidate_ids": payload.assigned_candidate_ids or cfg_in.get("assigned_candidate_ids", []),
     }
@@ -444,8 +498,25 @@ async def update_exam(exam_id: str, payload: ExamUpdateAdvanced):
         cfg["correct_marks"] = float(payload.correct_marks if payload.correct_marks is not None else cfg_in["correct_marks"])
     if payload.negative_marks is not None or "negative_marks" in cfg_in:
         cfg["negative_marks"] = float(payload.negative_marks if payload.negative_marks is not None else cfg_in["negative_marks"])
-    if payload.sections is not None:
-        cfg["sections"] = payload.sections
+    if payload.ai_camera_enabled is not None:
+        cfg["ai_camera_enabled"] = bool(payload.ai_camera_enabled)
+    elif "ai_camera_enabled" in cfg_in:
+        cfg["ai_camera_enabled"] = bool(cfg_in["ai_camera_enabled"])
+
+    raw_sec_up = payload.sections if payload.sections is not None else cfg_in.get("sections")
+    if raw_sec_up is not None:
+        normalized_sec_up = []
+        if isinstance(raw_sec_up, list):
+            for s in raw_sec_up:
+                if isinstance(s, dict):
+                    name = str(s.get("name", "")).strip()
+                    if name:
+                        normalized_sec_up.append({"name": name, "enabled": bool(s.get("enabled", True))})
+                elif isinstance(s, str) and s.strip():
+                    normalized_sec_up.append({"name": s.strip(), "enabled": True})
+        if normalized_sec_up:
+            cfg["sections"] = normalized_sec_up
+
     if payload.assigned_batches is not None:
         cfg["assigned_batches"] = payload.assigned_batches
 
@@ -467,10 +538,158 @@ async def update_exam(exam_id: str, payload: ExamUpdateAdvanced):
         if "state" in updates:
             ACTIVE_EXAM_SESSIONS[norm_id]["status"] = updates["state"]
 
+    # Real-Time WebSocket broadcast of updated test state
+    try:
+        await ws_manager.broadcast("admin_feed", {
+            "type": "EXAM_UPDATED",
+            "exam_id": norm_id,
+            "title": updated_row.get("title"),
+            "ai_camera_enabled": cfg.get("ai_camera_enabled", True),
+            "sections": cfg.get("sections"),
+            "timestamp": time.time(),
+        })
+        await ws_manager.broadcast(f"exam_{exam_id}", {
+            "type": "EXAM_UPDATED",
+            "exam_id": norm_id,
+            "title": updated_row.get("title"),
+            "ai_camera_enabled": cfg.get("ai_camera_enabled", True),
+            "sections": cfg.get("sections"),
+            "timestamp": time.time(),
+        })
+    except Exception:
+        pass
+
     return {
         "status": "success",
         "message": f"Exam '{updated_row.get('title')}' updated successfully.",
         "exam": _format_exam_item(updated_row),
+    }
+
+
+@router.post("/{exam_id}/toggle-ai-camera")
+async def toggle_exam_ai_camera(exam_id: str, payload: Optional[Dict[str, Any]] = None):
+    """
+    Instantly toggles or sets the AI Camera Proctoring state for an exam.
+    Persists immediately in Supabase Cloud DB and broadcasts via WebSocket.
+    """
+    db = get_db()
+    norm_id = _resolve_exam_id(exam_id)
+    try:
+        ex_res = db.table("exams").select("*").eq("id", norm_id).limit(1).execute()
+        if not ex_res.data:
+            raise HTTPException(status_code=404, detail=f"Exam '{exam_id}' not found.")
+        curr = ex_res.data[0]
+        cfg = curr.get("config") or {}
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Exam not found: {e}")
+
+    explicit_val = payload.get("ai_camera_enabled") if payload else None
+    if explicit_val is not None:
+        new_state = bool(explicit_val)
+    else:
+        new_state = not bool(cfg.get("ai_camera_enabled", True))
+
+    cfg["ai_camera_enabled"] = new_state
+    updates = {
+        "config": cfg,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    db.table("exams").update(updates).eq("id", norm_id).execute()
+
+    # Broadcast real-time change to connected candidate consoles and admin feed
+    try:
+        await ws_manager.broadcast(f"exam_{exam_id}", {
+            "type": "AI_CAMERA_TOGGLED",
+            "exam_id": exam_id,
+            "ai_camera_enabled": new_state,
+            "timestamp": time.time(),
+        })
+        await ws_manager.broadcast("admin_feed", {
+            "type": "AI_CAMERA_TOGGLED",
+            "exam_id": exam_id,
+            "ai_camera_enabled": new_state,
+            "timestamp": time.time(),
+        })
+    except Exception:
+        pass
+
+    return {
+        "status": "success",
+        "exam_id": exam_id,
+        "ai_camera_enabled": new_state,
+        "message": f"AI Camera proctoring is now {'ENABLED' if new_state else 'DISABLED'} in Cloud DB."
+    }
+
+
+@router.post("/{exam_id}/sections")
+async def update_exam_sections(exam_id: str, payload: Dict[str, Any] = Body(...)):
+    """
+    Updates and toggles section headers (e.g. MATH-1, MATH-2) for an exam.
+    Persists immediately in Supabase Cloud DB and broadcasts via WebSocket.
+    """
+    db = get_db()
+    norm_id = _resolve_exam_id(exam_id)
+    try:
+        ex_res = db.table("exams").select("*").eq("id", norm_id).limit(1).execute()
+        if not ex_res.data:
+            raise HTTPException(status_code=404, detail=f"Exam '{exam_id}' not found.")
+        curr = ex_res.data[0]
+        cfg = curr.get("config") or {}
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Exam not found: {e}")
+
+    raw_sections = payload.get("sections") or []
+    normalized = []
+    for s in raw_sections:
+        if isinstance(s, dict):
+            name = str(s.get("name", "")).strip()
+            if name:
+                normalized.append({
+                    "name": name,
+                    "enabled": bool(s.get("enabled", True))
+                })
+        elif isinstance(s, str) and s.strip():
+            normalized.append({
+                "name": s.strip(),
+                "enabled": True
+            })
+
+    if not normalized:
+        normalized = [
+            {"name": "MATH-1", "enabled": True},
+            {"name": "MATH-2", "enabled": True},
+            {"name": "PHYSICS", "enabled": True},
+            {"name": "CHEMISTRY", "enabled": True}
+        ]
+
+    cfg["sections"] = normalized
+    updates = {
+        "config": cfg,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    db.table("exams").update(updates).eq("id", norm_id).execute()
+
+    try:
+        await ws_manager.broadcast(f"exam_{exam_id}", {
+            "type": "SECTIONS_UPDATED",
+            "exam_id": exam_id,
+            "sections": normalized,
+            "timestamp": time.time(),
+        })
+        await ws_manager.broadcast("admin_feed", {
+            "type": "SECTIONS_UPDATED",
+            "exam_id": exam_id,
+            "sections": normalized,
+            "timestamp": time.time(),
+        })
+    except Exception:
+        pass
+
+    return {
+        "status": "success",
+        "exam_id": exam_id,
+        "sections": normalized,
+        "message": "Examination section headers successfully updated in Cloud DB."
     }
 
 
@@ -1437,21 +1656,48 @@ def get_exam_questions(exam_id: str):
             res = db.table("question_bank").select("id, content, options, subject, difficulty, type").order("created_at", desc=True).limit(50).execute()
             rows = res.data or []
 
+        # Extract enabled sections configured by Admin
+        enabled_sections = []
+        raw_sections = cfg.get("sections") if isinstance(cfg, dict) else []
+        if raw_sections and isinstance(raw_sections, list):
+            for s in raw_sections:
+                if isinstance(s, dict) and s.get("enabled", True) and s.get("name"):
+                    enabled_sections.append(str(s["name"]).strip())
+                elif isinstance(s, str) and s.strip():
+                    enabled_sections.append(s.strip())
+        if not enabled_sections:
+            enabled_sections = ["MATH-1", "MATH-2", "PHYSICS", "CHEMISTRY"]
+
+        math_counter = 0
         questions = []
         for r in rows:
             content = r.get("content") or {}
             stmt = content.get("statement", "") if isinstance(content, dict) else str(content)
             sec = content.get("section") if isinstance(content, dict) else None
             subj = r.get("subject", "General")
-            if not sec:
-                if subj == "Physics":
-                    sec = "PHYSICS - SEC-I"
+
+            if not sec or sec not in enabled_sections:
+                if subj in ("Maths", "Mathematics"):
+                    has_m1 = "MATH-1" in enabled_sections
+                    has_m2 = "MATH-2" in enabled_sections
+                    if has_m1 and has_m2:
+                        sec = "MATH-1" if (math_counter % 2 == 0) else "MATH-2"
+                        math_counter += 1
+                    elif has_m1:
+                        sec = "MATH-1"
+                    elif has_m2:
+                        sec = "MATH-2"
+                    else:
+                        found_m = next((s for s in enabled_sections if "math" in s.lower()), None)
+                        sec = found_m or enabled_sections[0]
+                elif subj == "Physics":
+                    found_p = next((s for s in enabled_sections if "phys" in s.lower()), None)
+                    sec = found_p or enabled_sections[0]
                 elif subj == "Chemistry":
-                    sec = "CHEMISTRY - SEC-I"
-                elif subj in ("Maths", "Mathematics"):
-                    sec = "MATHS - SEC-I"
+                    found_c = next((s for s in enabled_sections if "chem" in s.lower()), None)
+                    sec = found_c or enabled_sections[0]
                 else:
-                    sec = f"{subj.upper()} - SEC-I"
+                    sec = enabled_sections[0]
 
             questions.append({
                 "id": str(r["id"]),

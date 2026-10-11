@@ -17,7 +17,10 @@ interface ExamQuestion {
 // Authoritative Questions loaded directly from Supabase Cloud DB (Zero hardcoded mock questions)
 let allQuestions: ExamQuestion[] = [];
 let currentQuestionIndex = 0;
-let activeSection = "PHYSICS - SEC-I";
+let activeSection = "MATH-1";
+let configuredSections: string[] = ["MATH-1", "MATH-2", "PHYSICS", "CHEMISTRY"];
+let isAiCameraEnabled = true;
+let activeCameraMediaStream: MediaStream | null = null;
 
 // States: 0=Not Visited, 1=Answered, 2=Marked for Review, 3=Answered & Marked for Review, 4=Not Answered
 let questionState: number[] = [];
@@ -220,7 +223,7 @@ function loadQuestion(index: number): void {
     }
 
     // Set active section tab
-    const sec = q.section || (q.subject ? `${q.subject.toUpperCase()} - SEC-I` : 'PHYSICS - SEC-I');
+    const sec = q.section || configuredSections[0] || 'MATH-1';
     activeSection = sec;
     document.querySelectorAll('.sec-pill-btn').forEach(btn => {
         const pillSec = btn.getAttribute('data-sec');
@@ -475,6 +478,21 @@ function handleExamSocketMessage(msg: any): void {
         showLiveToast(`EMERGENCY HOLD: ${msg.reason || 'Timers frozen by Proctor.'}`, true);
     } else if (msg.type === 'EXAM_PHASE_CHANGED') {
         showLiveToast(`Examination Phase: ${(msg.new_phase || '').toUpperCase().replace(/_/g, ' ')}`);
+    } else if (msg.type === 'AI_CAMERA_TOGGLED') {
+        applyAiCameraState(Boolean(msg.ai_camera_enabled));
+        showLiveToast(`AI Proctoring Camera was turned ${msg.ai_camera_enabled ? 'ON' : 'OFF'} by Administrator.`);
+    } else if (msg.type === 'SECTIONS_UPDATED') {
+        if (msg.sections) {
+            renderDynamicSectionPills(msg.sections);
+            showLiveToast('Examination sections updated by Administrator.');
+        }
+    } else if (msg.type === 'EXAM_UPDATED') {
+        if (msg.ai_camera_enabled !== undefined) {
+            applyAiCameraState(Boolean(msg.ai_camera_enabled));
+        }
+        if (msg.sections) {
+            renderDynamicSectionPills(msg.sections);
+        }
     } else if (msg.type === 'ACK') {
         updateSyncTime();
     }
@@ -577,11 +595,11 @@ function updateSectionMeta(): void {
     }
 
     const secQuestions = allQuestions.map((q, idx) => ({ q, idx })).filter(item => {
-        const itemSec = item.q.section || (item.q.subject ? `${item.q.subject.toUpperCase()} - SEC-I` : 'PHYSICS - SEC-I');
+        const itemSec = item.q.section || (configuredSections.length > 0 ? configuredSections[0] : 'MATH-1');
         return itemSec === activeSection;
     });
 
-    const totalInSec = secQuestions.length || 7;
+    const totalInSec = secQuestions.length;
     const answeredInSec = secQuestions.filter(item => questionState[item.idx] === 1 || questionState[item.idx] === 3).length;
 
     if (secAnsEl) secAnsEl.textContent = answeredInSec.toString();
@@ -740,25 +758,58 @@ ui.formEditQ.onsubmit = async (e) => {
     loadQuestion(currentQuestionIndex);
 };
 
-// Section Tabs Interaction
-document.querySelectorAll('.sec-pill-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.sec-pill-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const targetSec = btn.getAttribute('data-sec') || '';
-        activeSection = targetSec;
-
-        // Jump to first question in section if available
-        const foundIdx = allQuestions.findIndex(q => {
-            const itemSec = q.section || (q.subject ? `${q.subject.toUpperCase()} - SEC-I` : 'PHYSICS - SEC-I');
-            return itemSec === targetSec;
+// Dynamic Section Tabs Interaction & Renderer
+function renderDynamicSectionPills(sections?: Array<{ name: string; enabled: boolean } | string>): void {
+    if (sections && Array.isArray(sections)) {
+        const enabledSections: string[] = [];
+        sections.forEach(s => {
+            if (typeof s === 'object' && s !== null) {
+                if (s.enabled !== false && s.name) enabledSections.push(String(s.name).trim());
+            } else if (typeof s === 'string' && s.trim()) {
+                enabledSections.push(s.trim());
+            }
         });
-        if (foundIdx !== -1) {
-            loadQuestion(foundIdx);
+        if (enabledSections.length > 0) {
+            configuredSections = enabledSections;
         }
-        updateSectionMeta();
+    }
+
+    if (!configuredSections.includes(activeSection)) {
+        activeSection = configuredSections[0] || 'MATH-1';
+    }
+
+    const container = document.getElementById('section-pills-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+    configuredSections.forEach(secName => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sec-pill-btn';
+        if (secName === activeSection) btn.classList.add('active');
+        btn.setAttribute('data-sec', secName);
+        btn.textContent = secName;
+
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.sec-pill-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeSection = secName;
+
+            // Jump to first question belonging to this section
+            const foundIdx = allQuestions.findIndex(q => (q.section || configuredSections[0]) === secName);
+            if (foundIdx !== -1) {
+                loadQuestion(foundIdx);
+            }
+            updateSectionMeta();
+        });
+
+        container.appendChild(btn);
     });
-});
+
+    updateSectionMeta();
+}
+
+renderDynamicSectionPills();
 
 // Question Paper Modal Generator
 function openQuestionPaper(): void {
@@ -918,7 +969,7 @@ if (ui.btnManualSync) {
 // Fetch Authoritative Questions strictly from Supabase Cloud DB (Zero mock questions)
 async function fetchRemoteQuestions(): Promise<void> {
     try {
-        // 1. Fetch Exam Metadata & Title
+        // 1. Fetch Exam Metadata & Title, Sections & AI Camera State
         try {
             const exInfoRes = await fetch(`${API_BASE}/${EXAM_ID}`, { headers: getAuthHeaders() });
             if (exInfoRes.ok) {
@@ -926,6 +977,20 @@ async function fetchRemoteQuestions(): Promise<void> {
                 const titleEl = document.getElementById('exam-header-title');
                 if (titleEl && exInfo.title) {
                     titleEl.textContent = `${exInfo.title.toUpperCase()} (CBT)`;
+                }
+
+                // AI Camera proctoring sync
+                const camEnabled = (exInfo.ai_camera_enabled !== undefined)
+                    ? Boolean(exInfo.ai_camera_enabled)
+                    : (exInfo.config?.ai_camera_enabled !== undefined ? Boolean(exInfo.config.ai_camera_enabled) : true);
+                applyAiCameraState(camEnabled);
+
+                // Section Headers sync
+                const secs = exInfo.sections || exInfo.config?.sections;
+                if (secs && Array.isArray(secs)) {
+                    renderDynamicSectionPills(secs);
+                } else {
+                    renderDynamicSectionPills(['MATH-1', 'MATH-2', 'PHYSICS', 'CHEMISTRY']);
                 }
             }
         } catch (_) {}
@@ -1150,7 +1215,52 @@ function initWatermark(): void {
     setInterval(updateWm, 5000);
 }
 
-// 4. AI Proctor Preview Canvas & Toggle
+// 4. AI Proctor Preview Canvas & Video Stream Engine
+function applyAiCameraState(enabled: boolean): void {
+    isAiCameraEnabled = enabled;
+    const card = document.getElementById('proctor-cam-card');
+    if (!card) return;
+
+    if (!enabled) {
+        card.style.display = 'none';
+        if (activeCameraMediaStream) {
+            activeCameraMediaStream.getTracks().forEach(t => {
+                try { t.stop(); } catch (_) {}
+            });
+            activeCameraMediaStream = null;
+        }
+        const video = document.getElementById('proctor-video') as HTMLVideoElement;
+        if (video) video.srcObject = null;
+    } else {
+        card.style.display = 'block';
+        startWebcamStream();
+    }
+}
+
+function startWebcamStream(): void {
+    if (!isAiCameraEnabled || activeCameraMediaStream) return;
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({
+            video: { width: 320, height: 240, facingMode: 'user' }
+        })
+        .then(stream => {
+            if (!isAiCameraEnabled) {
+                stream.getTracks().forEach(t => { try { t.stop(); } catch (_) {} });
+                return;
+            }
+            activeCameraMediaStream = stream;
+            const video = document.getElementById('proctor-video') as HTMLVideoElement;
+            if (video) {
+                video.srcObject = stream;
+                video.play().catch(() => {});
+            }
+        })
+        .catch(() => {
+            // Hardware camera blocked or missing - preview canvas will use fallback telemetry silhouette
+        });
+    }
+}
+
 function initProctorPreview(): void {
     const card = document.getElementById('proctor-cam-card');
     const toggleBtn = document.getElementById('proctor-cam-toggle');
@@ -1163,6 +1273,10 @@ function initProctorPreview(): void {
         });
     }
 
+    if (isAiCameraEnabled) {
+        startWebcamStream();
+    }
+
     const canvas = document.getElementById('proctor-canvas') as HTMLCanvasElement;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -1173,15 +1287,28 @@ function initProctorPreview(): void {
 
     function renderFrame() {
         if (!ctx) return;
-        ctx.fillStyle = '#020617';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Face outline silhouette
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.ellipse(canvas.width / 2, canvas.height / 2, 35, 48, 0, 0, Math.PI * 2);
-        ctx.stroke();
+        if (!isAiCameraEnabled) {
+            requestAnimationFrame(renderFrame);
+            return;
+        }
+
+        const video = document.getElementById('proctor-video') as HTMLVideoElement;
+        if (video && video.readyState >= 2) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(2, 6, 23, 0.2)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else {
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Face outline silhouette
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.ellipse(canvas.width / 2, canvas.height / 2, 35, 48, 0, 0, Math.PI * 2);
+            ctx.stroke();
+        }
 
         // Green tracking corners
         ctx.strokeStyle = '#10b981';
@@ -1220,7 +1347,7 @@ function initProctorPreview(): void {
         ctx.stroke();
 
         // Moving scanning radar beam
-        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.5)';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(cx - rw, cy - rh + scanY);

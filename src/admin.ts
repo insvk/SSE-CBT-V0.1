@@ -1782,6 +1782,10 @@ function initAdminWebSocket(): void {
                     showToast(`HALL-WIDE EMERGENCY HOLD: ${msg.reason || 'Evacuation Drill'}`, true);
                     appendIncidentLog(`DISASTER EVACUATION HOLD ACTIVATED: ${msg.reason}. Timers frozen.`, true);
                     loadExamPhase();
+
+                } else if (msg.type === 'EXAM_CREATED' || msg.type === 'EXAM_UPDATED' || msg.type === 'AI_CAMERA_TOGGLED' || msg.type === 'SECTIONS_UPDATED') {
+                    showToast('Cloud DB Sync: Examination state updated in real-time.');
+                    loadExams();
                 }
             } catch (_) {}
         };
@@ -2233,6 +2237,122 @@ function populateShareRegExamSelect(): void {
     if (currentVal) sel.value = currentVal;
 }
 
+// State for Dynamic Section Headers Builder in Modal
+let currentModalSections: Array<{ name: string; enabled: boolean }> = [];
+
+function updateModalAiCamBadge(enabled: boolean): void {
+    const badge = document.getElementById('badge-modal-ai-camera');
+    const label = document.getElementById('exam-ai-camera-toggle-label');
+    if (badge) {
+        if (enabled) {
+            badge.textContent = 'ACTIVE (ON)';
+            badge.style.background = 'rgba(16, 185, 129, 0.15)';
+            badge.style.color = '#047857';
+        } else {
+            badge.textContent = 'DISABLED (OFF)';
+            badge.style.background = 'rgba(239, 68, 68, 0.15)';
+            badge.style.color = '#b91c1c';
+        }
+    }
+    if (label) {
+        label.textContent = enabled ? 'AI Camera ON' : 'AI Camera OFF';
+        label.style.color = enabled ? '#047857' : '#b91c1c';
+    }
+}
+
+function renderModalSections(): void {
+    const container = document.getElementById('exam-sections-list-container');
+    const countBadge = document.getElementById('sec-builder-count');
+    if (!container) return;
+
+    const enabledCount = currentModalSections.filter(s => s.enabled).length;
+    if (countBadge) {
+        countBadge.textContent = `${currentModalSections.length} Sections (${enabledCount} Enabled)`;
+    }
+
+    container.innerHTML = '';
+    currentModalSections.forEach((sec, idx) => {
+        const row = document.createElement('div');
+        row.style.display = 'grid';
+        row.style.gridTemplateColumns = '32px 1fr 140px 36px';
+        row.style.gap = '8px';
+        row.style.alignItems = 'center';
+        row.style.background = 'var(--bg-card)';
+        row.style.border = '1px solid var(--border-color)';
+        row.style.borderRadius = 'var(--radius)';
+        row.style.padding = '0.4rem 0.65rem';
+
+        row.innerHTML = `
+            <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-align: center;">#${idx + 1}</span>
+            <input type="text" class="form-input-ctrl sec-name-input" data-idx="${idx}" value="${escapeHtml(sec.name)}" placeholder="Section Header (e.g. MATH-1)" style="height: 32px; font-size: 0.8rem; font-weight: 700; padding: 0 0.5rem;" required />
+            <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700; user-select: none;">
+                <input type="checkbox" class="sec-enable-toggle" data-idx="${idx}" ${sec.enabled ? 'checked' : ''} style="width: 15px; height: 15px; accent-color: #059669; cursor: pointer;" />
+                <span style="color: ${sec.enabled ? '#047857' : '#b91c1c'}; font-size: 0.72rem;">${sec.enabled ? 'ACTIVE (ON)' : 'OFF'}</span>
+            </label>
+            <button type="button" class="btn btn-outline btn-sm btn-delete-sec-row" data-idx="${idx}" style="color: #ef4444; border-color: #fca5a5; padding: 2px 6px; height: 30px;" title="Remove this section header">
+                &times;
+            </button>
+        `;
+        container.appendChild(row);
+    });
+
+    // Wire listeners
+    container.querySelectorAll('.sec-name-input').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+            const idx = parseInt((e.target as HTMLElement).getAttribute('data-idx') || '0', 10);
+            if (currentModalSections[idx]) {
+                currentModalSections[idx].name = (e.target as HTMLInputElement).value.trim();
+            }
+        });
+    });
+
+    container.querySelectorAll('.sec-enable-toggle').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+            const idx = parseInt((e.target as HTMLElement).getAttribute('data-idx') || '0', 10);
+            if (currentModalSections[idx]) {
+                currentModalSections[idx].enabled = (e.target as HTMLInputElement).checked;
+                renderModalSections();
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-delete-sec-row').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = parseInt((e.target as HTMLElement).getAttribute('data-idx') || '0', 10);
+            if (currentModalSections.length <= 1) {
+                showToast('At least 1 section header is required', true);
+                return;
+            }
+            currentModalSections.splice(idx, 1);
+            renderModalSections();
+        });
+    });
+}
+
+function addModalSection(): void {
+    const nextNum = currentModalSections.length + 1;
+    currentModalSections.push({ name: `MATH-${nextNum}`, enabled: true });
+    renderModalSections();
+}
+
+async function toggleExamAiCamera(examId: string): Promise<void> {
+    try {
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/toggle-ai-camera`, {
+            method: 'POST',
+            headers: getHeaders()
+        });
+        if (res.ok) {
+            const data = await res.json();
+            showToast(`AI Camera is now ${data.ai_camera_enabled ? 'ENABLED' : 'DISABLED'} in Cloud DB!`);
+            await loadExams();
+        } else {
+            showToast('Failed to toggle AI Camera', true);
+        }
+    } catch (_) {
+        showToast('Network error toggling AI Camera', true);
+    }
+}
+
 // 2. Render Exams Table with Live Actions
 function renderExamsTable(): void {
     const tbody = document.getElementById('exam-table-body');
@@ -2261,7 +2381,7 @@ function renderExamsTable(): void {
     if (filtered.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
                     No examinations found matching your filter criteria. Click "Create New Test" to schedule one.
                 </td>
             </tr>
@@ -2280,8 +2400,8 @@ function renderExamsTable(): void {
         const correctMarks = ex.config?.correct_marks || 4;
         const negMarks = ex.config?.negative_marks || 1;
 
-        const startIST = formatISTDate(ex.start_time);
-        const endIST = formatISTDate(ex.end_time);
+        const startIST = formatISTDate(ex.start_time || ex.start_time_ist);
+        const endIST = formatISTDate(ex.end_time || ex.end_time_ist);
 
         // Schedule status pill
         const schedStatus = ex.schedule_status || 'active';
@@ -2291,6 +2411,29 @@ function renderExamsTable(): void {
         } else if (schedStatus === 'concluded') {
             statusPill = '<span class="schedule-pill schedule-concluded">[CONCLUDED]</span>';
         }
+
+        // AI Camera state and badge
+        const aiCam = (ex.ai_camera_enabled !== undefined)
+            ? Boolean(ex.ai_camera_enabled)
+            : (ex.config?.ai_camera_enabled !== undefined ? Boolean(ex.config.ai_camera_enabled) : true);
+
+        const camBadge = aiCam
+            ? '<span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800; font-size: 0.72rem;">[AI Camera: ON]</span>'
+            : '<span class="badge-pill" style="background: rgba(239, 68, 68, 0.15); color: #b91c1c; font-weight: 800; font-size: 0.72rem;">[AI Camera: OFF]</span>';
+
+        // Sections chips
+        const rawSecList: Array<any> = ex.sections || ex.config?.sections || [];
+        const enabledSecNames: string[] = [];
+        rawSecList.forEach((s: any) => {
+            if (typeof s === 'object' && s !== null) {
+                if (s.enabled !== false && s.name) enabledSecNames.push(String(s.name));
+            } else if (typeof s === 'string' && s.trim()) {
+                enabledSecNames.push(s.trim());
+            }
+        });
+
+        const secChips = enabledSecNames.slice(0, 3).map((n: string) => `<span class="badge-pill" style="font-size: 0.68rem; background: #e0e7ff; color: #3730a3; font-weight: 700;">${escapeHtml(n)}</span>`).join(' ')
+            + (enabledSecNames.length > 3 ? ` <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">+${enabledSecNames.length - 3}</span>` : '');
 
         // Test link requiring candidate credentials
         const shareTestLink = `${window.location.origin}/instructions.html?exam_id=${encodeURIComponent(examId)}`;
@@ -2343,6 +2486,21 @@ function renderExamsTable(): void {
                     </div>
                 </td>
 
+                <!-- AI Camera & Dynamic Sections -->
+                <td>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            ${camBadge}
+                            <button type="button" class="btn btn-outline btn-sm btn-quick-toggle-cam" data-id="${examId}" style="padding: 2px 6px; font-size: 0.7rem; font-weight: 700; ${aiCam ? 'color: #dc2626; border-color: #fca5a5;' : 'color: #059669; border-color: #a7f3d0;'}" title="Instantly toggle AI Camera in Cloud DB">
+                                ${aiCam ? 'Turn OFF' : 'Turn ON'}
+                            </button>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 2px;">
+                            ${secChips || '<span style="font-size: 0.7rem; color: var(--text-muted);">None</span>'}
+                        </div>
+                    </div>
+                </td>
+
                 <!-- Enrolled Candidates -->
                 <td>
                     <div style="font-size: 0.85rem; font-weight: 800; color: var(--text-heading);">
@@ -2359,7 +2517,7 @@ function renderExamsTable(): void {
                         <button type="button" class="btn btn-outline btn-sm btn-open-summary" data-id="${examId}" title="View class performance leaderboard and statistics">
                             Digest
                         </button>
-                        <button type="button" class="btn btn-outline btn-sm btn-edit-exam" data-id="${examId}" title="Edit schedule and questions">
+                        <button type="button" class="btn btn-outline btn-sm btn-edit-exam" data-id="${examId}" title="Edit schedule, sections, and questions">
                             Settings
                         </button>
                         <button type="button" class="btn btn-outline btn-sm btn-delete-exam" data-id="${examId}" style="color: #ef4444;" title="Delete examination">
@@ -2374,6 +2532,13 @@ function renderExamsTable(): void {
     tbody.innerHTML = html;
 
     // Attach row event listeners
+    tbody.querySelectorAll('.btn-quick-toggle-cam').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+            if (id) await toggleExamAiCamera(id);
+        });
+    });
+
     tbody.querySelectorAll('.btn-export-xls').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
@@ -2604,6 +2769,22 @@ function openCreateExamModal(): void {
     (document.getElementById('exam-start-time-input') as HTMLInputElement).value = toLocalInputString(now);
     (document.getElementById('exam-end-time-input') as HTMLInputElement).value = toLocalInputString(end);
 
+    // Initialize Default Section Headers: MATH-1, MATH-2, PHYSICS, CHEMISTRY
+    currentModalSections = [
+        { name: 'MATH-1', enabled: true },
+        { name: 'MATH-2', enabled: true },
+        { name: 'PHYSICS', enabled: true },
+        { name: 'CHEMISTRY', enabled: true }
+    ];
+    renderModalSections();
+
+    // Reset AI Camera proctoring toggle to ON
+    const camToggle = document.getElementById('exam-ai-camera-toggle') as HTMLInputElement;
+    if (camToggle) {
+        camToggle.checked = true;
+        updateModalAiCamBadge(true);
+    }
+
     // If nothing selected yet, auto-pick balanced questions
     if (selectedQuestionIds.size === 0 && cachedQuestionBank.length > 0) {
         autoPickBalancedQuestions();
@@ -2640,6 +2821,36 @@ function openEditExamModal(examId: string): void {
     if (ex.end_time) {
         const et = new Date(ex.end_time);
         if (!isNaN(et.getTime())) (document.getElementById('exam-end-time-input') as HTMLInputElement).value = toLocalInputString(et);
+    }
+
+    // Restore and normalize sections from Cloud DB
+    const rawSecs = ex.sections || ex.config?.sections;
+    if (Array.isArray(rawSecs) && rawSecs.length > 0) {
+        currentModalSections = rawSecs.map((s: any) => {
+            if (typeof s === 'object' && s !== null) {
+                return { name: String(s.name || '').trim(), enabled: s.enabled !== false };
+            }
+            return { name: String(s).trim(), enabled: true };
+        }).filter((s: any) => s.name);
+    } else {
+        currentModalSections = [
+            { name: 'MATH-1', enabled: true },
+            { name: 'MATH-2', enabled: true },
+            { name: 'PHYSICS', enabled: true },
+            { name: 'CHEMISTRY', enabled: true }
+        ];
+    }
+    renderModalSections();
+
+    // Restore AI Camera setting
+    const aiCam = (ex.ai_camera_enabled !== undefined)
+        ? Boolean(ex.ai_camera_enabled)
+        : (ex.config?.ai_camera_enabled !== undefined ? Boolean(ex.config.ai_camera_enabled) : true);
+
+    const camToggle = document.getElementById('exam-ai-camera-toggle') as HTMLInputElement;
+    if (camToggle) {
+        camToggle.checked = aiCam;
+        updateModalAiCamBadge(aiCam);
     }
 
     // Restore selected questions
@@ -2710,6 +2921,21 @@ if (formExamCreate) {
             return;
         }
 
+        // Validate sections
+        const validSections = currentModalSections.filter(s => s.name && s.name.trim().length > 0);
+        if (validSections.length === 0) {
+            showToast('Please configure at least 1 section header (e.g. MATH-1)', true);
+            return;
+        }
+        const hasEnabled = validSections.some(s => s.enabled);
+        if (!hasEnabled) {
+            showToast('Please toggle ON at least 1 section for candidate exam screen', true);
+            return;
+        }
+
+        // Read AI Camera toggle
+        const aiCameraEnabled = (document.getElementById('exam-ai-camera-toggle') as HTMLInputElement)?.checked ?? true;
+
         const qIdArray = Array.from(selectedQuestionIds);
         if (qIdArray.length === 0) {
             showToast('Please select at least 1 question from Question Bank for this test', true);
@@ -2734,11 +2960,15 @@ if (formExamCreate) {
                         start_time: startISO,
                         end_time: endISO,
                         question_ids: qIdArray,
+                        ai_camera_enabled: aiCameraEnabled,
+                        sections: validSections,
                         config: {
                             exam_code: code,
                             correct_marks: correctMarks,
                             negative_marks: negMarks,
-                            question_ids: qIdArray
+                            question_ids: qIdArray,
+                            ai_camera_enabled: aiCameraEnabled,
+                            sections: validSections
                         }
                     })
                 });
@@ -2752,11 +2982,15 @@ if (formExamCreate) {
                         start_time: startISO,
                         end_time: endISO,
                         question_ids: qIdArray,
+                        ai_camera_enabled: aiCameraEnabled,
+                        sections: validSections,
                         config: {
                             exam_code: code,
                             correct_marks: correctMarks,
                             negative_marks: negMarks,
-                            question_ids: qIdArray
+                            question_ids: qIdArray,
+                            ai_camera_enabled: aiCameraEnabled,
+                            sections: validSections
                         }
                     })
                 });
@@ -2983,6 +3217,19 @@ if (searchExamsInput) searchExamsInput.addEventListener('input', renderExamsTabl
 
 const filterExamSchedule = document.getElementById('filter-exam-schedule');
 if (filterExamSchedule) filterExamSchedule.addEventListener('change', renderExamsTable);
+
+// Dynamic Sections Builder & AI Camera Modal Listeners
+const btnAddSectionRow = document.getElementById('btn-add-section-row');
+if (btnAddSectionRow) {
+    btnAddSectionRow.addEventListener('click', () => addModalSection());
+}
+
+const toggleAiCamInput = document.getElementById('exam-ai-camera-toggle');
+if (toggleAiCamInput) {
+    toggleAiCamInput.addEventListener('change', (e) => {
+        updateModalAiCamBadge((e.target as HTMLInputElement).checked);
+    });
+}
 
 // --- EXAMINATION CENTER & CONTROLLER SETTINGS SUITE ---
 const btnOpenSettingsModal = document.getElementById('btn-open-settings-modal');

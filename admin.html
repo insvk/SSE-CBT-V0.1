@@ -2242,17 +2242,18 @@
             <table>
               <thead>
                 <tr>
-                  <th style="min-width: 330px;">Test Name &amp; One-Click Analysis Exports</th>
-                  <th style="min-width: 190px;">Scheduled Window (IST)</th>
+                  <th style="min-width: 320px;">Test Name &amp; One-Click Analysis Exports</th>
+                  <th style="min-width: 180px;">Scheduled Window (IST)</th>
                   <th>Status &amp; Gate</th>
                   <th>Questions &amp; Marking</th>
+                  <th>AI Camera &amp; Sections</th>
                   <th>Enrolled / Sat</th>
-                  <th style="text-align: right; min-width: 140px;">Operations</th>
+                  <th style="text-align: right; min-width: 150px;">Operations</th>
                 </tr>
               </thead>
               <tbody id="exam-table-body">
                 <tr>
-                  <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                  <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
                     Loading Cloud DB Examination Schedules...
                   </td>
                 </tr>
@@ -3499,6 +3500,59 @@
           <div>
             <label class="form-label">Negative Marks (Penalty)</label>
             <input type="number" class="form-input-ctrl" id="exam-negative-marks-input" value="1" min="0" max="10" />
+          </div>
+        </div>
+
+        <!-- 1. AI PROCTORING & WEBCAM PERMISSIONS CONTROLLER -->
+        <div
+          style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <div
+                style="font-size: 0.85rem; font-weight: 800; color: var(--text-heading); display: flex; align-items: center; gap: 8px;">
+                <span>AI Proctoring Camera &amp; Live Facial Telemetry</span>
+                <span class="badge-pill" id="badge-modal-ai-camera"
+                  style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">ACTIVE (ON)</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                When enabled, candidate terminals stream real-time webcam video with AI face gaze tracking. When turned OFF, camera feed is completely disabled and hidden.
+              </div>
+            </div>
+            <label
+              style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.825rem; font-weight: 700; user-select: none;">
+              <input type="checkbox" id="exam-ai-camera-toggle" checked
+                style="width: 18px; height: 18px; accent-color: #059669; cursor: pointer;" />
+              <span id="exam-ai-camera-toggle-label" style="color: #047857;">AI Camera ON</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 2. DYNAMIC EXAMINATION SECTIONS & HEADERS BUILDER -->
+        <div
+          style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; margin-bottom: 1.25rem;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <div
+                style="font-size: 0.85rem; font-weight: 800; color: var(--text-heading); display: flex; align-items: center; gap: 6px;">
+                <span>Examination Sections &amp; Subject Headers</span>
+                <span class="badge-pill"
+                  style="background: rgba(30, 58, 138, 0.1); color: var(--brand-blue); font-weight: 800;"
+                  id="sec-builder-count">4 Sections</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">
+                Admin can edit section headers (e.g. MATH-1, MATH-2), toggle sections ON/OFF, and add new sections. Only enabled sections appear on candidate consoles.
+              </div>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-add-section-row"
+              style="color: var(--brand-blue); border-color: var(--brand-blue); font-weight: 700;">
+              + Add Section Header
+            </button>
+          </div>
+
+          <!-- Dynamic Sections List -->
+          <div id="exam-sections-list-container" style="display: flex; flex-direction: column; gap: 6px;">
+            <!-- Populated dynamically via JS -->
           </div>
         </div>
 
