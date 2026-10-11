@@ -13,7 +13,7 @@ from app.core.tenant import DEFAULT_TENANT_ID, ensure_tenant_exists
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-# Authoritative Hardcoded Super Admin Credentials (GOD MAXX MODE)
+# Authoritative Examination Controller Credentials (AUTHORITATIVE SYSTEM ACCESS)
 GOD_ADMIN_EMAILS = [
     "admin@sse.cbt.in",
     "admin@sse,cbt.in",
@@ -57,14 +57,14 @@ def generate_jwt_token(user_id: str, email: str, role: str, god_mode: bool = Fal
 def login(payload: LoginRequest):
     """
     Authoritative Login Endpoint.
-    Validates credentials including the GOD MAXX Administrator Account:
+    Validates credentials including the Chief Examination Controller Account:
     Username/Email: admin@sse.cbt.in
     Password: Admin.sse@123
     """
     ident = payload.username_or_email.strip().lower()
     pwd = payload.password.strip()
 
-    # 1. Check GOD MAXX Admin Account
+    # 1. Check Examination Controller Account
     is_god_admin_email = any(ident == g.lower() for g in GOD_ADMIN_EMAILS)
     if is_god_admin_email and pwd == GOD_ADMIN_PASSWORD:
         token = generate_jwt_token(
@@ -80,12 +80,12 @@ def login(payload: LoginRequest):
             "user": {
                 "id": GOD_ADMIN_USER_ID,
                 "email": "admin@sse.cbt.in",
-                "full_name": "God MAXX Administrator",
+                "full_name": "Chief Examination Controller",
                 "role": "super_admin",
                 "god_mode": True,
                 "permissions": ["*"],
             },
-            "message": "Authenticated as God MAXX Administrator with unrestricted access."
+            "message": "Authenticated as Examination Controller with authoritative access."
         }
 
     # 2. Check Candidate Credentials in Supabase Database
@@ -144,11 +144,11 @@ def create_account(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    GOD MAXX Admin Tool: Legitimately create accounts (candidates, staff, or admins)
+    System Administrator Tool: Authoritatively creates accounts (candidates, staff, or admins)
     directly committed to Supabase with durable passwords and credentials.
     """
     if current_user.get("role") != "super_admin":
-        raise HTTPException(status_code=403, detail="Unrestricted God MAXX Admin access required")
+        raise HTTPException(status_code=403, detail="Authoritative Examination Controller credentials required")
 
     db = get_db()
     ensure_tenant_exists(db, DEFAULT_TENANT_ID)
@@ -219,5 +219,5 @@ def get_current_user_profile(current_user: dict = Depends(get_current_user)):
         "role": current_user.get("role"),
         "email": current_user.get("email"),
         "god_mode": current_user.get("role") == "super_admin",
-        "access_level": "GOD MAXX (UNRESTRICTED)" if current_user.get("role") == "super_admin" else "STANDARD"
+        "access_level": "EXAMINATION_CONTROLLER (AUTHORITATIVE)" if current_user.get("role") == "super_admin" else "CANDIDATE"
     }

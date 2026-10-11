@@ -61,7 +61,7 @@ def get_exams():
             # Fallback to default exam
             return [{
                 "id": "EX-1001",
-                "title": "JEE Main Mock A",
+                "title": "SSE CBT PLATFORM — NATIONAL ASSESSMENT EXAMINATION",
                 "state": "active",
                 "duration_minutes": 180,
             }]
@@ -69,7 +69,7 @@ def get_exams():
         for e in exams_data:
             output.append({
                 "id": str(e["id"]),
-                "title": e.get("title", "JEE Mock Exam"),
+                "title": e.get("title", "SSE CBT PLATFORM — NATIONAL ASSESSMENT EXAMINATION"),
                 "state": e.get("state", "active"),
                 "duration_minutes": e.get("duration_minutes", 180),
                 "config": e.get("config", {}),
@@ -79,7 +79,7 @@ def get_exams():
         logger.warning("Error fetching exams from database: %s", e)
         return [{
             "id": "EX-1001",
-            "title": "JEE Main Mock A",
+            "title": "SSE CBT PLATFORM — NATIONAL ASSESSMENT EXAMINATION",
             "state": "active",
             "duration_minutes": 180,
         }]
@@ -142,7 +142,7 @@ async def reset_exam_session(exam_id: str, duration_minutes: int = 180):
 
 @router.post("/{exam_id}/extend-time")
 async def extend_exam_time(exam_id: str, extra_minutes: int = 15):
-    """God MAXX Tool: Dynamically extends the active exam deadline and notifies candidate screens live."""
+    """Examination Controller Tool: Dynamically extends the active exam deadline and notifies candidate screens live."""
     norm_id = _resolve_exam_id(exam_id)
     session = _get_or_create_session(norm_id)
     session["duration_seconds"] += extra_minutes * 60
@@ -176,7 +176,7 @@ async def extend_exam_time(exam_id: str, extra_minutes: int = 15):
 
 @router.post("/{exam_id}/unlock-sessions")
 def unlock_exam_sessions(exam_id: str):
-    """God MAXX Tool: Clears active tab/lockout conflicts across exam sessions."""
+    """Examination Controller Tool: Clears active tab/lockout conflicts across exam sessions."""
     norm_id = _resolve_exam_id(exam_id)
     session = _get_or_create_session(norm_id)
     session.pop("active_tab_id", None)
@@ -486,7 +486,7 @@ def get_exam_result(exam_id: str):
     return {
         "candidate_name": "Registered Candidate",
         "registration_number": f"{result.get('reference', 'SSEC-1001')}",
-        "exam_title": "SSE CBT PLATFORM V0.1 - JEE MAIN 2026 MOCK TEST",
+        "exam_title": "SSE CBT PLATFORM V0.1 — NATIONAL ASSESSMENT EXAMINATION",
         "score": f"{result.get('score', 0)} / {result.get('max_possible', 20)}",
         "percentile": f"{result.get('percentile', 90.0)}",
         "reference": result.get("reference"),

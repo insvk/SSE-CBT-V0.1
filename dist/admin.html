@@ -13,7 +13,7 @@
         const role = localStorage.getItem('user_role');
         const godMode = localStorage.getItem('god_mode') === 'true';
         if (!token || (role !== 'super_admin' && !godMode)) {
-          alert('Access Denied: Super Admin authentication required. Candidate accounts are strictly restricted to the Exam Portal.');
+          alert('Access Restricted: Examination Controller credentials required. Candidate sessions are restricted to the Candidate Examination Portal.');
           window.location.replace('/login.html');
         }
       })();
@@ -170,32 +170,36 @@
         color: #818cf8;
       }
 
-      /* God MAXX Strip in Sidebar */
-      .god-chip {
+      /* System Administrator Authority Badge */
+      .auth-badge-chip {
         margin: 1rem 1.25rem 0.5rem 1.25rem;
         padding: 0.65rem 0.85rem;
         border-radius: var(--radius);
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.2));
-        border: 1px solid rgba(245, 158, 11, 0.35);
+        background: linear-gradient(135deg, rgba(30, 58, 138, 0.08), rgba(37, 99, 235, 0.12));
+        border: 1px solid rgba(37, 99, 235, 0.25);
         display: flex;
         align-items: center;
         gap: 0.65rem;
       }
 
-      .god-chip-text {
+      .auth-badge-chip-text {
         display: flex;
         flex-direction: column;
       }
 
-      .god-chip-title {
+      .auth-badge-chip-title {
         font-size: 0.68rem;
         font-weight: 800;
-        color: #d97706;
+        color: #1e40af;
         letter-spacing: 0.06em;
         text-transform: uppercase;
       }
 
-      .god-chip-sub {
+      [data-theme="dark"] .auth-badge-chip-title {
+        color: #93c5fd;
+      }
+
+      .auth-badge-chip-sub {
         font-size: 0.72rem;
         font-family: var(--font-mono);
         color: var(--text-main);
@@ -542,7 +546,7 @@
         font-size: 0.75rem;
       }
 
-      /* God MAXX Controls Bar */
+      /* Central Controller Operations Bar */
       .emergency-strip {
         background: var(--bg-card);
         border: 1px solid var(--card-border);
@@ -1005,7 +1009,7 @@
         opacity: 1;
       }
     </style>
-    <script type="module" crossorigin src="/assets/admin-93401431.js"></script>
+    <script type="module" crossorigin src="/assets/admin-912868a3.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
   </head>
   <body>
@@ -1021,12 +1025,12 @@
           </div>
         </div>
 
-        <!-- GOD MAXX CHIP -->
-        <div class="god-chip">
-          <span style="font-size: 1.25rem;">👑</span>
-          <div class="god-chip-text">
-            <span class="god-chip-title">GOD MAXX ACCESS</span>
-            <span class="god-chip-sub">admin@sse.cbt.in</span>
+        <!-- SYSTEM CONTROLLER AUTHORITY BADGE -->
+        <div class="auth-badge-chip">
+          <span style="font-size: 1.25rem;">🛡️</span>
+          <div class="auth-badge-chip-text">
+            <span class="auth-badge-chip-title">SYSTEM ADMINISTRATOR</span>
+            <span class="auth-badge-chip-sub">admin@sse.cbt.in</span>
           </div>
         </div>
 
@@ -1070,7 +1074,7 @@
           <li class="nav-item">
             <a href="/instructions.html" class="nav-link">
               <span class="nav-icon">💻</span>
-              <span class="nav-text">Mock Exam Console</span>
+              <span class="nav-text">Candidate Exam View</span>
             </a>
           </li>
           <li class="nav-item">
@@ -1080,12 +1084,12 @@
             </a>
           </li>
 
-          <li class="nav-group-title">Plugins &amp; God MAXX</li>
+          <li class="nav-group-title">Invigilation &amp; System Utilities</li>
           <li class="nav-item">
             <a href="javascript:void(0)" id="btn-quick-provision-nav" class="nav-link">
-              <span class="nav-icon">⚡</span>
-              <span class="nav-text">Provision Account</span>
-              <span class="badge-pill badge-pro">GOD</span>
+              <span class="nav-icon">🛡️</span>
+              <span class="nav-text">Authorize Candidate</span>
+              <span class="badge-pill badge-pro">AUTH</span>
             </a>
           </li>
           <li class="nav-item">
@@ -1146,14 +1150,14 @@
             </button>
 
             <!-- User Profile Avatar Pill -->
-            <div class="user-pill" title="God MAXX Administrator">
+            <div class="user-pill" title="Chief Examination Controller">
               <div class="user-avatar-wrap">
-                <div class="user-avatar">SA</div>
+                <div class="user-avatar">EC</div>
                 <div class="online-dot"></div>
               </div>
               <div class="user-meta">
-                <span class="user-name">Administrator</span>
-                <span class="user-role">GOD MAXX</span>
+                <span class="user-name">Exam Controller</span>
+                <span class="user-role">ADMIN</span>
               </div>
             </div>
           </div>
@@ -1174,26 +1178,26 @@
               <button class="btn btn-outline" id="btn-export-csv">📥 Export Credentials CSV</button>
               <button class="btn btn-outline" id="btn-import">📂 Bulk Import CSV</button>
               <button class="btn btn-primary" id="btn-create">
-                ⚡ Provision Account (God MAXX)
+                🛡️ Authorize Candidate Account
               </button>
             </div>
           </div>
 
-          <!-- GOD MAXX REALTIME STATUS & CONTROLS STRIP -->
+          <!-- CENTRAL CONTROLLER REAL-TIME OPERATIONS BAR -->
           <div class="emergency-strip">
             <div class="pulse-chip">
               <span class="pulse-dot" id="ws-admin-dot"></span>
-              <span id="ws-admin-status">Cloud DB &amp; Real-time Feed: Active</span>
+              <span id="ws-admin-status">Cloud DB &amp; Real-time Telemetry: Active</span>
             </div>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               <button class="btn btn-outline btn-sm" id="btn-extend-time" title="Add 15 minutes to all active exams">
                 ⏱️ +15 Min Extension
               </button>
-              <button class="btn btn-outline btn-sm" id="btn-unlock-sessions" title="Clear tab collisions and duplicate locks">
-                🔄 Clear Tab Locks
+              <button class="btn btn-outline btn-sm" id="btn-unlock-sessions" title="Release tab collisions and duplicate locks">
+                🔄 Release Concurrency Locks
               </button>
               <button class="btn btn-outline btn-sm" id="btn-emergency-reset" style="color: #ef4444; border-color: #fca5a5;" title="Emergency wipe of active exam responses">
-                ⚠️ Emergency Reset
+                ⚠️ Reset Active Sessions
               </button>
               <button class="btn btn-primary btn-sm" id="btn-assign" disabled>Assign to Exam</button>
             </div>
@@ -1232,9 +1236,14 @@
 
             <!-- TCS iON Incident & Malpractice Audit Log -->
             <div style="margin-top: 1.25rem; background: var(--bg-body); border-radius: var(--radius); padding: 0.85rem 1rem; border: 1px solid var(--border-color);">
-              <div style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+              <div style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
                 <span>🛡️ TCS iON Incident &amp; Malpractice Audit Feed</span>
-                <span style="color: #10b981; font-size: 0.7rem;">🟢 Live Proctoring Engine Active</span>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-export-incidents" style="font-size: 0.7rem; padding: 2px 8px;" title="Export incident and telemetry events to CSV">
+                    📥 Export Audit Log CSV
+                  </button>
+                  <span style="color: #10b981; font-size: 0.7rem;">🟢 Live Proctoring Engine Active</span>
+                </div>
               </div>
               <div id="incident-audit-log" style="font-family: var(--font-mono); font-size: 0.75rem; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; color: var(--text-main);">
                 <div style="color: #64748b;">[System Ready] Central Invigilator Proctoring Engine initialized &bull; Awaiting candidate telemetry.</div>
@@ -1402,12 +1411,12 @@
 
     </div>
 
-    <!-- PROVISION ACCOUNT MODAL -->
+    <!-- AUTHORIZE CANDIDATE ACCOUNT MODAL -->
     <div class="modal-backdrop" id="modal-create">
       <div class="modal-box">
-        <h2>⚡ Provision Candidate Account</h2>
+        <h2>🛡️ Authorize Candidate Account</h2>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-          God MAXX Authority: Creates authenticated account immediately in Supabase.
+          System Administrator Authority: Authorizes authenticated candidate credentials directly in Supabase Cloud DB.
         </p>
         
         <form id="form-create">

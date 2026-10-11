@@ -369,7 +369,7 @@ def suspend_candidate(candidate_id: str, user_context: dict = Depends(require_ad
 
 @router.patch("/{candidate_id}/toggle-status")
 async def toggle_candidate_status(candidate_id: str, user_context: dict = Depends(require_admin_user)):
-    """God MAXX Tool: Toggles candidate status between active and suspended."""
+    """Examination Controller Tool: Toggles candidate status between active and suspended."""
     tid = user_context["tenant_id"]
     db = get_db()
 
@@ -403,7 +403,7 @@ async def toggle_candidate_status(candidate_id: str, user_context: dict = Depend
 
 @router.post("/{candidate_id}/reset-attempt")
 async def reset_candidate_attempt(candidate_id: str, user_context: dict = Depends(require_admin_user)):
-    """God MAXX Tool: Resets candidate exam attempt for immediate re-take."""
+    """Examination Controller Tool: Resets candidate exam attempt for immediate re-take."""
     tid = user_context["tenant_id"]
     db = get_db()
 

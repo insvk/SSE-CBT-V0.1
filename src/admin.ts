@@ -311,7 +311,7 @@ async function loadCandidates(query = ""): Promise<void> {
     }
 }
 
-// --- CREATION MODAL & GOD MAXX ACCOUNT PROVISIONING ---
+// --- CREATION MODAL & AUTHORITATIVE ACCOUNT PROVISIONING ---
 if (ui.btnCreate) {
     ui.btnCreate.onclick = () => {
         ui.credResultBox.style.display = 'none';
@@ -461,7 +461,7 @@ if (ui.btnExportCsv) {
     };
 }
 
-// --- GOD MAXX EMERGENCY CONTROLS ---
+// --- CENTRAL CONTROLLER OPERATIONS CONTROLS ---
 if (ui.btnExtendTime) {
     ui.btnExtendTime.onclick = async () => {
         try {
@@ -488,7 +488,7 @@ if (ui.btnUnlockSessions) {
             });
             if (res.ok) {
                 const data = await res.json();
-                showToast(data.message || "All tab locks and collisions cleared!");
+                showToast(data.message || "All concurrency locks and tab collisions cleared!");
             }
         } catch (_) {
             showToast("Failed to unlock sessions", true);
@@ -498,7 +498,7 @@ if (ui.btnUnlockSessions) {
 
 if (ui.btnEmergencyReset) {
     ui.btnEmergencyReset.onclick = async () => {
-        if (!confirm("⚠️ WARNING: This will reset all active exam responses and timer countdowns. Proceed with Global Exam Reset?")) {
+        if (!confirm("⚠️ WARNING: This will reset all active exam responses and timer countdowns. Proceed with Global Exam Session Reset?")) {
             return;
         }
         try {
@@ -600,15 +600,51 @@ if (ui.btnAssign) {
 // --- TCS iON PROCTORING LAB & TERMINALS GRID ---
 const terminalViolations: Record<string, number> = {};
 
+interface IncidentAuditRecord {
+    timestamp: string;
+    details: string;
+    severity: string;
+}
+
+const incidentAuditRecords: IncidentAuditRecord[] = [
+    { timestamp: new Date().toLocaleTimeString(), details: "Central Invigilator Proctoring Engine initialized • Awaiting candidate telemetry.", severity: "INFO" }
+];
+
 function appendIncidentLog(text: string, isAlert = false): void {
+    const timeStr = new Date().toLocaleTimeString();
+    incidentAuditRecords.unshift({
+        timestamp: timeStr,
+        details: text,
+        severity: isAlert ? "MALPRACTICE_ALERT" : "OPERATIONAL_EVENT"
+    });
     const logEl = document.getElementById('incident-audit-log');
     if (!logEl) return;
-    const timeStr = new Date().toLocaleTimeString();
     const div = document.createElement('div');
     div.style.color = isAlert ? '#ef4444' : 'var(--text-main)';
     div.style.fontWeight = isAlert ? '700' : '500';
     div.innerHTML = `<span style="color: #64748b;">[${timeStr}]</span> ${escapeHtml(text)}`;
     logEl.prepend(div);
+}
+
+const btnExportIncidents = document.getElementById('btn-export-incidents');
+if (btnExportIncidents) {
+    btnExportIncidents.addEventListener('click', () => {
+        let csv = "Timestamp,Severity,Details\n";
+        incidentAuditRecords.forEach(rec => {
+            const cleanDetails = rec.details.replace(/"/g, '""');
+            csv += `"${rec.timestamp}","${rec.severity}","${cleanDetails}"\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `incident_audit_trail_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast("Incident Audit Log exported to CSV!");
+    });
 }
 
 function renderProctorTerminals(): void {

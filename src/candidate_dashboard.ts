@@ -114,7 +114,7 @@ async function loadPortalData(): Promise<void> {
                 ui.candAttemptsBody.innerHTML = `
                     <tr>
                         <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">EX-1001</td>
-                        <td><strong>${resultData.exam_title || 'JEE MAIN 2026 MOCK TEST'}</strong></td>
+                        <td><strong>${resultData.exam_title || 'NATIONAL ASSESSMENT EXAMINATION'}</strong></td>
                         <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Slot A</span></td>
                         <td>
                             <span class="status-pill status-active" style="background: #ecfdf5; color: #047857;">
@@ -130,6 +130,29 @@ async function loadPortalData(): Promise<void> {
             }
         }
     } catch (_) {}
+}
+
+// Admit Card Modal Wiring
+const btnViewAdmit = document.getElementById('btn-view-admit-card');
+const modalAdmit = document.getElementById('modal-admit-card');
+const btnCloseAdmit = document.getElementById('btn-close-admit');
+const admitName = document.getElementById('admit-name');
+const admitReg = document.getElementById('admit-reg');
+
+if (btnViewAdmit && modalAdmit) {
+    btnViewAdmit.addEventListener('click', () => {
+        const name = localStorage.getItem('candidate_name') || 'NARESH S';
+        const reg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        if (admitName) admitName.textContent = name;
+        if (admitReg) admitReg.textContent = reg;
+        modalAdmit.style.display = 'flex';
+    });
+}
+
+if (btnCloseAdmit && modalAdmit) {
+    btnCloseAdmit.addEventListener('click', () => {
+        modalAdmit.style.display = 'none';
+    });
 }
 
 initTheme();

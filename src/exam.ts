@@ -254,7 +254,7 @@ const ui = {
     btnViewPaper: document.getElementById('btn-view-paper')!,
     btnClosePaper: document.getElementById('btn-close-paper')!,
     paperListContainer: document.getElementById('paper-list-container')!,
-    // God MAXX Edit Question
+    // Controller Live Item Editor
     btnGodEditQ: document.getElementById('btn-god-edit-q')!,
     modalEditQ: document.getElementById('modal-edit-question')!,
     btnCloseEditQ: document.getElementById('btn-close-edit-q')!,
@@ -267,7 +267,7 @@ const ui = {
     editQOptD: document.getElementById('edit-q-opt-d') as HTMLInputElement,
     editQAns: document.getElementById('edit-q-ans') as HTMLSelectElement,
     editQSec: document.getElementById('edit-q-sec') as HTMLInputElement,
-    // God MAXX Tools
+    // Controller Diagnostics & Overrides Tools
     btnGodTools: document.getElementById('btn-god-tools')!,
     modalGodTools: document.getElementById('modal-god-tools')!,
     btnCloseGodTools: document.getElementById('btn-close-god-tools')!,
@@ -336,17 +336,25 @@ function updateCounters(): void {
     if (ui.countAnsReview) ui.countAnsReview.textContent = counts.ansReview.toString();
 }
 
+let currentPaletteFilter: 'all' | 'answered' | 'unanswered' | 'review' = 'all';
+
 function renderPalette(): void {
     if (!ui.palette) return;
     ui.palette.innerHTML = '';
 
     allQuestions.forEach((_, idx) => {
+        const st = questionState[idx];
+
+        // Apply palette filter
+        if (currentPaletteFilter === 'answered' && st !== 1 && st !== 3) return;
+        if (currentPaletteFilter === 'unanswered' && st !== 0 && st !== 4) return;
+        if (currentPaletteFilter === 'review' && st !== 2 && st !== 3) return;
+
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'palette-number-btn';
         btn.textContent = (idx + 1).toString();
 
-        const st = questionState[idx];
         if (st === 0) btn.classList.add('not-visited');
         else if (st === 1) btn.classList.add('answered');
         else if (st === 2) btn.classList.add('review');
@@ -537,7 +545,7 @@ function handleExamSocketMessage(msg: any): void {
         currentRemainingSeconds += extraMins * 60;
         showLiveToast(`⏱️ PROCTOR NOTICE: +${extraMins} minutes extra time added to your exam!`);
     } else if (msg.type === 'QUESTION_UPDATED') {
-        // God MAXX / Admin Live Question Edit applied to all consoles
+        // Examination Controller Live Question Edit applied to all consoles
         const qIdx = allQuestions.findIndex(q => q.id === msg.question_id);
         if (qIdx !== -1) {
             if (msg.statement) allQuestions[qIdx].text = msg.statement;
@@ -744,7 +752,7 @@ async function performFinalSubmission(): Promise<void> {
     }
 }
 
-// God MAXX Edit Question Feature
+// Examination Controller Live Item Editor Feature
 function openGodEditModal(): void {
     const q = allQuestions[currentQuestionIndex];
     if (!q) return;
@@ -865,14 +873,14 @@ if (ui.btnInstDone) ui.btnInstDone.onclick = () => { ui.modalInstructions.style.
 if (ui.btnViewPaper) ui.btnViewPaper.onclick = openQuestionPaper;
 if (ui.btnClosePaper) ui.btnClosePaper.onclick = () => { ui.modalPaper.style.display = 'none'; };
 
-// God MAXX Listeners
+// Controller Diagnostics & Item Editor Listeners
 if (ui.btnGodEditQ) ui.btnGodEditQ.onclick = openGodEditModal;
 if (ui.btnCloseEditQ) ui.btnCloseEditQ.onclick = () => { ui.modalEditQ.style.display = 'none'; };
 if (ui.btnCancelEditQ) ui.btnCancelEditQ.onclick = () => { ui.modalEditQ.style.display = 'none'; };
 if (ui.btnGodTools) ui.btnGodTools.onclick = () => { ui.modalGodTools.style.display = 'flex'; };
 if (ui.btnCloseGodTools) ui.btnCloseGodTools.onclick = () => { ui.modalGodTools.style.display = 'none'; };
 
-// God MAXX Actions
+// Controller Actions
 if (ui.btnAutoSolve) {
     ui.btnAutoSolve.onclick = () => {
         allQuestions.forEach((q, idx) => {
@@ -884,7 +892,7 @@ if (ui.btnAutoSolve) {
         });
         ui.modalGodTools.style.display = 'none';
         loadQuestion(currentQuestionIndex);
-        showLiveToast("God MAXX: All 20 questions auto-solved and synced in realtime to Cloud DB!");
+        showLiveToast("Controller Diagnostics: Authoritative answer keys populated and synchronized.");
     };
 }
 
@@ -893,7 +901,7 @@ if (ui.btnRevealKey) {
         revealAnswersMode = !revealAnswersMode;
         ui.modalGodTools.style.display = 'none';
         loadQuestion(currentQuestionIndex);
-        showLiveToast(`God MAXX: Answer key display mode is now ${revealAnswersMode ? "ACTIVE (highlighted in green)" : "OFF"}.`);
+        showLiveToast(`Controller Diagnostics: Authoritative answer key display is now ${revealAnswersMode ? "VISIBLE (highlighted in green)" : "HIDDEN"}.`);
     };
 }
 
@@ -913,9 +921,38 @@ if (ui.btnResetAttemptSelf) {
             currentRemainingSeconds = 179 * 60 + 41;
             ui.modalGodTools.style.display = 'none';
             loadQuestion(0);
-            showLiveToast("Exam attempt reset! You may now begin the test freshly.");
+            showLiveToast("Examination session attempt reset for fresh assessment.");
         } catch (_) {}
     };
+}
+
+// Question Palette Filter Buttons
+document.querySelectorAll('.btn-palette-filter').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.btn-palette-filter').forEach(b => {
+            (b as HTMLElement).style.background = 'white';
+            (b as HTMLElement).style.color = '#1e293b';
+            (b as HTMLElement).classList.remove('active');
+        });
+        const target = e.currentTarget as HTMLElement;
+        target.classList.add('active');
+        target.style.background = '#1e3a8a';
+        target.style.color = 'white';
+        currentPaletteFilter = (target.getAttribute('data-filter') || 'all') as any;
+        renderPalette();
+    });
+});
+
+// Official Language Switcher
+const langSelect = document.getElementById('select-lang-view') as HTMLSelectElement;
+if (langSelect) {
+    langSelect.addEventListener('change', () => {
+        const chosen = langSelect.value;
+        showLiveToast(chosen === 'hi'
+            ? "भाषा: प्रश्न पत्र अधिकृत द्विभाषी प्रारूप (हिंदी/English) में प्रदर्शित है।"
+            : "Language display set to English.");
+        loadQuestion(currentQuestionIndex);
+    });
 }
 
 // Palette Collapse/Expand Toggle

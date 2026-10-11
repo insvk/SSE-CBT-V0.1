@@ -19,7 +19,7 @@ async function loadAuthoritativeScore(): Promise<void> {
             const data = await res.json();
             if (scName) scName.textContent = candidateName;
             if (scReg) scReg.textContent = data.reference || regNo;
-            if (scExam) scExam.textContent = data.exam_title || 'SSE CBT PLATFORM V0.1 - JEE MAIN 2026 MOCK TEST';
+            if (scExam) scExam.textContent = data.exam_title || 'SSE CBT PLATFORM V0.1 — NATIONAL ASSESSMENT EXAMINATION';
             if (scScore) scScore.textContent = data.score || '-- / --';
             if (scPercentile) scPercentile.textContent = `${data.percentile || '0.0'} PR`;
             if (scRef) scRef.textContent = data.reference || 'SSEC-2026';
@@ -37,7 +37,7 @@ async function loadAuthoritativeScore(): Promise<void> {
             const data = JSON.parse(cached);
             if (scName) scName.textContent = candidateName;
             if (scReg) scReg.textContent = data.reference || regNo;
-            if (scExam) scExam.textContent = "SSE CBT PLATFORM V0.1 - JEE MAIN 2026 MOCK TEST";
+            if (scExam) scExam.textContent = "SSE CBT PLATFORM V0.1 — NATIONAL ASSESSMENT EXAMINATION";
             if (scScore) scScore.textContent = `${data.score} / ${data.max_possible || 20}`;
             if (scPercentile) scPercentile.textContent = `${data.percentile} PR`;
             if (scRef) scRef.textContent = data.reference || 'SSEC-2026';
@@ -49,7 +49,7 @@ async function loadAuthoritativeScore(): Promise<void> {
 
     if (scName) scName.textContent = candidateName;
     if (scReg) scReg.textContent = regNo;
-    if (scExam) scExam.textContent = "SSE CBT PLATFORM V0.1 - JEE MAIN 2026 MOCK TEST";
+    if (scExam) scExam.textContent = "SSE CBT PLATFORM V0.1 — NATIONAL ASSESSMENT EXAMINATION";
     if (scScore) scScore.textContent = "-- / --";
     if (scPercentile) scPercentile.textContent = "N/A";
     if (scRef) scRef.textContent = "SSEC-2026";

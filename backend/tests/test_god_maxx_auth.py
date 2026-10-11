@@ -38,7 +38,7 @@ def test_god_maxx_admin_hardcoded_login():
     me_data = me_res.json()
     assert me_data["god_mode"] is True
     assert me_data["role"] == "super_admin"
-    assert "GOD MAXX" in me_data["access_level"]
+    assert "CONTROLLER" in me_data["access_level"] or "AUTHORITATIVE" in me_data["access_level"]
 
 
 def test_god_maxx_rejects_wrong_password():
@@ -52,25 +52,25 @@ def test_god_maxx_rejects_wrong_password():
 
 def test_god_maxx_create_and_authenticate_candidate_account():
     """
-    Tests legitimate God MAXX account creation committed to Supabase,
+    Tests legitimate account creation committed to Supabase,
     followed by direct candidate authentication using issued credentials.
     """
-    # 1. Login as God MAXX Admin
+    # 1. Login as Admin
     admin_login = client.post(
         "/api/v1/auth/login",
         json={"username_or_email": "admin@sse.cbt.in", "password": "Admin.sse@123"},
     )
     admin_token = admin_login.json()["access_token"]
 
-    # 2. God MAXX creates a legitimate candidate account with custom PIN
-    candidate_name = "GodMaxx Test Candidate"
-    custom_pin = "GodMaxx@99"
+    # 2. Creates a candidate account with custom PIN
+    candidate_name = "Candidate Verification Record"
+    custom_pin = "Verify.Pin@2026"
     create_payload = {
         "full_name": candidate_name,
         "role": "candidate",
         "batch_or_slot": "B",
         "initial_password": custom_pin,
-        "email": "godmaxx_cand@ssecbt.in",
+        "email": "cand_verify@ssecbt.in",
     }
 
     create_res = client.post(
@@ -98,6 +98,10 @@ def test_god_maxx_create_and_authenticate_candidate_account():
     assert cand_data["user"]["registration_number"] == reg_number
     assert cand_data["user"]["role"] == "candidate"
     assert cand_data["user"]["god_mode"] is False
+
+    # 4. Teardown: Clean up test candidate to ensure zero persistent dummy records
+    from app.core.db import get_db
+    get_db().table("candidates").delete().eq("registration_number", reg_number).execute()
 
 
 def test_god_maxx_emergency_controls():

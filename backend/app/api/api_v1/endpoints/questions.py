@@ -231,7 +231,7 @@ async def update_question(
     payload: Dict[str, Any],
     user_context: dict = Depends(get_tenant_user),
 ):
-    """God MAXX Tool: Updates question content, statement, options, or answer key and broadcasts live."""
+    """Examination Controller Tool: Updates question content, statement, options, or answer key and broadcasts live."""
     tid = user_context["tenant_id"]
     db = get_db()
     ensure_tenant_exists(db, tid)

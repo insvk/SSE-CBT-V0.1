@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
-    <script type="module" crossorigin src="/assets/exam-75359b95.js"></script>
+    <script type="module" crossorigin src="/assets/exam-1c5dfcf9.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
     <link rel="stylesheet" href="/assets/style-5f067ebd.css">
   </head>
@@ -28,7 +28,7 @@
       <!-- 1. TOP HEADER (EXACT REPLICA OF SCREENSHOT + TCS iON EXTENSIONS) -->
       <header class="exam-header">
         <div class="exam-title-text" id="exam-header-title">
-          SSE CBT PLATFORM V0.1 - JEE MAIN 2026 MOCK TEST
+          SSE CBT PLATFORM V0.1 — NATIONAL ASSESSMENT EXAMINATION
         </div>
 
         <div class="exam-header-right">
@@ -130,16 +130,28 @@
         <div class="question-workspace-inner">
           
           <div class="question-top-row">
-            <div class="question-meta-left">
+            <div class="question-meta-left" style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
               <span class="question-heading" id="question-number">Question 3</span>
               <span class="question-type-tag" id="question-type-label">Single Select Type</span>
+              <span class="marking-scheme-pill" style="font-size: 0.75rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 8px; border-radius: 4px;">
+                Marks: +4.00, -1.00
+              </span>
+
+              <!-- Official Language Selector -->
+              <div class="lang-selector-wrap" style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--text-heading);">
+                <label for="select-lang-view">Lang:</label>
+                <select id="select-lang-view" style="font-size: 0.75rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color); background: white;">
+                  <option value="en" selected>English</option>
+                  <option value="hi">Hindi (हिंदी)</option>
+                </select>
+              </div>
               
-              <!-- God MAXX Live Edit Controls (Super Admin Only) -->
-              <button type="button" class="btn btn-sm btn-outline" id="btn-god-edit-q" style="display: none; font-size: 0.75rem; border-color: #f59e0b; color: #b45309; padding: 2px 8px; align-items: center; gap: 4px;">
-                ✏️ Edit (God MAXX)
+              <!-- Authoritative Controller Controls -->
+              <button type="button" class="btn btn-sm btn-outline" id="btn-god-edit-q" style="display: none; font-size: 0.75rem; border-color: #2563eb; color: #1d4ed8; padding: 2px 8px; align-items: center; gap: 4px;">
+                ✏️ Live Item Editor
               </button>
-              <button type="button" class="btn btn-sm btn-outline" id="btn-god-tools" style="display: none; font-size: 0.75rem; border-color: #8b5cf6; color: #6d28d9; padding: 2px 8px;">
-                ⚡ God MAXX Tools
+              <button type="button" class="btn btn-sm btn-outline" id="btn-god-tools" style="display: none; font-size: 0.75rem; border-color: #475569; color: #1e293b; padding: 2px 8px;">
+                ⚙️ Controller Diagnostics
               </button>
             </div>
 
@@ -193,7 +205,17 @@
           <span class="status-badge-text">Answered &amp; Marked for Review</span>
         </div>
 
-        <div class="sidebar-section-title" style="margin-top: 0.5rem;">CHOOSE A QUESTION</div>
+        <div class="sidebar-section-title" style="margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <span>CHOOSE A QUESTION</span>
+        </div>
+
+        <!-- Question Palette Filters -->
+        <div class="palette-filter-bar" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0.5rem 0 0.75rem 0;">
+          <button type="button" class="btn-palette-filter active" data-filter="all" style="padding: 4px 2px; font-size: 0.68rem; font-weight: 700; border-radius: 4px; border: 1px solid var(--border-color); background: #1e3a8a; color: white; cursor: pointer;">All</button>
+          <button type="button" class="btn-palette-filter" data-filter="answered" style="padding: 4px 2px; font-size: 0.68rem; font-weight: 700; border-radius: 4px; border: 1px solid var(--border-color); background: white; color: #15803d; cursor: pointer;">Ans</button>
+          <button type="button" class="btn-palette-filter" data-filter="unanswered" style="padding: 4px 2px; font-size: 0.68rem; font-weight: 700; border-radius: 4px; border: 1px solid var(--border-color); background: white; color: #b91c1c; cursor: pointer;">Unans</button>
+          <button type="button" class="btn-palette-filter" data-filter="review" style="padding: 4px 2px; font-size: 0.68rem; font-weight: 700; border-radius: 4px; border: 1px solid var(--border-color); background: white; color: #7e22ce; cursor: pointer;">Review</button>
+        </div>
 
         <div class="choose-question-grid" id="palette-grid">
           <!-- 1 to 20 palette buttons injected via JS -->
@@ -229,15 +251,15 @@
 
     </div>
 
-    <!-- GOD MAXX QUESTION EDITOR MODAL -->
+    <!-- MASTER QUESTION BANK ITEM EDITOR MODAL -->
     <div class="modal-overlay" id="modal-edit-question">
       <div class="modal-content" style="max-width: 680px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">✏️ God MAXX Question Editor</h3>
+          <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">✏️ Master Question Bank Live Item Editor</h3>
           <button type="button" id="btn-close-edit-q" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #94a3b8;">&times;</button>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-          Update question statement, LaTeX formulas, options, or answer key directly in PostgreSQL database.
+          Directly update syllabus question formulation, formulas, options, or authoritative answer keys in the central database.
         </p>
 
         <form id="form-edit-q">
@@ -289,24 +311,24 @@
       </div>
     </div>
 
-    <!-- GOD MAXX FLOATING TOOLS MODAL -->
+    <!-- CONTROLLER DIAGNOSTICS & OVERRIDES MODAL -->
     <div class="modal-overlay" id="modal-god-tools">
       <div class="modal-content" style="max-width: 500px;">
-        <h3 style="margin-bottom: 0.5rem; font-weight: 800; color: #4c1d95;">⚡ God MAXX Examination Controls</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Super Administrator privileged operational shortcuts.</p>
+        <h3 style="margin-bottom: 0.5rem; font-weight: 800; color: #1e3a8a;">⚙️ Controller Diagnostics &amp; Overrides</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Authoritative controller diagnostics and QA assessment verification tools.</p>
         
         <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
           <button type="button" class="btn btn-outline" id="btn-auto-solve" style="justify-content: flex-start; text-align: left; padding: 0.75rem 1rem;">
-            🎯 <strong>Auto-Solve 100% Correct</strong> — Fill all answers with correct keys for full 300 marks
+            🎯 <strong>Standard Key Verification (QA Fill)</strong> — Populates authoritative answer keys for benchmark validation
           </button>
           <button type="button" class="btn btn-outline" id="btn-reveal-key" style="justify-content: flex-start; text-align: left; padding: 0.75rem 1rem;">
-            👁️ <strong>Reveal Answer Keys</strong> — Highlights correct option badge in live question view
+            👁️ <strong>Inspect Active Answer Keys</strong> — Highlights official key badges in live review
           </button>
           <button type="button" class="btn btn-outline" id="btn-skip-timer" style="justify-content: flex-start; text-align: left; padding: 0.75rem 1rem;">
-            ⏱️ <strong>Fast-Forward Timer to 10s</strong> — Test automated expiry and submission
+            ⏱️ <strong>Accelerate Test Timer to 10s</strong> — Validates automated time-up submission pipeline
           </button>
           <button type="button" class="btn btn-outline" id="btn-reset-attempt-self" style="justify-content: flex-start; text-align: left; padding: 0.75rem 1rem; color: #b91c1c; border-color: #fca5a5;">
-            🔄 <strong>Wipe My Exam Attempt</strong> — Reset responses so exam can be restarted cleanly
+            🔄 <strong>Reset Current Session Attempt</strong> — Clears candidate responses for fresh verification
           </button>
         </div>
 
