@@ -141,7 +141,7 @@ async function loadPortalData(): Promise<void> {
                                     Duration: ${duration} Mins &bull; ${qCount} Questions
                                 </div>
                             </td>
-                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Slot ${localStorage.getItem('batch_slot') || 'A'}</span></td>
+                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot ${localStorage.getItem('batch_slot') || 'A'}</span></td>
                             <td>${statusBadge}</td>
                             <td style="text-align: right; white-space: nowrap;">
                                 ${actionBtn}
@@ -172,7 +172,7 @@ async function loadPortalData(): Promise<void> {
                     <tr>
                         <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">EX-1001</td>
                         <td><strong>${resultData.exam_title || 'NATIONAL ASSESSMENT EXAMINATION'}</strong></td>
-                        <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Slot A</span></td>
+                        <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot A</span></td>
                         <td>
                             <span class="status-pill status-active" style="background: #ecfdf5; color: #047857;">
                                 Score: ${resultData.score} (${resultData.percentile} PR)

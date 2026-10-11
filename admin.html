@@ -2208,11 +2208,11 @@
             <!-- ADVANCED MULTI-FILTER BAR -->
             <div class="table-filters-row">
               <select class="table-filter-select" id="filter-slot">
-                <option value="ALL">All Shifts / Slots</option>
-                <option value="A">Slot A (08:30 - 11:30 IST)</option>
-                <option value="B">Slot B (12:30 - 15:30 IST)</option>
-                <option value="C">Slot C (16:30 - 19:30 IST)</option>
-                <option value="D">Slot D (20:00 - 23:00 IST)</option>
+                <option value="ALL">All Subject Slots</option>
+                <option value="A">Slot A (Subject Paper Slot A)</option>
+                <option value="B">Slot B (Subject Paper Slot B)</option>
+                <option value="C">Slot C (Subject Paper Slot C)</option>
+                <option value="D">Slot D (Subject Paper Slot D)</option>
               </select>
 
               <select class="table-filter-select" id="filter-status">
@@ -2241,7 +2241,7 @@
               </div>
               <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                 <button type="button" class="btn btn-primary btn-sm" id="btn-bulk-migrate-slot">
-                  Bulk Shift Migration
+                  Bulk Subject Slot Migration
                 </button>
                 <button type="button" class="btn btn-outline btn-sm" id="btn-bulk-export-sel">
                   Export Selected CSV
@@ -2258,7 +2258,7 @@
                   <tr>
                     <th style="width: 36px;"><input type="checkbox" id="check-all" /></th>
                     <th>Candidate Identification</th>
-                    <th>Shift &amp; Slot (IST)</th>
+                    <th>Subject Slot</th>
                     <th>Terminal &amp; Venue</th>
                     <th>Biometrics &amp; PwD</th>
                     <th>Status</th>
@@ -2586,10 +2586,6 @@
                 <span class="dossier-val" id="dos-roll-no" style="font-family: var(--font-mono);">--</span>
               </div>
               <div class="dossier-field">
-                <span class="dossier-label">Social Category</span>
-                <span class="dossier-val" id="dos-category">General</span>
-              </div>
-              <div class="dossier-field">
                 <span class="dossier-label">Gender</span>
                 <span class="dossier-val" id="dos-gender">Male</span>
               </div>
@@ -2600,21 +2596,21 @@
             </div>
           </div>
 
-          <!-- Section 2: Shift, Venue & Physical Allocation -->
+          <!-- Section 2: Subject Slot & Physical Allocation -->
           <div class="dossier-section">
-            <div class="dossier-section-title">Shift &amp; Venue Allocation</div>
+            <div class="dossier-section-title">Subject Slot &amp; Venue Allocation</div>
             <div class="dossier-fields-grid">
               <div class="dossier-field">
-                <span class="dossier-label">Assigned Shift</span>
-                <span class="dossier-val" id="dos-slot" style="color: var(--brand-blue);">Slot A</span>
+                <span class="dossier-label">Subject Examination Slot</span>
+                <span class="dossier-val" id="dos-slot" style="color: var(--brand-blue);">Subject Slot A</span>
               </div>
               <div class="dossier-field">
-                <span class="dossier-label">Shift Duration (IST)</span>
-                <span class="dossier-val" id="dos-slot-timing">08:30 - 11:30 IST</span>
+                <span class="dossier-label">Subject Slot Specification</span>
+                <span class="dossier-val" id="dos-slot-timing">Subject Paper Slot A</span>
               </div>
               <div class="dossier-field">
-                <span class="dossier-label">Reporting Time (IST)</span>
-                <span class="dossier-val" id="dos-reporting">07:30 IST</span>
+                <span class="dossier-label">Subject Allocation Cohort</span>
+                <span class="dossier-val" id="dos-reporting">Cohort A</span>
               </div>
               <div class="dossier-field">
                 <span class="dossier-label">Assigned Terminal Node</span>
@@ -2746,8 +2742,8 @@
           </div>
           <div style="display: flex; flex-direction: column; gap: 6px;">
             <div>
-              <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">CATEGORY &amp; GENDER</div>
-              <div style="font-size: 0.85rem; font-weight: 700;" id="admit-cat-gen">General / Male</div>
+              <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">GENDER</div>
+              <div style="font-size: 0.85rem; font-weight: 700;" id="admit-cat-gen">Male</div>
             </div>
             <div>
               <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">PwD ACCOMMODATION</div>
@@ -2766,26 +2762,25 @@
           <tr style="background: #f8fafc;">
             <th
               style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: left; font-size: 0.72rem; color: #475569;">
-              EXAMINATION SHIFT</th>
+              SUBJECT EXAMINATION SLOT</th>
             <th
               style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: left; font-size: 0.72rem; color: #475569;">
-              REPORTING TIME (IST)</th>
+              SUBJECT SLOT SPECIFICATION</th>
             <th
               style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: left; font-size: 0.72rem; color: #475569;">
-              GATE CLOSURE (IST)</th>
+              SUBJECT COHORT</th>
             <th
               style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: left; font-size: 0.72rem; color: #475569;">
-              EXAMINATION TIMINGS (IST)</th>
+              PAPER ASSESSMENT SLOT</th>
           </tr>
           <tr>
             <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 800; color: #2563eb;" id="admit-slot">
-              Slot A</td>
-            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;" id="admit-reporting">07:30 IST
+              Subject Slot A</td>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;" id="admit-reporting">Subject Slot A
             </td>
-            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #dc2626;"
-              id="admit-gate-close">08:15 IST</td>
-            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;" id="admit-exam-timings">08:30 -
-              11:30 IST</td>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #2563eb;"
+              id="admit-gate-close">Slot A Cohort</td>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;" id="admit-exam-timings">Subject Paper Slot A</td>
           </tr>
         </table>
 
@@ -2828,9 +2823,9 @@
   <!-- SHIFT / SLOT REALLOCATION MODAL -->
   <div class="modal-backdrop" id="modal-reallocate-slot">
     <div class="modal-box">
-      <h2>Shift / Slot Migration</h2>
+      <h2>Subject Slot Migration</h2>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-        Migrate candidate to an alternate examination shift. Automatically recalibrates reporting time and schedule.
+        Migrate candidate to an alternate subject paper slot. Recalibrates subject cohort allocation and paper specification.
       </p>
 
       <form id="form-reallocate-slot">
@@ -2840,16 +2835,16 @@
           <div style="font-size: 0.8rem; color: var(--text-muted);">Candidate:</div>
           <div style="font-size: 1rem; font-weight: 700; color: var(--text-heading);" id="realloc-cand-name">--</div>
           <div style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--brand-blue);"
-            id="realloc-cand-current-slot">Current: Slot A</div>
+            id="realloc-cand-current-slot">Current: Subject Slot A</div>
         </div>
 
         <div style="margin-bottom: 1rem;">
-          <label class="form-label">Target Shift / Slot</label>
+          <label class="form-label">Target Subject Slot</label>
           <select class="form-input-ctrl" id="realloc-target-slot" required>
-            <option value="A">Slot A (08:30 - 11:30 IST &bull; Reporting 07:30 IST)</option>
-            <option value="B">Slot B (12:30 - 15:30 IST &bull; Reporting 11:30 IST)</option>
-            <option value="C">Slot C (16:30 - 19:30 IST &bull; Reporting 15:30 IST)</option>
-            <option value="D">Slot D (20:00 - 23:00 IST &bull; Reporting 19:00 IST)</option>
+            <option value="A">Slot A (Subject Paper Slot A)</option>
+            <option value="B">Slot B (Subject Paper Slot B)</option>
+            <option value="C">Slot C (Subject Paper Slot C)</option>
+            <option value="D">Slot D (Subject Paper Slot D)</option>
           </select>
         </div>
 
@@ -3031,19 +3026,19 @@
         </div>
 
         <div style="margin-bottom: 1rem;">
-          <label class="form-label">Destination Shift / Slot</label>
+          <label class="form-label">Destination Subject Slot</label>
           <select class="form-input-ctrl" id="bulk-realloc-target-slot" required>
-            <option value="A">Slot A (08:30 - 11:30 IST &bull; Reporting 07:30 IST)</option>
-            <option value="B">Slot B (12:30 - 15:30 IST &bull; Reporting 11:30 IST)</option>
-            <option value="C">Slot C (16:30 - 19:30 IST &bull; Reporting 15:30 IST)</option>
-            <option value="D">Slot D (20:00 - 23:00 IST &bull; Reporting 19:00 IST)</option>
+            <option value="A">Slot A (Subject Paper Slot A)</option>
+            <option value="B">Slot B (Subject Paper Slot B)</option>
+            <option value="C">Slot C (Subject Paper Slot C)</option>
+            <option value="D">Slot D (Subject Paper Slot D)</option>
           </select>
         </div>
 
         <div style="margin-bottom: 1.25rem;">
           <label class="form-label">Batch Reallocation Reason</label>
           <input type="text" class="form-input-ctrl" id="bulk-realloc-reason"
-            value="Bulk Administrative Shift Balancing" required />
+            value="Bulk Administrative Subject Slot Balancing" required />
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">

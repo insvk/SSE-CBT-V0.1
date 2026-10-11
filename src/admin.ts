@@ -340,10 +340,7 @@ function renderCandidateTable(): void {
         const isDisqualified = status === 'disqualified';
         const slot = (c.batch || 'A').toUpperCase();
         const rollNo = c.roll_number || c.registration_number || `SSE-${slot}-CBT-0001`;
-        const category = c.category || 'General';
         const terminal = c.assigned_terminal || `T-${slot}-01`;
-        const slotTiming = c.slot_timing_ist || '08:30 - 11:30 IST';
-        const reporting = c.reporting_time_ist || '07:30 IST';
         const isPwd = c.is_pwd || false;
         const extraMins = c.compensatory_minutes || 0;
 
@@ -368,7 +365,6 @@ function renderCandidateTable(): void {
                     <div class="user-cell-info">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <span class="user-cell-name">${escapeHtml(c.full_name)}</span>
-                            <span style="font-size: 0.68rem; font-weight: 700; background: rgba(50, 31, 219, 0.08); color: var(--brand-blue); padding: 1px 5px; border-radius: 4px;">${escapeHtml(category)}</span>
                         </div>
                         <span class="user-cell-sub">
                             Roll: <strong style="color: var(--text-heading); font-family: var(--font-mono);">${escapeHtml(rollNo)}</strong> &bull; ${escapeHtml(c.registration_number)}
@@ -380,11 +376,10 @@ function renderCandidateTable(): void {
                 <div style="display: flex; flex-direction: column; gap: 2px;">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-weight: 800; padding: 0.15rem 0.5rem; background: rgba(79, 70, 229, 0.12); color: var(--brand-blue); border-radius: 4px; font-size: 0.75rem;">
-                            Slot ${escapeHtml(slot)}
+                            Subject Slot ${escapeHtml(slot)}
                         </span>
-                        <span style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(reporting)} Rep</span>
                     </div>
-                    <span style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted);">${escapeHtml(slotTiming)}</span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">Subject Paper Slot ${escapeHtml(slot)}</span>
                 </div>
             </td>
             <td>
@@ -755,12 +750,13 @@ function openCandidateDossier(id: string): void {
     (document.getElementById('dos-full-name') as HTMLElement).textContent = c.full_name || '--';
     (document.getElementById('dos-reg-no') as HTMLElement).textContent = c.registration_number || '--';
     (document.getElementById('dos-roll-no') as HTMLElement).textContent = c.roll_number || c.registration_number || '--';
-    (document.getElementById('dos-category') as HTMLElement).textContent = c.category || 'General';
+    const dosCat = document.getElementById('dos-category');
+    if (dosCat) dosCat.textContent = c.category || 'General';
     (document.getElementById('dos-gender') as HTMLElement).textContent = c.gender || 'Male';
     (document.getElementById('dos-email') as HTMLElement).textContent = c.email || `${(c.registration_number || '').toLowerCase()}@ssecbt.in`;
-    (document.getElementById('dos-slot') as HTMLElement).textContent = `Slot ${c.batch || 'A'}`;
-    (document.getElementById('dos-slot-timing') as HTMLElement).textContent = c.slot_timing_ist || '08:30 - 11:30 IST';
-    (document.getElementById('dos-reporting') as HTMLElement).textContent = c.reporting_time_ist || '07:30 IST';
+    (document.getElementById('dos-slot') as HTMLElement).textContent = `Subject Slot ${c.batch || 'A'}`;
+    (document.getElementById('dos-slot-timing') as HTMLElement).textContent = `Subject Paper Slot ${c.batch || 'A'}`;
+    (document.getElementById('dos-reporting') as HTMLElement).textContent = `Cohort ${c.batch || 'A'}`;
     (document.getElementById('dos-terminal') as HTMLElement).textContent = c.assigned_terminal || `T-${c.batch || 'A'}-01`;
     (document.getElementById('dos-ip') as HTMLElement).textContent = c.ip_address || '10.0.4.12';
     (document.getElementById('dos-pwd') as HTMLElement).textContent = c.is_pwd ? 'Yes (Benchmark Disability)' : 'No (Standard)';
@@ -808,13 +804,14 @@ async function openAdmitCard(id: string): Promise<void> {
         (document.getElementById('admit-name') as HTMLElement).textContent = data.full_name;
         (document.getElementById('admit-roll') as HTMLElement).textContent = data.roll_number;
         (document.getElementById('admit-reg') as HTMLElement).textContent = data.registration_number;
-        (document.getElementById('admit-cat-gen') as HTMLElement).textContent = `${data.category} / ${data.gender}`;
+        const admitCatGen = document.getElementById('admit-cat-gen');
+        if (admitCatGen) admitCatGen.textContent = data.gender || 'Male';
         (document.getElementById('admit-pwd') as HTMLElement).textContent = data.is_pwd ? 'Yes (Benchmark Disability)' : 'No (Standard)';
         (document.getElementById('admit-extra-time') as HTMLElement).textContent = `${data.compensatory_minutes} Minutes`;
-        (document.getElementById('admit-slot') as HTMLElement).textContent = data.slot;
-        (document.getElementById('admit-reporting') as HTMLElement).textContent = data.reporting_time_ist;
-        (document.getElementById('admit-gate-close') as HTMLElement).textContent = data.gate_closure_ist;
-        (document.getElementById('admit-exam-timings') as HTMLElement).textContent = data.slot_timing_ist;
+        (document.getElementById('admit-slot') as HTMLElement).textContent = data.slot ? (data.slot.startsWith('Subject') ? data.slot : `Subject ${data.slot}`) : 'Subject Slot A';
+        (document.getElementById('admit-reporting') as HTMLElement).textContent = data.reporting_time_ist || 'Subject Slot A';
+        (document.getElementById('admit-gate-close') as HTMLElement).textContent = data.gate_closure_ist || 'Slot A Cohort';
+        (document.getElementById('admit-exam-timings') as HTMLElement).textContent = data.slot_timing_ist || 'Subject Paper Slot A';
         (document.getElementById('admit-venue-name') as HTMLElement).textContent = data.test_center_name;
         (document.getElementById('admit-lab') as HTMLElement).textContent = data.lab_number;
         (document.getElementById('admit-terminal') as HTMLElement).textContent = data.assigned_terminal;
@@ -854,7 +851,7 @@ function openShiftReallocation(id: string): void {
 
     (document.getElementById('realloc-cand-id') as HTMLInputElement).value = id;
     (document.getElementById('realloc-cand-name') as HTMLElement).textContent = c.full_name;
-    (document.getElementById('realloc-cand-current-slot') as HTMLElement).textContent = `Current Shift: Slot ${c.batch || 'A'} (${c.slot_timing_ist || '08:30 - 11:30 IST'})`;
+    (document.getElementById('realloc-cand-current-slot') as HTMLElement).textContent = `Current: Subject Slot ${c.batch || 'A'} (Subject Paper Slot ${c.batch || 'A'})`;
     (document.getElementById('realloc-target-slot') as HTMLSelectElement).value = c.batch === 'A' ? 'B' : 'A';
 
     modal.style.display = 'flex';
@@ -1004,21 +1001,20 @@ if (btnBulkExportSel) {
             return;
         }
 
-        let csv = "Roll_Number,Registration_Number,Full_Name,Slot,Category,Gender,PwD,Compensatory_Minutes,Terminal,Status,Reporting_Time_IST,Slot_Timing_IST\n";
+        let csv = "Roll_Number,Registration_Number,Full_Name,Subject_Slot,Gender,PwD,Compensatory_Minutes,Terminal,Status,Subject_Cohort,Subject_Paper_Slot\n";
         selected.forEach(c => {
             const roll = (c.roll_number || c.registration_number || '').replace(/"/g, '""');
             const reg = (c.registration_number || '').replace(/"/g, '""');
             const name = (c.full_name || '').replace(/"/g, '""');
             const slot = (c.batch || 'A').replace(/"/g, '""');
-            const cat = (c.category || 'General').replace(/"/g, '""');
             const gen = (c.gender || 'Male').replace(/"/g, '""');
             const pwd = c.is_pwd ? "Yes" : "No";
             const extra = c.compensatory_minutes || 0;
             const term = (c.assigned_terminal || '').replace(/"/g, '""');
             const status = (c.status || 'active').replace(/"/g, '""');
-            const rep = (c.reporting_time_ist || '').replace(/"/g, '""');
-            const timing = (c.slot_timing_ist || '').replace(/"/g, '""');
-            csv += `"${roll}","${reg}","${name}","${slot}","${cat}","${gen}","${pwd}",${extra},"${term}","${status}","${rep}","${timing}"\n`;
+            const rep = (c.reporting_time_ist || `Subject Slot ${slot}`).replace(/"/g, '""');
+            const timing = (c.slot_timing_ist || `Subject Paper Slot ${slot}`).replace(/"/g, '""');
+            csv += `"${roll}","${reg}","${name}","Subject Slot ${slot}","${gen}","${pwd}",${extra},"${term}","${status}","${rep}","${timing}"\n`;
         });
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

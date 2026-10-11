@@ -35,27 +35,31 @@ router = APIRouter()
 
 SLOT_SCHEDULE = {
     "A": {
-        "timing": "08:30 - 11:30 IST",
-        "reporting": "07:30 IST",
-        "gate_closure": "08:15 IST",
+        "slot": "Slot A",
+        "timing": "Subject Paper Slot A",
+        "reporting": "Subject Slot A",
+        "gate_closure": "Slot A Cohort",
         "lab": "LAB-01 (Block-A)",
     },
     "B": {
-        "timing": "12:30 - 15:30 IST",
-        "reporting": "11:30 IST",
-        "gate_closure": "12:15 IST",
+        "slot": "Slot B",
+        "timing": "Subject Paper Slot B",
+        "reporting": "Subject Slot B",
+        "gate_closure": "Slot B Cohort",
         "lab": "LAB-02 (Block-B)",
     },
     "C": {
-        "timing": "16:30 - 19:30 IST",
-        "reporting": "15:30 IST",
-        "gate_closure": "16:15 IST",
+        "slot": "Slot C",
+        "timing": "Subject Paper Slot C",
+        "reporting": "Subject Slot C",
+        "gate_closure": "Slot C Cohort",
         "lab": "LAB-03 (Block-C)",
     },
     "D": {
-        "timing": "20:00 - 23:00 IST",
-        "reporting": "19:00 IST",
-        "gate_closure": "19:45 IST",
+        "slot": "Slot D",
+        "timing": "Subject Paper Slot D",
+        "reporting": "Subject Slot D",
+        "gate_closure": "Slot D Cohort",
         "lab": "LAB-04 (Block-D)",
     },
 }

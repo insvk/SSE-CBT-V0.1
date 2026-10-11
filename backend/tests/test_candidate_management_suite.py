@@ -72,19 +72,19 @@ def test_candidate_management_full_lifecycle():
     assert cand["has_scribe"] is True
     assert cand["compensatory_minutes"] == 60
     assert "IST" in (cand["created_at_ist"] or "")
-    assert "IST" in (cand["reporting_time_ist"] or "")
+    assert "Slot" in (cand["reporting_time_ist"] or "")
 
     # 2. Reallocate slot from Slot A -> Slot C
     realloc_res = client.patch(
         f"/api/v1/candidates/{cand_id}/reallocate-slot",
-        json={"slot": "C", "reason": "Administrative Rescheduling to Afternoon Shift"},
+        json={"slot": "C", "reason": "Administrative Rescheduling to Subject Slot C"},
         headers=headers,
     )
     assert realloc_res.status_code == 200
     realloc_cand = realloc_res.json()
     assert realloc_cand["batch"] == "C"
-    assert "16:30" in realloc_cand["slot_timing_ist"]
-    assert "15:30" in realloc_cand["reporting_time_ist"]
+    assert "Slot C" in realloc_cand["slot_timing_ist"]
+    assert "Slot C" in realloc_cand["reporting_time_ist"]
 
     # 3. Update Accommodations
     acc_res = client.patch(
@@ -118,8 +118,8 @@ def test_candidate_management_full_lifecycle():
     assert admit_card["status"] == "success"
     assert "AC-2026-C" in admit_card["admit_card_number"]
     assert admit_card["slot"] == "Slot C"
-    assert "IST" in admit_card["reporting_time_ist"]
-    assert "IST" in admit_card["gate_closure_ist"]
+    assert "Slot" in admit_card["reporting_time_ist"]
+    assert "Cohort" in admit_card["gate_closure_ist"]
     assert "barcode_data" in admit_card
     assert admit_card["test_center_code"] == "SSEC-TN-042"
 

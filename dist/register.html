@@ -426,18 +426,6 @@
               <input type="tel" class="form-input" id="reg-mobile" placeholder="e.g. +91 98765 43210" />
             </div>
 
-            <!-- Category -->
-            <div class="form-group">
-              <label class="form-label">Social Category</label>
-              <select class="form-select" id="reg-category">
-                <option value="General" selected>General (UR)</option>
-                <option value="OBC-NCL">OBC-NCL (Central List)</option>
-                <option value="SC">Scheduled Caste (SC)</option>
-                <option value="ST">Scheduled Tribe (ST)</option>
-                <option value="EWS">General - EWS</option>
-              </select>
-            </div>
-
             <!-- Gender -->
             <div class="form-group">
               <label class="form-label">Gender</label>
@@ -448,15 +436,18 @@
               </select>
             </div>
 
-            <!-- Examination Shift / Batch Preference -->
+            <!-- Subject Paper Slot -->
             <div class="form-group form-group-full">
-              <label class="form-label">Preferred Shift / Batch Slot</label>
+              <label class="form-label">Subject Examination Slot</label>
               <select class="form-select" id="reg-slot">
-                <option value="A" selected>Slot A : 08:30 to 11:30 IST (Morning Session)</option>
-                <option value="B">Slot B : 12:30 to 15:30 IST (Afternoon Session)</option>
-                <option value="C">Slot C : 16:30 to 19:30 IST (Evening Session)</option>
-                <option value="D">Slot D : 20:00 to 23:00 IST (Night Shift Session)</option>
+                <option value="A" selected>Slot A (Subject Paper Slot A)</option>
+                <option value="B">Slot B (Subject Paper Slot B)</option>
+                <option value="C">Slot C (Subject Paper Slot C)</option>
+                <option value="D">Slot D (Subject Paper Slot D)</option>
               </select>
+              <span style="font-size: 0.72rem; color: #64748b; margin-top: 4px; display: block;">
+                Designates the subject paper slot / cohort for this examination paper.
+              </span>
             </div>
 
             <!-- Password Container -->
@@ -598,7 +589,6 @@
           const fullName = document.getElementById('reg-fullname').value.trim();
           const email = document.getElementById('reg-email').value.trim();
           const mobile = document.getElementById('reg-mobile').value.trim();
-          const category = document.getElementById('reg-category').value;
           const gender = document.getElementById('reg-gender').value;
           const slot = document.getElementById('reg-slot').value;
           const pwd = document.getElementById('reg-password').value.trim();
@@ -629,7 +619,6 @@
                 email: email,
                 password: pwd,
                 mobile: mobile,
-                category: category,
                 gender: gender,
                 preferred_slot: slot,
                 is_pwd: isPwd,

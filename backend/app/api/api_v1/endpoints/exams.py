@@ -1961,7 +1961,7 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
             "biometric_status": bio_status,
             "tab_violations": tab_violations,
             "status": exam_status,
-            "start_time_ist": meta.get("slot_timing_ist") or "08:30:00 IST",
+            "start_time_ist": meta.get("slot_timing_ist") or "Subject Paper Slot A",
             "submission_time_ist": now_ist,
             "time_taken_mins": dur_mins,
             "remarks": "Accommodations: PwD Relief" if meta.get("is_pwd") else "Compliant / Hall Certified",

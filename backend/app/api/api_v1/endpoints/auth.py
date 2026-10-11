@@ -340,6 +340,8 @@ async def register_candidate(req: CandidateSelfRegisterRequest):
         "compensatory_minutes": 60 if req.is_pwd else 0,
         "assigned_terminal": assigned_terminal,
         "roll_number": roll_number,
+        "slot_timing_ist": f"Subject Paper Slot {slot}",
+        "reporting_time_ist": f"Subject Slot {slot}",
         "registered_at_ist": now_ist,
         "exam_status": "assigned",
         "biometric_status": "verified",
