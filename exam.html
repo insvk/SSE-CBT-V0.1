@@ -82,6 +82,12 @@
             <span>Question Paper</span>
           </button>
 
+          <!-- TCS iON Candidate Rough Sheet / Scribble Pad -->
+          <button type="button" class="header-action-item" id="btn-open-scratchpad" title="Open Digital Rough Sheet / Scratchpad">
+            <span style="font-size: 0.95rem;">📝</span>
+            <span>Rough Sheet</span>
+          </button>
+
           <!-- Time Remaining Capsule -->
           <div class="countdown-widget">
             <div class="countdown-label">Time remaining</div>
@@ -117,6 +123,13 @@
           <button type="button" class="sec-pill-btn" data-sec="CHEMISTRY - SEC-II">CHEMISTRY - SEC-II</button>
           <button type="button" class="sec-pill-btn" data-sec="MATHS - SEC-I">MATHS - SEC-I</button>
           <button type="button" class="sec-pill-btn" data-sec="MATHS - SEC-II">MATHS - SEC-II</button>
+        </div>
+
+        <!-- Section Statistics & Countdown Timer Capsule -->
+        <div id="section-meta-indicator" style="display: flex; align-items: center; gap: 8px; font-size: 0.72rem; font-weight: 700; color: #1e3a8a; background: #eff6ff; padding: 4px 10px; border-radius: 6px; border: 1px solid #bfdbfe; margin-left: auto; white-space: nowrap;">
+          <span>⏱️ Sec Time: <span id="sec-timer" style="font-family: var(--font-mono); color: #2563eb;">00:00</span></span>
+          <span style="color: #cbd5e1;">|</span>
+          <span>Ans: <span id="sec-ans-count">0</span> / <span id="sec-tot-count">7</span></span>
         </div>
 
         <button type="button" class="section-arrow-btn" id="sec-arrow-right">&gt;</button>
@@ -348,6 +361,42 @@
       </div>
     </div>
 
+    <!-- DIGITAL SCRATCHPAD / ROUGH WORK MODAL -->
+    <div class="modal-overlay" id="modal-scratchpad">
+      <div class="modal-content" style="max-width: 840px; width: 100%; max-height: 90vh; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 0.75rem;">
+          <div>
+            <h3 style="font-weight: 800; font-size: 1.15rem; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+              <span>📝 Digital Rough Sheet / Scratchpad</span>
+              <span style="font-size: 0.7rem; background: #eff6ff; color: #1d4ed8; padding: 2px 6px; border-radius: 4px; font-weight: 700;">NTA COMPLIANT</span>
+            </h3>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Candidate working space for formulas and calculation scratchwork.</p>
+          </div>
+          <button type="button" id="btn-close-scratchpad" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8;">&times;</button>
+        </div>
+
+        <!-- Scratchpad Toolbar -->
+        <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline btn-sm" id="sp-pen" style="background: #1e3a8a; color: white;">✏️ Pen</button>
+          <button type="button" class="btn btn-outline btn-sm" id="sp-eraser">🧹 Eraser</button>
+          <div style="display: flex; gap: 6px; align-items: center; margin-left: 0.5rem;">
+            <button type="button" class="sp-color-btn" data-color="#0f172a" style="width: 22px; height: 22px; border-radius: 50%; background: #0f172a; border: 2px solid #2563eb; cursor: pointer;" title="Black"></button>
+            <button type="button" class="sp-color-btn" data-color="#2563eb" style="width: 22px; height: 22px; border-radius: 50%; background: #2563eb; border: 2px solid transparent; cursor: pointer;" title="Blue"></button>
+            <button type="button" class="sp-color-btn" data-color="#dc2626" style="width: 22px; height: 22px; border-radius: 50%; background: #dc2626; border: 2px solid transparent; cursor: pointer;" title="Red"></button>
+          </div>
+          <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+            <button type="button" class="btn btn-outline btn-sm" id="sp-clear" style="color: #ef4444; border-color: #fca5a5;">🗑️ Clear</button>
+            <button type="button" class="btn btn-primary btn-sm" id="sp-done">Done</button>
+          </div>
+        </div>
+
+        <!-- Drawing Canvas -->
+        <div style="flex: 1; border: 1.5px solid var(--border-color); border-radius: 8px; background: #f8fafc; overflow: hidden; position: relative;">
+          <canvas id="scratchpad-canvas" width="800" height="420" style="display: block; cursor: crosshair; touch-action: none; background: #ffffff;"></canvas>
+        </div>
+      </div>
+    </div>
+
     <!-- INSTRUCTIONS MODAL -->
     <div class="modal-overlay" id="modal-instructions">
       <div class="modal-content" style="max-width: 650px;">
@@ -516,7 +565,8 @@
         <button type="button" class="calc-btn op" data-fn="abs">|x|</button>
         <button type="button" class="calc-btn num" data-insert="0" style="grid-column: span 2;">0</button>
         <button type="button" class="calc-btn num" data-insert=".">.</button>
-        <button type="button" class="calc-btn equals" id="calc-eq" style="grid-column: span 3;">=</button>
+        <button type="button" class="calc-btn equals" id="calc-eq" style="grid-column: span 2;">=</button>
+        <button type="button" class="calc-btn action" id="calc-copy-result" style="font-size: 0.72rem; padding: 4px 6px; background: #1e3a8a; color: white;" title="Copy result to clipboard">📋 Copy</button>
       </div>
     </div>
 

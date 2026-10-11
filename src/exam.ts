@@ -660,6 +660,33 @@ function handleClearResponse(): void {
     renderPalette();
 }
 
+// Section Time & Question Statistics Tracking
+const sectionElapsedSeconds: Record<string, number> = {};
+
+function updateSectionMeta(): void {
+    const secTimerEl = document.getElementById('sec-timer');
+    const secAnsEl = document.getElementById('sec-ans-count');
+    const secTotEl = document.getElementById('sec-tot-count');
+
+    const elapsed = sectionElapsedSeconds[activeSection] || 0;
+    const sMins = Math.floor(elapsed / 60);
+    const sSecs = elapsed % 60;
+    if (secTimerEl) {
+        secTimerEl.textContent = `${sMins.toString().padStart(2, '0')}:${sSecs.toString().padStart(2, '0')}`;
+    }
+
+    const secQuestions = allQuestions.map((q, idx) => ({ q, idx })).filter(item => {
+        const itemSec = item.q.section || (item.q.subject ? `${item.q.subject.toUpperCase()} - SEC-I` : 'PHYSICS - SEC-I');
+        return itemSec === activeSection;
+    });
+
+    const totalInSec = secQuestions.length || 7;
+    const answeredInSec = secQuestions.filter(item => questionState[item.idx] === 1 || questionState[item.idx] === 3).length;
+
+    if (secAnsEl) secAnsEl.textContent = answeredInSec.toString();
+    if (secTotEl) secTotEl.textContent = totalInSec.toString();
+}
+
 // Timer Logic
 function startTimer(): void {
     if (timerInterval) clearInterval(timerInterval);
@@ -673,6 +700,8 @@ function startTimer(): void {
         }
 
         currentRemainingSeconds--;
+        sectionElapsedSeconds[activeSection] = (sectionElapsedSeconds[activeSection] || 0) + 1;
+        updateSectionMeta();
 
         const mins = Math.floor(currentRemainingSeconds / 60);
         const secs = currentRemainingSeconds % 60;
@@ -815,10 +844,14 @@ document.querySelectorAll('.sec-pill-btn').forEach(btn => {
         activeSection = targetSec;
 
         // Jump to first question in section if available
-        const foundIdx = allQuestions.findIndex(q => q.section === targetSec);
+        const foundIdx = allQuestions.findIndex(q => {
+            const itemSec = q.section || (q.subject ? `${q.subject.toUpperCase()} - SEC-I` : 'PHYSICS - SEC-I');
+            return itemSec === targetSec;
+        });
         if (foundIdx !== -1) {
             loadQuestion(foundIdx);
         }
+        updateSectionMeta();
     });
 });
 
@@ -1506,6 +1539,145 @@ if (btnCalcEq) {
         resetNextNum = true;
         updateCalcDisplay();
     };
+}
+
+// Copy Result button
+const btnCalcCopy = document.getElementById('calc-copy-result');
+if (btnCalcCopy) {
+    btnCalcCopy.onclick = () => {
+        const textToCopy = calcCurrent !== 'Error' ? calcCurrent : '0';
+        navigator.clipboard?.writeText(textToCopy).catch(() => {});
+        showLiveToast(`📋 Calculator result (${textToCopy}) copied!`);
+    };
+}
+
+// Physical Keyboard Calculator Shortcuts
+window.addEventListener('keydown', (e) => {
+    const calcWindow = document.getElementById('calc-window');
+    if (!calcWindow || !calcWindow.classList.contains('active')) return;
+
+    if (e.key >= '0' && e.key <= '9') {
+        const btn = document.querySelector(`.calc-btn[data-insert="${e.key}"]`) as HTMLButtonElement;
+        btn?.click();
+    } else if (['+', '-', '*', '/', '^', '%', '(', ')'].includes(e.key)) {
+        const btn = document.querySelector(`.calc-btn[data-insert="${e.key}"]`) as HTMLButtonElement;
+        btn?.click();
+    } else if (e.key === '.') {
+        const btn = document.querySelector(`.calc-btn[data-insert="."]`) as HTMLButtonElement;
+        btn?.click();
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        btnCalcEq?.click();
+    } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        const btnBack = document.getElementById('calc-back') as HTMLButtonElement;
+        btnBack?.click();
+    } else if (e.key === 'Escape') {
+        calcWindow.classList.remove('active');
+    }
+});
+
+// --- TCS iON CANDIDATE DIGITAL SCRATCHPAD (ROUGH SHEET) ---
+const btnOpenScratchpad = document.getElementById('btn-open-scratchpad');
+const modalScratchpad = document.getElementById('modal-scratchpad');
+const btnCloseScratchpad = document.getElementById('btn-close-scratchpad');
+const btnDoneScratchpad = document.getElementById('sp-done');
+const btnClearScratchpad = document.getElementById('sp-clear');
+const btnPen = document.getElementById('sp-pen');
+const btnEraser = document.getElementById('sp-eraser');
+const canvasScratchpad = document.getElementById('scratchpad-canvas') as HTMLCanvasElement;
+
+if (canvasScratchpad && modalScratchpad) {
+    const ctx = canvasScratchpad.getContext('2d');
+    let isDrawing = false;
+    let currentColor = '#0f172a';
+    const currentLineWidth = 2.5;
+    let isEraserMode = false;
+
+    // Open/Close
+    const openScratchpad = () => { modalScratchpad.style.display = 'flex'; };
+    const closeScratchpad = () => { modalScratchpad.style.display = 'none'; };
+
+    btnOpenScratchpad?.addEventListener('click', openScratchpad);
+    btnCloseScratchpad?.addEventListener('click', closeScratchpad);
+    btnDoneScratchpad?.addEventListener('click', closeScratchpad);
+
+    // Tools
+    btnPen?.addEventListener('click', () => {
+        isEraserMode = false;
+        btnPen.classList.add('active');
+        btnPen.style.background = '#1e3a8a';
+        btnPen.style.color = 'white';
+        btnEraser?.classList.remove('active');
+        if (btnEraser) { btnEraser.style.background = 'white'; btnEraser.style.color = '#1e293b'; }
+    });
+
+    btnEraser?.addEventListener('click', () => {
+        isEraserMode = true;
+        btnEraser.classList.add('active');
+        btnEraser.style.background = '#1e3a8a';
+        btnEraser.style.color = 'white';
+        btnPen?.classList.remove('active');
+        if (btnPen) { btnPen.style.background = 'white'; btnPen.style.color = '#1e293b'; }
+    });
+
+    btnClearScratchpad?.addEventListener('click', () => {
+        if (ctx) {
+            ctx.clearRect(0, 0, canvasScratchpad.width, canvasScratchpad.height);
+            showLiveToast('Rough sheet cleared.');
+        }
+    });
+
+    document.querySelectorAll('.sp-color-btn').forEach(b => {
+        b.addEventListener('click', (e) => {
+            const target = e.currentTarget as HTMLElement;
+            document.querySelectorAll('.sp-color-btn').forEach(btn => (btn as HTMLElement).style.borderColor = 'transparent');
+            target.style.borderColor = '#2563eb';
+            currentColor = target.getAttribute('data-color') || '#0f172a';
+            isEraserMode = false;
+            btnPen?.click();
+        });
+    });
+
+    const getPos = (e: MouseEvent | TouchEvent) => {
+        const rect = canvasScratchpad.getBoundingClientRect();
+        const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
+        const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    };
+
+    const startDraw = (e: MouseEvent | TouchEvent) => {
+        isDrawing = true;
+        const pos = getPos(e);
+        ctx?.beginPath();
+        ctx?.moveTo(pos.x, pos.y);
+    };
+
+    const draw = (e: MouseEvent | TouchEvent) => {
+        if (!isDrawing || !ctx) return;
+        const pos = getPos(e);
+        ctx.strokeStyle = isEraserMode ? '#ffffff' : currentColor;
+        ctx.lineWidth = isEraserMode ? 14 : currentLineWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+    };
+
+    const stopDraw = () => {
+        isDrawing = false;
+        ctx?.closePath();
+    };
+
+    canvasScratchpad.addEventListener('mousedown', startDraw);
+    canvasScratchpad.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stopDraw);
+    canvasScratchpad.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); }, { passive: false });
+    canvasScratchpad.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { passive: false });
+    window.addEventListener('touchend', stopDraw);
 }
 
 // INITIALIZE CONSOLE
