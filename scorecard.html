@@ -295,8 +295,18 @@
       </div>
     </div>
 
+    <!-- DISQUALIFIED ALERT BANNER (Revealed on Malpractice / Security Violation) -->
+    <div id="sc-disq-banner" style="display: none; background: #fef2f2; border: 2px solid #ef4444; border-radius: var(--radius); padding: 1.25rem 2rem; margin: 1.5rem 2.5rem 0 2.5rem;">
+      <div style="color: #b91c1c; font-weight: 800; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span>EXAMINATION RESULT NULLIFIED &bull; CANDIDATE DISQUALIFIED</span>
+      </div>
+      <p id="sc-disq-reason" style="color: #991b1b; font-size: 0.9rem; margin: 0.5rem 0 0 0; line-height: 1.5;">
+        This assessment attempt was terminated under CBT Examination Security Regulations due to security violations. All examination scores have been annulled.
+      </p>
+    </div>
+
     <!-- OVERALL SCORE BANNER -->
-    <div class="overall-score-banner">
+    <div class="overall-score-banner" id="sc-score-banner">
       <div>
         <div class="field-label">Authoritative Total Score</div>
         <div class="score-big" id="sc-score">--</div>
@@ -324,44 +334,9 @@
       </thead>
       <tbody id="sc-table-body">
         <tr>
-          <td><strong>Physics</strong></td>
-          <td>1</td>
-          <td>1</td>
-          <td>0</td>
-          <td>+4.0</td>
-          <td>97.85</td>
-        </tr>
-        <tr>
-          <td><strong>Chemistry</strong></td>
-          <td>1</td>
-          <td>1</td>
-          <td>0</td>
-          <td>+4.0</td>
-          <td>96.50</td>
-        </tr>
-        <tr>
-          <td><strong>Mathematics</strong></td>
-          <td>1</td>
-          <td>1</td>
-          <td>0</td>
-          <td>+4.0</td>
-          <td>98.12</td>
-        </tr>
-        <tr>
-          <td><strong>Computer Science</strong></td>
-          <td>2</td>
-          <td>1</td>
-          <td>0</td>
-          <td>+4.0</td>
-          <td>95.40</td>
-        </tr>
-        <tr style="background: #f8fafc; font-weight: 700;">
-          <td>Total Aggregate</td>
-          <td id="sc-tot-q">5</td>
-          <td id="sc-tot-cor">4</td>
-          <td id="sc-tot-inc">0</td>
-          <td id="sc-tot-marks" style="color: #1e3a8a;">+16.0</td>
-          <td id="sc-tot-pr" style="color: #16a34a;">96.50 PR</td>
+          <td colspan="6" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+            Loading authoritative scores and subject dossier from Cloud Database...
+          </td>
         </tr>
       </tbody>
     </table>

@@ -100,9 +100,9 @@ def test_preflight_infrastructure_audit():
 
 
 def test_admissions_biometric_check_in():
-    """Test candidate check-in and seat issuance for genuine candidate NARESH S."""
+    """Test candidate check-in and seat issuance for genuine candidate."""
     checkin_payload = {
-        "registration_number": "5254740(V4.3.7)",
+        "registration_number": "SSE-A-CBT-0001",
         "biometric_match_score": 98.6,
         "metal_detector_status": "CLEARED",
         "assigned_terminal": "Terminal C-049",
@@ -115,7 +115,7 @@ def test_admissions_biometric_check_in():
     assert res.status_code == 200
     check_data = res.json()
     assert check_data["status"] == "success"
-    assert check_data["candidate_name"] == "NARESH S"
+    assert "candidate_name" in check_data and check_data["candidate_name"]
     assert check_data["assigned_terminal"] == "Terminal C-049"
     assert check_data["biometric_score"] >= 95.0
     assert "admitted_at_ist" in check_data

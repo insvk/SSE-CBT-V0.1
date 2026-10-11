@@ -337,7 +337,7 @@ function renderCandidateTable(): void {
         const initials = (c.full_name || 'CD').split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
         const status = (c.status || 'active').toLowerCase();
         const isActive = status === 'active';
-        const isDisqualified = status === 'disqualified';
+        const isDisqualified = status === 'disqualified' || status === 'invalidated' || (c.metadata && (c.metadata.disqualified === true || c.metadata.exam_status === 'invalidated'));
         const slot = (c.batch || 'A').toUpperCase();
         const rollNo = c.roll_number || c.registration_number || `SSE-${slot}-CBT-0001`;
         const terminal = c.assigned_terminal || `T-${slot}-01`;
@@ -350,7 +350,7 @@ function renderCandidateTable(): void {
         if (isDisqualified) {
             statusClass = 'status-suspended';
             statusDot = '#ef4444';
-            statusLabel = 'Debarred';
+            statusLabel = 'Disqualified';
         } else if (!isActive) {
             statusClass = 'status-suspended';
             statusDot = '#f59e0b';
@@ -2623,7 +2623,8 @@ function renderQuestionChecklist(): void {
     const filtered = cachedQuestionBank.filter(q => {
         const subject = q.subject || '';
         const diff = q.difficulty || '';
-        const text = (q.question_text || '').toLowerCase();
+        const stmt = q.statement || q.question_text || (q.content && q.content.statement) || '';
+        const text = stmt.toLowerCase();
 
         const matchesSub = (subFilter === 'ALL') || (subject.toLowerCase() === subFilter.toLowerCase());
         const matchesDiff = (diffFilter === 'ALL') || (diff.toLowerCase() === diffFilter.toLowerCase());
@@ -2648,7 +2649,8 @@ function renderQuestionChecklist(): void {
         const isChecked = selectedQuestionIds.has(qId) ? 'checked' : '';
         const subject = q.subject || 'General';
         const diff = q.difficulty || 'Medium';
-        const snippet = escapeHtml(q.question_text ? q.question_text.slice(0, 90) + (q.question_text.length > 90 ? '...' : '') : '');
+        const qText = q.statement || q.question_text || (q.content && q.content.statement) || '';
+        const snippet = escapeHtml(qText ? qText.slice(0, 90) + (qText.length > 90 ? '...' : '') : '');
 
         let subColor = '#2563eb';
         if (subject.toLowerCase() === 'chemistry') subColor = '#7c3aed';
@@ -3051,15 +3053,26 @@ async function openExamSummaryModal(examId: string): Promise<void> {
             } else {
                 let html = '';
                 leaderboard.forEach((c, idx) => {
-                    const rankMedal = idx === 0 ? 'Rank 1' : idx === 1 ? 'Rank 2' : idx === 2 ? 'Rank 3' : `#${idx + 1}`;
+                    const isDisq = c.disqualified === true || c.status === 'Disqualified' || c.rank === 'DISQ';
+                    const rankMedal = isDisq
+                        ? '<span style="color: #dc2626; font-weight: 800;">DISQ</span>'
+                        : (c.rank ? (typeof c.rank === 'number' ? (c.rank === 1 ? 'Rank 1' : c.rank === 2 ? 'Rank 2' : c.rank === 3 ? 'Rank 3' : `#${c.rank}`) : c.rank) : (idx === 0 ? 'Rank 1' : idx === 1 ? 'Rank 2' : idx === 2 ? 'Rank 3' : `#${idx + 1}`));
+                    const scoreDisplay = isDisq
+                        ? '<span style="color: #dc2626; font-weight: 800;">0.0 (NULLIFIED)</span>'
+                        : `<span style="font-weight: 800; color: #047857;">${c.raw_score} / ${data.max_possible_score}</span>`;
+                    const accDisplay = isDisq ? '0%' : `${c.accuracy}%`;
+                    const pillDisplay = isDisq
+                        ? `<span class="badge-pill" style="background: #fee2e2; color: #b91c1c; font-weight: 800;" title="${escapeHtml(c.disqualification_reason || 'Security Malpractice')}">DISQUALIFIED</span>`
+                        : `<span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">${c.percentile} PR</span>`;
+
                     html += `
-                        <tr>
+                        <tr style="${isDisq ? 'background: #fff5f5;' : ''}">
                             <td style="font-weight: 800; font-size: 0.85rem;">${rankMedal}</td>
                             <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">${escapeHtml(c.registration_number || c.roll_number || '--')}</td>
                             <td><strong>${escapeHtml(c.candidate_name || 'Candidate')}</strong></td>
-                            <td style="font-weight: 800; color: #047857;">${c.raw_score} / ${data.max_possible_score}</td>
-                            <td>${c.accuracy}%</td>
-                            <td><span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">${c.percentile} PR</span></td>
+                            <td>${scoreDisplay}</td>
+                            <td>${accDisplay}</td>
+                            <td>${pillDisplay}</td>
                         </tr>
                     `;
                 });

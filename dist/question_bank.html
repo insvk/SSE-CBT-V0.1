@@ -9,7 +9,7 @@
         const token = localStorage.getItem('access_token');
         const role = localStorage.getItem('user_role');
         const godMode = localStorage.getItem('god_mode') === 'true';
-        if (!token || (role !== 'super_admin' && !godMode)) {
+        if (!token || (role !== 'super_admin' && role !== 'admin' && !godMode)) {
           alert('Access Restricted: Examination Controller credentials required to access the Master Question Bank.');
           window.location.replace('/login.html');
         }
@@ -79,9 +79,9 @@
         .modal-content { padding: 1.25rem; width: 95vw; }
       }
     </style>
-    <script type="module" crossorigin src="/assets/question_bank-46eff847.js"></script>
+    <script type="module" crossorigin src="/assets/question_bank-f8eb6469.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
-    <link rel="stylesheet" href="/assets/style-8418e68e.css">
+    <link rel="stylesheet" href="/assets/style-e946e59c.css">
   </head>
   <body>
     

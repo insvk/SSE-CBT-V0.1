@@ -20,133 +20,136 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
-  <script type="module" crossorigin src="/assets/exam-a0ee21de.js"></script>
+  <script type="module" crossorigin src="/assets/exam-5e269241.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
-  <link rel="stylesheet" href="/assets/style-8418e68e.css">
+  <link rel="stylesheet" href="/assets/style-e946e59c.css">
 </head>
 
 <body>
   <div class="exam-layout">
 
-    <!-- 1. TOP HEADER (EXACT REPLICA OF SCREENSHOT) -->
-    <header class="exam-header">
-      <div class="exam-title-text" id="exam-header-title">
-        SSE CBT PLATFORM V0.1 -- ASSESSMENT EXAMINATION
+    <!-- 1. TOP HEADER (CLEAN RESPONSIVE 3-ZONE APPLICATION SHELL) -->
+    <header class="exam-header" role="banner">
+      <div class="exam-header-brand">
+        <div class="exam-title-text" id="exam-header-title">
+          SSE CBT PLATFORM V0.1 -- ASSESSMENT EXAMINATION
+        </div>
       </div>
 
-      <div class="exam-header-right">
+      <!-- Secondary Tools Toolbar (Centered on Desktop, Responsive Scroll/Drawer on Small Screens) -->
+      <div class="exam-header-tools" role="toolbar" aria-label="Exam Accessibility and Tools">
         <!-- Font Size Scaling Accessibility Group -->
-        <div class="font-scale-group"
-          style="display: flex; gap: 2px; align-items: center; border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 4px; background: #f8fafc;"
-          title="Change Font Size">
-          <button type="button" class="btn-font-scale" id="btn-font-dec"
-            style="background: none; border: none; font-size: 0.72rem; font-weight: 700; cursor: pointer; padding: 2px 6px; color: var(--text-body);"
-            title="Decrease Font">A-</button>
-          <button type="button" class="btn-font-scale" id="btn-font-reset"
-            style="background: none; border: none; font-size: 0.82rem; font-weight: 700; cursor: pointer; padding: 2px 6px; color: var(--primary);"
-            title="Default Font">A</button>
-          <button type="button" class="btn-font-scale" id="btn-font-inc"
-            style="background: none; border: none; font-size: 0.92rem; font-weight: 700; cursor: pointer; padding: 2px 6px; color: var(--text-body);"
-            title="Increase Font">A+</button>
+        <div class="font-scale-group" title="Adjust text font size">
+          <button type="button" class="btn-font-scale" id="btn-font-dec" title="Decrease Font">A-</button>
+          <button type="button" class="btn-font-scale" id="btn-font-reset" title="Default Font">A</button>
+          <button type="button" class="btn-font-scale" id="btn-font-inc" title="Increase Font">A+</button>
         </div>
 
         <!-- Virtual Calculator Button -->
-        <button type="button" class="header-action-item" id="btn-open-calc" title="Open Virtual Scientific Calculator">
-          
+        <button type="button" class="header-action-item" id="btn-open-calc" title="Open Scientific Calculator">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="2" width="16" height="20" rx="2" />
+            <line x1="8" y1="6" x2="16" y2="6" />
+            <line x1="16" y1="14" x2="16" y2="18" />
+            <path d="M16 10h.01" /><path d="M12 10h.01" /><path d="M8 10h.01" />
+            <path d="M12 14h.01" /><path d="M8 14h.01" /><path d="M12 18h.01" /><path d="M8 18h.01" />
+          </svg>
           <span>Calculator</span>
         </button>
 
-        <!-- Kiosk Fullscreen Trigger -->
-        <button type="button" class="header-action-item" id="btn-toggle-fullscreen"
-          title="Toggle Fullscreen Kiosk Mode">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+        <!-- Candidate Rough Sheet / Scribble Pad -->
+        <button type="button" class="header-action-item" id="btn-open-scratchpad" title="Open Digital Rough Sheet">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 19l7-7 3 3-7 7-3-3z" />
+            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
           </svg>
-          <span id="fullscreen-text">Fullscreen</span>
-        </button>
-
-        <!-- Sync Widget -->
-        <div class="sync-widget" id="btn-manual-sync" title="Synchronize state with cloud">
-          <div class="sync-top">
-            <span id="ws-live-dot"
-              style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; margin-right:5px; box-shadow: 0 0 6px #10b981;"></span>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-            </svg>
-            <span>Sync</span>
-          </div>
-          <div class="sync-sub" id="sync-sub-time">Cloud DB: Live</div>
-        </div>
-
-        <!-- Instructions Link -->
-        <button type="button" class="header-action-item" id="btn-view-instructions">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-          <span>Instructions</span>
+          <span>Rough Sheet</span>
         </button>
 
         <!-- Question Paper Link -->
-        <button type="button" class="header-action-item" id="btn-view-paper">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
+        <button type="button" class="header-action-item" id="btn-view-paper" title="View Full Question Paper">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
           </svg>
           <span>Question Paper</span>
         </button>
 
-        <!-- Candidate Rough Sheet / Scribble Pad -->
-        <button type="button" class="header-action-item" id="btn-open-scratchpad"
-          title="Open Digital Rough Sheet / Scratchpad">
-          
-          <span>Rough Sheet</span>
+        <!-- Instructions Link -->
+        <button type="button" class="header-action-item" id="btn-view-instructions" title="View Examination Instructions">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+          <span>Instructions</span>
         </button>
 
-        <!-- Authoritative Master Clock (time.google.com & IST) -->
-        <div class="header-action-item" id="exam-master-clock-chip"
-          style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.35); color: #047857; font-weight: 700;"
-          title="Authoritative Master Exam Clock synchronized with Google NTP (time.google.com) in Indian Standard Time (IST)">
-          
-          <span id="exam-ist-clock" style="font-family: var(--font-mono); font-size: 0.82rem;">--:--:-- IST</span>
+        <!-- Kiosk Fullscreen Trigger -->
+        <button type="button" class="header-action-item" id="btn-toggle-fullscreen" title="Toggle Fullscreen Kiosk Mode">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+          </svg>
+          <span id="fullscreen-text">Fullscreen</span>
+        </button>
+      </div>
+
+      <!-- Telemetry & Candidate Identification (Right Zone) -->
+      <div class="exam-header-telemetry">
+        <!-- Cloud DB Live Sync Indicator -->
+        <div class="sync-widget" id="btn-manual-sync" role="button" title="Synchronize authoritative state with cloud">
+          <div class="sync-top">
+            <span id="ws-live-dot" class="live-pulse-dot"></span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+            </svg>
+            <span>Sync</span>
+          </div>
+          <div class="sync-sub" id="sync-sub-time">Live</div>
         </div>
 
-        <!-- Time Remaining Capsule -->
-        <div class="countdown-widget">
+        <!-- Authoritative NTP Master Clock in Indian Standard Time (IST) -->
+        <div class="header-action-item header-clock-chip" id="exam-master-clock-chip"
+          title="Authoritative Master Exam Clock synchronized with Google NTP (time.google.com) in IST">
+          <span id="exam-ist-clock">--:--:-- IST</span>
+        </div>
+
+        <!-- Time Remaining Countdown Capsule -->
+        <div class="countdown-widget" aria-live="polite">
           <div class="countdown-label">Time remaining</div>
           <div class="countdown-pill" id="timer-display">179 : 41</div>
         </div>
 
         <!-- Candidate Details Profile -->
         <div class="candidate-profile-chip">
-          <div class="candidate-name-bold" id="cand-display-name">NARESH S</div>
-          <div class="candidate-roll-sub" id="cand-display-reg">5254740(V4.3.7)</div>
+          <div class="candidate-name-bold" id="cand-display-name">Candidate</div>
+          <div class="candidate-roll-sub" id="cand-display-reg">SSE-A-CBT-0001</div>
         </div>
 
         <!-- Terminal Node Badge -->
-        <div class="header-action-item" id="terminal-badge"
-          style="background: rgba(30, 58, 138, 0.06); border-color: rgba(37, 99, 235, 0.3); font-family: var(--font-mono); font-weight: 700; color: #1e40af;"
-          title="Physical CBT Terminal Node">
-          Node:
-          <span id="term-display-id">C-042</span>
+        <div class="header-action-item terminal-badge-chip" id="terminal-badge" title="Physical CBT Terminal Node">
+          Node: <span id="term-display-id">C-042</span>
         </div>
 
+        <!-- Palette Toggle Button (Visible on Tablets & Mobile) -->
+        <button type="button" class="btn-palette-toggle-header" id="btn-mobile-palette-toggle" title="Toggle Question Palette">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+          </svg>
+          <span>Palette</span>
+        </button>
+
         <!-- Exit / Logout -->
-        <button type="button" class="header-action-item" id="btn-exam-exit-logout"
+        <button type="button" class="header-action-item btn-exit-chip" id="btn-exam-exit-logout"
           onclick="if(confirm('Are you sure you want to exit and return to the login page?')) { localStorage.clear(); sessionStorage.clear(); window.location.href='/login.html'; }"
-          style="color: #ef4444; border-color: rgba(239, 68, 68, 0.4); font-weight: 700;"
           title="Sign out and return to login">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
           <span>Exit</span>
         </button>
@@ -232,10 +235,13 @@
       </div>
     </main>
 
-    <!-- 4. RIGHT SIDEBAR: QUESTION STATUS & CHOOSE A QUESTION -->
-    <aside class="exam-sidebar" id="exam-sidebar-pane">
+    <!-- 4. RIGHT SIDEBAR: QUESTION STATUS & CHOOSE A QUESTION (DOCKED ON DESKTOP, OFF-CANVAS DRAWER ON MOBILE/TABLET) -->
+    <aside class="exam-sidebar" id="exam-sidebar-pane" aria-label="Question Navigation Palette">
 
-      <div class="sidebar-section-title">QUESTION STATUS</div>
+      <div class="sidebar-header-row">
+        <div class="sidebar-section-title">QUESTION STATUS</div>
+        <button type="button" class="btn-close-palette-drawer" id="btn-close-palette-drawer" title="Close Question Palette">&times;</button>
+      </div>
 
       <div class="status-counter-grid">
         <div class="status-badge-item">
@@ -287,6 +293,8 @@
       </div>
 
     </aside>
+    <!-- Backdrop for Mobile/Tablet Question Palette Drawer -->
+    <div class="palette-drawer-backdrop" id="palette-drawer-backdrop"></div>
 
     <!-- 5. FOOTER CONTROLS BAR (MIRRORS SCREENSHOT) -->
     <footer class="exam-footer">
@@ -583,11 +591,11 @@
 
   <!-- DYNAMIC MOVING ANTI-SCREEN-CAPTURE WATERMARK -->
   <div class="anti-cheat-watermark" id="anti-cheat-watermark">
-    <div class="watermark-row" id="wm-row-1">NARESH S &bull; 5254740(V4.3.7) &bull; TERMINAL C-042 &bull; SECURE CBT
+    <div class="watermark-row" id="wm-row-1">Candidate &bull; SSE-A-CBT-0001 &bull; TERMINAL C-042 &bull; SECURE CBT
     </div>
     <div class="watermark-row" id="wm-row-2">SSE CBT PLATFORM V0.1 &bull; OFFICIAL EXAM &bull; CLOUD LIVE</div>
     <div class="watermark-row" id="wm-row-3">CONFIDENTIAL EXAMINATION &bull; DO NOT PHOTOGRAPH &bull; AUDIT ACTIVE</div>
-    <div class="watermark-row" id="wm-row-4">NARESH S &bull; 5254740(V4.3.7) &bull; TERMINAL C-042 &bull; SECURE CBT
+    <div class="watermark-row" id="wm-row-4">Candidate &bull; SSE-A-CBT-0001 &bull; TERMINAL C-042 &bull; SECURE CBT
     </div>
   </div>
 
@@ -732,7 +740,7 @@
       <div
         style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem;">
         <div style="font-weight: 800; color: #991b1b; font-size: 0.9rem;" id="viol-badge-text">
-          Strike 1 of 3: Window / Tab Switch Detected
+          Strike 1 of 4: Window / Tab Switch Detected
         </div>
         <p style="font-size: 0.825rem; color: #7f1d1d; margin-top: 0.35rem; line-height: 1.4;" id="viol-desc-text">
           Your browser window lost active focus or a disallowed action was attempted. This event has been stamped and
@@ -740,7 +748,7 @@
         </p>
       </div>
       <p style="font-size: 0.825rem; color: #64748b; margin-bottom: 1.25rem;">
-        <strong>Examination Security 3-Strike Rule:</strong> On the 3rd security strike, your exam will be terminated immediately and
+        <strong>Examination Security 4-Strike Rule:</strong> On the 4th security strike, your exam will be terminated immediately and
         locked permanently.
       </p>
       <div style="display: flex; justify-content: flex-end;">

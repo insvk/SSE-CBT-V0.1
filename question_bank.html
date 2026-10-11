@@ -9,7 +9,7 @@
         const token = localStorage.getItem('access_token');
         const role = localStorage.getItem('user_role');
         const godMode = localStorage.getItem('god_mode') === 'true';
-        if (!token || (role !== 'super_admin' && !godMode)) {
+        if (!token || (role !== 'super_admin' && role !== 'admin' && !godMode)) {
           alert('Access Restricted: Examination Controller credentials required to access the Master Question Bank.');
           window.location.replace('/login.html');
         }

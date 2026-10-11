@@ -9,7 +9,7 @@ from app.core.tenant import DEFAULT_TENANT_ID, ensure_tenant_exists
 logger = logging.getLogger(__name__)
 
 DEFAULT_EXAM_UUID = "00000000-0000-0000-0000-000000000101"
-DEFAULT_CANDIDATE_UUID = "018d1a55-2959-48c4-b2a4-8a72894512b9"  # NARESH S / 5254740(V4.3.7)
+DEFAULT_CANDIDATE_UUID = "018d1a55-2959-48c4-b2a4-8a72894512b9"
 
 # Mapping from client numeric states to database response_status_enum
 STATE_TO_STATUS = {
@@ -80,12 +80,19 @@ def ensure_candidate_exists(
 ) -> str:
     """Ensures candidate row exists in public.candidates table."""
     ensure_tenant_exists(db, tenant_id)
-    reg = (reg_no or "5254740(V4.3.7)").strip()
-    name = candidate_name or ("NARESH S" if reg == "5254740(V4.3.7)" else f"Candidate {reg}")
+    reg = (reg_no or "SSE-A-CBT-0001").strip()
+    name = (candidate_name or f"Candidate {reg}").strip()
     try:
         chk = db.table("candidates").select("id").eq("id", candidate_id).limit(1).execute()
         if chk.data:
-            return candidate_id
+            return str(chk.data[0]["id"])
+    except Exception:
+        pass
+
+    try:
+        chk_reg = db.table("candidates").select("id").eq("registration_number", reg).limit(1).execute()
+        if chk_reg.data:
+            return str(chk_reg.data[0]["id"])
     except Exception:
         pass
 
@@ -101,7 +108,7 @@ def ensure_candidate_exists(
                 "exam_status": "in_progress",
                 "password": "password123",
                 "assigned_terminal": "Terminal C-049",
-                "roll_number": "SSE-A-CBT-0001",
+                "roll_number": reg,
                 "biometric_status": "verified",
                 "biometric_score": 98.6,
             }
@@ -114,7 +121,7 @@ def ensure_candidate_exists(
 
 def get_or_create_candidate_id(db, reg_no: Optional[str] = None, candidate_name: Optional[str] = None) -> str:
     """Finds or ensures candidate exists in database."""
-    reg = (reg_no or "5254740(V4.3.7)").strip()
+    reg = (reg_no or "SSE-A-CBT-0001").strip()
     try:
         res = db.table("candidates").select("id").eq("registration_number", reg).limit(1).execute()
         if res.data:
@@ -123,9 +130,8 @@ def get_or_create_candidate_id(db, reg_no: Optional[str] = None, candidate_name:
         logger.warning(f"Error querying candidate by reg_no {reg}: {e}")
 
     # Fallback to ensuring DEFAULT_CANDIDATE_UUID in candidates table
-    cand_id = DEFAULT_CANDIDATE_UUID if reg == "5254740(V4.3.7)" else str(uuid.uuid5(uuid.NAMESPACE_DNS, reg))
-    ensure_candidate_exists(db, DEFAULT_TENANT_ID, cand_id, reg_no=reg, candidate_name=candidate_name)
-    return cand_id
+    cand_id = DEFAULT_CANDIDATE_UUID if reg in ("SSE-A-CBT-0001", "5254740(V4.3.7)") else str(uuid.uuid5(uuid.NAMESPACE_DNS, reg))
+    return ensure_candidate_exists(db, DEFAULT_TENANT_ID, cand_id, reg_no=reg, candidate_name=candidate_name)
 
 
 def get_or_create_attempt(
@@ -145,7 +151,7 @@ def get_or_create_attempt(
     if not cand_id:
         cand_id = get_or_create_candidate_id(db, reg_no, candidate_name)
     else:
-        ensure_candidate_exists(db, tenant_id, cand_id, reg_no=reg_no, candidate_name=candidate_name)
+        cand_id = ensure_candidate_exists(db, tenant_id, cand_id, reg_no=reg_no, candidate_name=candidate_name)
 
     # Check if attempt exists
     try:
@@ -233,16 +239,62 @@ def mark_attempt_submitted_cloud_db(
     exam_id: str,
     candidate_id: Optional[str] = None,
     reg_no: Optional[str] = None,
+    scoring_result: Optional[Dict[str, Any]] = None,
+    is_disqualified: bool = False,
+    disqualification_reason: Optional[str] = None,
 ) -> bool:
-    """Marks candidate attempt as 'submitted' in Supabase."""
+    """
+    Marks candidate attempt as 'submitted' or 'invalidated' in Supabase Cloud DB.
+    Persists authoritative scores and disqualification metadata directly into Cloud DB.
+    """
     exam_uuid = resolve_exam_uuid(exam_id)
-    attempt_id, _ = get_or_create_attempt(db, tenant_id, exam_uuid, candidate_id, reg_no)
+    attempt_id, cand_uuid = get_or_create_attempt(db, tenant_id, exam_uuid, candidate_id, reg_no)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    status_str = "invalidated" if is_disqualified else "submitted"
+
+    # 1. Update public.exam_attempts
     try:
         db.table("exam_attempts").update({
-            "status": "submitted",
-            "end_time": datetime.now(timezone.utc).isoformat(),
+            "status": status_str,
+            "end_time": now_iso,
         }).eq("id", attempt_id).execute()
-        return True
     except Exception as e:
-        logger.error(f"Error marking attempt submitted: {e}")
-        return False
+        logger.error(f"Error marking attempt {status_str}: {e}")
+
+    # 2. Update public.candidates metadata in Supabase Cloud DB
+    try:
+        c_res = db.table("candidates").select("metadata").eq("id", cand_uuid).limit(1).execute()
+        meta = (c_res.data[0].get("metadata") or {}) if (c_res.data and len(c_res.data) > 0) else {}
+
+        if is_disqualified:
+            meta.update({
+                "exam_status": "invalidated",
+                "disqualified": True,
+                "disqualification_reason": disqualification_reason or "4 Security Violations Exceeded",
+                "score": 0.0,
+                "percentage": 0.0,
+                "percentile": 0.0,
+                "result_status": "Disqualified (Security Malpractice)",
+                "disqualified_at": now_iso,
+            })
+        elif scoring_result:
+            meta.update({
+                "exam_status": "submitted",
+                "disqualified": False,
+                "score": float(scoring_result.get("total_score", 0.0)),
+                "max_possible": float(scoring_result.get("max_possible_score", 0.0)),
+                "percentage": float(scoring_result.get("percentage", 0.0)),
+                "percentile": float(scoring_result.get("percentile", 0.0)),
+                "correct_count": int(scoring_result.get("correct_count", 0)),
+                "incorrect_count": int(scoring_result.get("incorrect_count", 0)),
+                "unanswered_count": int(scoring_result.get("unanswered_count", 0)),
+                "total_questions": int(scoring_result.get("total_questions", 0)),
+                "subject_breakdown": scoring_result.get("subject_breakdown", {}),
+                "submission_reference": scoring_result.get("reference", ""),
+                "submitted_at": now_iso,
+            })
+        db.table("candidates").update({"metadata": meta}).eq("id", cand_uuid).execute()
+    except Exception as e:
+        logger.error(f"Error updating candidate metadata in Cloud DB: {e}")
+
+    return True

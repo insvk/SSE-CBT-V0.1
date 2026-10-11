@@ -689,19 +689,18 @@ def purge_all_questions(user_context: dict = Depends(require_admin_user)):
         q_res = db.table("question_bank").select("id").eq("tenant_id", tid).execute()
         all_q_ids = [str(q["id"]) for q in (q_res.data or []) if q.get("id")]
 
-        # 2. Cascade delete all responses referencing these questions
-        if all_q_ids:
-            _cascade_delete_responses_for_questions(db, all_q_ids)
-
-        # 3. Also cascade delete responses for any exam attempts under this tenant
+        # 2. Cascade delete all responses under tenant
         try:
-            att_res = db.table("exam_attempts").select("id").eq("tenant_id", tid).execute()
-            att_ids = [str(a["id"]) for a in (att_res.data or []) if a.get("id")]
-            for i in range(0, len(att_ids), 40):
-                chunk = att_ids[i:i + 40]
-                db.table("responses").delete().in_("attempt_id", chunk).execute()
-        except Exception as att_err:
-            logger.warning("Attempt response cleanup error: %s", att_err)
+            db.table("responses").delete().eq("tenant_id", tid).execute()
+        except Exception as t_err:
+            logger.warning("Tenant responses cleanup error: %s", t_err)
+
+        # 3. Explicitly cascade delete responses referencing any of these question IDs
+        for qid in all_q_ids:
+            try:
+                db.table("responses").delete().eq("question_id", qid).execute()
+            except Exception:
+                pass
 
         # 4. Perform question bank deletion
         res = db.table("question_bank").delete().eq("tenant_id", tid).execute()

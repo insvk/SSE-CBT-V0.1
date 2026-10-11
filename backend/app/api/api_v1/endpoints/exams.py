@@ -168,14 +168,17 @@ def _format_exam_item(e: dict, total_candidates: int = 1) -> dict:
         try:
             st_utc = datetime.fromisoformat(str(start_time_raw).replace("Z", "+00:00"))
             et_utc = datetime.fromisoformat(str(end_time_raw).replace("Z", "+00:00"))
-            if now_utc < st_utc:
+            if now_utc < st_utc and current_state != "active":
                 current_state = "scheduled"
             elif st_utc <= now_utc <= et_utc and current_state != "concluded":
                 current_state = "active"
-            elif now_utc > et_utc:
+            elif now_utc > et_utc and current_state not in ("active", "published"):
                 current_state = "concluded"
         except Exception:
             pass
+
+    if exam_id_str == DEFAULT_EXAM_UUID and current_state != "draft":
+        current_state = "active"
 
     q_ids = cfg.get("question_ids") or []
     question_count = len(q_ids) if q_ids else 20
@@ -787,7 +790,7 @@ def get_exam_session(exam_id: str):
         }
 
     # 2. Scheduled expiration: current time is past scheduled end time
-    if end_time_ts and now > end_time_ts:
+    if end_time_ts and now > end_time_ts and exam_state not in ("active", "published") and session.get("status") != "active":
         session["status"] = "concluded"
         return {
             "exam_id": exam_id,
@@ -811,21 +814,10 @@ def get_exam_session(exam_id: str):
     else:
         time_remaining = max(0, int(session["deadline"] - now))
 
-    # If scheduled end_time exists, cap time_remaining to not exceed scheduled end
-    if end_time_ts:
+    # If scheduled end_time exists and is in future, cap time_remaining to not exceed scheduled end
+    if end_time_ts and end_time_ts > now:
         secs_to_end = max(0, int(end_time_ts - now))
         time_remaining = min(time_remaining, secs_to_end)
-
-    if time_remaining == 0 and session["status"] == "active":
-        session["status"] = "expired"
-
-    now = time.time()
-
-    if session.get("is_paused"):
-        paused_at = session.get("paused_at", now)
-        time_remaining = max(0, int(session["deadline"] - paused_at))
-    else:
-        time_remaining = max(0, int(session["deadline"] - now))
 
     if time_remaining == 0 and session["status"] == "active":
         session["status"] = "expired"
@@ -854,6 +846,19 @@ async def reset_exam_session(exam_id: str, duration_minutes: int = 180):
     }
     if norm_id in LATEST_SUBMISSION_RESULT:
         del LATEST_SUBMISSION_RESULT[norm_id]
+
+    try:
+        from datetime import timedelta
+        db = get_db()
+        new_start = datetime.now(timezone.utc).isoformat()
+        new_end = (datetime.now(timezone.utc) + timedelta(minutes=duration_minutes)).isoformat()
+        db.table("exams").update({
+            "start_time": new_start,
+            "end_time": new_end,
+            "state": "active",
+        }).eq("id", norm_id).execute()
+    except Exception as db_err:
+        logger.warning(f"Failed updating exam schedule on reset: {db_err}")
 
     # Live WebSocket Broadcast across candidate channel and admin command centre
     await ws_manager.broadcast(f"exam_{exam_id}", {
@@ -1121,7 +1126,7 @@ async def candidate_admissions_check_in(exam_id: str, payload: AdmissionsCheckIn
                 break
 
     if not cands:
-        cand_id = get_or_create_candidate_id(db, reg_no=reg_no or roll_no, candidate_name="NARESH S" if (reg_no == "5254740(V4.3.7)" or not reg_no) else None)
+        cand_id = get_or_create_candidate_id(db, reg_no=reg_no or roll_no, candidate_name=None)
         cres = db.table("candidates").select("*").eq("id", cand_id).limit(1).execute()
         cands = cres.data or []
 
@@ -1554,16 +1559,6 @@ def get_attendance_roster(exam_id: str, format: Optional[str] = None):
         logger.warning("Error fetching candidates for roster: %s", e)
         candidates = []
 
-    has_naresh = any(c.get("full_name") == "NARESH S" or c.get("registration_number") == "5254740(V4.3.7)" for c in candidates)
-    if not has_naresh:
-        try:
-            cand_id = get_or_create_candidate_id(db, reg_no="5254740(V4.3.7)", candidate_name="NARESH S")
-            res_n = db.table("candidates").select("*").eq("id", cand_id).limit(1).execute()
-            if res_n.data:
-                candidates.insert(0, res_n.data[0])
-        except Exception as e:
-            logger.warning("Could not auto-seed default candidate in roster: %s", e)
-
     roster = []
     for idx, c in enumerate(candidates, start=1):
         reg = c.get("registration_number", f"SSE-A-CBT-000{idx}")
@@ -1572,7 +1567,7 @@ def get_attendance_roster(exam_id: str, format: Optional[str] = None):
         extra_mins = session.get("candidate_accommodations", {}).get(reg, 0)
         
         status = "In Progress" if session["status"] == "active" else session["status"].capitalize()
-        answered_count = len(session.get("responses", {})) if reg == "5254740(V4.3.7)" else 0
+        answered_count = len(session.get("responses", {})) if reg in ("SSE-A-CBT-0001", "5254740(V4.3.7)") else 0
 
         roster.append({
             "s_no": idx,
@@ -1647,6 +1642,7 @@ def get_exam_questions(exam_id: str):
     norm_id = _resolve_exam_id(exam_id)
 
     target_q_ids = []
+    cfg = {}
     try:
         ex_res = db.table("exams").select("config").eq("id", norm_id).limit(1).execute()
         if ex_res.data:
@@ -1666,6 +1662,27 @@ def get_exam_questions(exam_id: str):
             # Default: fetch user-uploaded questions from Cloud DB
             res = db.table("question_bank").select("id, content, options, subject, difficulty, type").order("created_at", desc=True).limit(50).execute()
             rows = res.data or []
+
+        if not rows:
+            # Fallback to authoritative baseline exam questions if database is unpopulated
+            rows = [
+                {
+                    "id": "01f1db8c-9b61-4f92-962d-e977bd1dcc4a",
+                    "content": {"statement": "What does HTTP stand for in networking?"},
+                    "options": ["HyperText Transfer Protocol", "High Tech Transmission Program", "Hyper Transfer Text Path", "None of the above"],
+                    "subject": "Computer Science",
+                    "difficulty": "Easy",
+                    "type": "mcq_single"
+                },
+                {
+                    "id": "6c4ce646-d628-4fe2-a1b2-85e02ce6b8ee",
+                    "content": {"statement": "What is the speed of light in vacuum?"},
+                    "options": ["3 x 10^8 m/s", "3 x 10^6 m/s", "1.5 x 10^8 m/s", "3 x 10^10 m/s"],
+                    "subject": "Physics",
+                    "difficulty": "Easy",
+                    "type": "mcq_single"
+                }
+            ]
 
         # Extract enabled sections configured by Admin
         enabled_sections = []
@@ -1773,15 +1790,83 @@ def get_exam_results_summary(exam_id: str):
     session = _get_or_create_session(norm_id)
     active_responses = list(session.get("responses", {}).values())
 
-    leaderboard = []
+    attempts_by_cid = {str(a.get("candidate_id")): a for a in attempts}
+    leaderboard_valid = []
+    leaderboard_disq = []
     scores = []
 
     for idx, c in enumerate(candidates, start=1):
+        cid = str(c["id"])
         reg = c.get("registration_number", f"SSE-A-CBT-{idx:04d}")
         meta = c.get("metadata") or {}
         name = c.get("full_name", "Registered Candidate")
+        att = attempts_by_cid.get(cid)
+        att_status = att.get("status") if att else None
 
-        # Use responses if available
+        # Check disqualification status in DB and session
+        is_disq = (
+            meta.get("disqualified") is True
+            or meta.get("exam_status") == "invalidated"
+            or att_status == "invalidated"
+            or reg in session.get("disqualified_candidates", {})
+        )
+
+        if is_disq:
+            disq_reason = meta.get("disqualification_reason") or (session.get("disqualified_candidates", {}).get(reg, {}).get("reason") if isinstance(session.get("disqualified_candidates", {}).get(reg), dict) else None) or "4 Security Violations Exceeded"
+            leaderboard_disq.append({
+                "candidate_id": cid,
+                "registration_number": reg,
+                "roll_number": meta.get("roll_number") or reg,
+                "full_name": name,
+                "candidate_name": name,
+                "score": 0.0,
+                "raw_score": 0.0,
+                "max_marks": 0.0,
+                "percentage": 0.0,
+                "percentile": 0.0,
+                "accuracy": 0,
+                "correct_count": 0,
+                "incorrect_count": 0,
+                "unanswered_count": len(questions_map),
+                "status": "Disqualified",
+                "disqualified": True,
+                "disqualification_reason": disq_reason,
+                "terminal": meta.get("assigned_terminal") or f"T-A-{idx:03d}",
+            })
+            continue
+
+        # Check if score is already saved in Cloud DB metadata
+        if "score" in meta and meta.get("exam_status") == "submitted":
+            total_sc = float(meta.get("score", 0.0))
+            max_sc = float(meta.get("max_possible", 80.0))
+            pct = float(meta.get("percentage", 0.0))
+            pr = float(meta.get("percentile", 50.0))
+            cor = int(meta.get("correct_count", 0))
+            inc = int(meta.get("incorrect_count", 0))
+            unans = int(meta.get("unanswered_count", 0))
+            scores.append(total_sc)
+            leaderboard_valid.append({
+                "candidate_id": cid,
+                "registration_number": reg,
+                "roll_number": meta.get("roll_number") or reg,
+                "full_name": name,
+                "candidate_name": name,
+                "score": total_sc,
+                "raw_score": total_sc,
+                "max_marks": max_sc,
+                "percentage": pct,
+                "percentile": pr,
+                "accuracy": round((cor / max(cor + inc, 1)) * 100, 1),
+                "correct_count": cor,
+                "incorrect_count": inc,
+                "unanswered_count": unans,
+                "status": "Submitted",
+                "disqualified": False,
+                "terminal": meta.get("assigned_terminal") or f"T-A-{idx:03d}",
+            })
+            continue
+
+        # Calculate score from responses if available
         resp_list = active_responses if reg in ("5254740(V4.3.7)", "SSE-A-CBT-0001", "SSEC-A-CBT-0001") else []
         sc_res = ScoringEngine.calculate_score(
             responses=resp_list,
@@ -1790,26 +1875,37 @@ def get_exam_results_summary(exam_id: str):
         )
         total_sc = sc_res["total_score"]
         pct = sc_res["percentage"]
-        scores.append(total_sc)
+        if total_sc > 0 or att_status == "submitted":
+            scores.append(total_sc)
 
-        leaderboard.append({
-            "candidate_id": str(c["id"]),
+        leaderboard_valid.append({
+            "candidate_id": cid,
             "registration_number": reg,
             "roll_number": meta.get("roll_number") or reg,
             "full_name": name,
+            "candidate_name": name,
             "score": total_sc,
+            "raw_score": total_sc,
             "max_marks": sc_res["max_possible_score"],
             "percentage": pct,
+            "percentile": sc_res["percentile"],
+            "accuracy": round((sc_res["correct_count"] / max(sc_res["correct_count"] + sc_res["incorrect_count"], 1)) * 100, 1),
             "correct_count": sc_res["correct_count"],
             "incorrect_count": sc_res["incorrect_count"],
             "unanswered_count": sc_res["unanswered_count"],
-            "status": "Submitted" if total_sc > 0 else "In Progress",
+            "status": "Submitted" if (total_sc > 0 or att_status == "submitted") else "In Progress",
+            "disqualified": False,
             "terminal": meta.get("assigned_terminal") or f"T-A-{idx:03d}",
         })
 
-    leaderboard.sort(key=lambda x: x["score"], reverse=True)
-    for r_idx, item in enumerate(leaderboard, start=1):
+    leaderboard_valid.sort(key=lambda x: x["score"], reverse=True)
+    for r_idx, item in enumerate(leaderboard_valid, start=1):
         item["rank"] = r_idx
+
+    for item in leaderboard_disq:
+        item["rank"] = "DISQ"
+
+    leaderboard = leaderboard_valid + leaderboard_disq
 
     avg_score = round(sum(scores) / len(scores), 2) if scores else 0.0
     highest_score = max(scores, default=0.0)
@@ -1938,7 +2034,23 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
 
         # Tab switches / violations count
         tab_violations = meta.get("tab_violations", 0)
-        exam_status = "SUBMITTED" if (total_sc > 0 or session["status"] == "submitted") else "IN_PROGRESS"
+        is_disq = (
+            meta.get("disqualified") is True
+            or meta.get("exam_status") == "invalidated"
+            or (attempts_by_cand.get(cid) and attempts_by_cand[cid].get("status") == "invalidated")
+            or reg_no in session.get("disqualified_candidates", {})
+        )
+
+        if is_disq:
+            disq_reason = meta.get("disqualification_reason") or (session.get("disqualified_candidates", {}).get(reg_no, {}).get("reason") if isinstance(session.get("disqualified_candidates", {}).get(reg_no), dict) else None) or "4 Security Violations Exceeded"
+            total_sc = 0.0
+            pct = 0.0
+            accuracy = 0.0
+            exam_status = "DISQUALIFIED"
+            remarks = f"DISQUALIFIED ({disq_reason})"
+        else:
+            exam_status = "SUBMITTED" if (total_sc > 0 or session["status"] == "submitted") else "IN_PROGRESS"
+            remarks = "Accommodations: PwD Relief" if meta.get("is_pwd") else "Compliant / Hall Certified"
 
         rows_data.append({
             "registration_number": reg_no,
@@ -1964,16 +2076,24 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
             "start_time_ist": meta.get("slot_timing_ist") or "Subject Paper Slot A",
             "submission_time_ist": now_ist,
             "time_taken_mins": dur_mins,
-            "remarks": "Accommodations: PwD Relief" if meta.get("is_pwd") else "Compliant / Hall Certified",
+            "remarks": remarks,
         })
 
-    # Sort by score descending to determine official merit rank
-    rows_data.sort(key=lambda x: x["score"], reverse=True)
-    total_cand_count = len(rows_data)
-    for r_idx, row in enumerate(rows_data, start=1):
+    # Separate valid and disqualified rows for official merit ranking
+    valid_rows = [r for r in rows_data if r["status"] != "DISQUALIFIED"]
+    disq_rows = [r for r in rows_data if r["status"] == "DISQUALIFIED"]
+
+    valid_rows.sort(key=lambda x: x["score"], reverse=True)
+    total_valid = len(valid_rows)
+    for r_idx, row in enumerate(valid_rows, start=1):
         row["rank"] = r_idx
-        # Calculate percentile: (total - rank) / total * 100
-        row["percentile"] = round(((total_cand_count - r_idx) / max(total_cand_count - 1, 1)) * 100.0, 2) if total_cand_count > 1 else 99.0
+        row["percentile"] = round(((total_valid - r_idx) / max(total_valid - 1, 1)) * 100.0, 2) if total_valid > 1 else 99.0
+
+    for row in disq_rows:
+        row["rank"] = "DISQ"
+        row["percentile"] = 0.0
+
+    rows_data = valid_rows + disq_rows
 
     timestamp_suffix = int(time.time())
 
@@ -2161,7 +2281,7 @@ async def save_response(exam_id: str, payload: ResponsePayload):
         "type": "CANDIDATE_RESPONSE",
         "exam_id": exam_id,
         "candidate_id": payload.candidate_id or persist_res.get("candidate_id"),
-        "candidate_name": payload.candidate_name or "NARESH S",
+        "candidate_name": payload.candidate_name or "Candidate",
         "question_id": q_id,
         "question_uuid": persist_res.get("question_uuid"),
         "answer": payload.answer,
@@ -2188,39 +2308,159 @@ async def save_response(exam_id: str, payload: ResponsePayload):
     )
 
 
+@router.post("/{exam_id}/disqualify")
+async def disqualify_exam_candidate(exam_id: str, payload: Optional[Dict[str, Any]] = None):
+    """
+    Terminates candidate attempt due to security malpractice/violations.
+    Nullifies scores, marks attempt status as 'invalidated' in Supabase Cloud DB,
+    persists disqualification record in candidate metadata, and broadcasts to admin telemetry.
+    """
+    payload = payload or {}
+    norm_id = _resolve_exam_id(exam_id)
+    cand_id = payload.get("candidate_id")
+    cand_name = payload.get("candidate_name") or "Candidate"
+    reg_no = payload.get("reg_no") or "SSE-A-CBT-0001"
+    reason = payload.get("reason") or "4 Security Violations Exceeded"
+    v_count = payload.get("violation_count", 4)
+    ref = f"DISQ-{uuid.uuid4().hex[:6].upper()}"
+
+    db = get_db()
+    session = _get_or_create_session(norm_id)
+
+    # 1. Update session state
+    if "disqualified_candidates" not in session:
+        session["disqualified_candidates"] = {}
+    session["disqualified_candidates"][reg_no] = {
+        "candidate_id": cand_id,
+        "candidate_name": cand_name,
+        "reason": reason,
+        "timestamp": time.time(),
+        "reference": ref,
+    }
+
+    # 2. Update Cloud DB attempt and candidate metadata
+    actual_cand_id = cand_id
+    if not actual_cand_id or len(str(actual_cand_id)) < 10:
+        actual_cand_id = get_or_create_candidate_id(db, reg_no, cand_name)
+
+    mark_attempt_submitted_cloud_db(
+        db=db,
+        tenant_id=DEFAULT_TENANT_ID,
+        exam_id=exam_id,
+        candidate_id=actual_cand_id,
+        reg_no=reg_no,
+        is_disqualified=True,
+        disqualification_reason=reason,
+    )
+
+    # 3. Broadcast live alert to Admin Command Centre
+    await ws_manager.broadcast("admin_feed", {
+        "type": "CANDIDATE_DISQUALIFIED",
+        "exam_id": exam_id,
+        "candidate_name": cand_name,
+        "reg_no": reg_no,
+        "reference": ref,
+        "reason": reason,
+        "score": 0.0,
+        "status": "Disqualified",
+        "timestamp": time.time(),
+    })
+
+    result_payload = {
+        "status": "disqualified",
+        "message": f"Candidate disqualified: {reason}. Examination result nullified.",
+        "reference": ref,
+        "score": 0.0,
+        "max_possible": 0.0,
+        "percentage": 0.0,
+        "percentile": 0.0,
+        "disqualified": True,
+        "reason": reason,
+        "candidate_name": cand_name,
+        "registration_number": reg_no,
+        "scoring_details": {
+            "total_score": 0.0,
+            "max_possible_score": 0.0,
+            "percentage": 0.0,
+            "percentile": 0.0,
+            "correct_count": 0,
+            "incorrect_count": 0,
+            "unanswered_count": 0,
+            "total_questions": 0,
+            "subject_breakdown": {},
+        }
+    }
+
+    LATEST_SUBMISSION_RESULT[reg_no] = result_payload
+    LATEST_SUBMISSION_RESULT[str(actual_cand_id)] = result_payload
+    LATEST_SUBMISSION_RESULT[norm_id] = result_payload
+    LATEST_SUBMISSION_RESULT["latest"] = result_payload
+
+    return result_payload
+
+
 @router.post("/{exam_id}/submit")
-async def submit_exam(exam_id: str):
+async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
     """
     Authoritative server-side submission.
     Evaluates all responses against database answer keys and computes scores.
-    Persists submission status in Supabase Cloud DB and notifies admin command centre live.
+    Persists submission status and calculated scores in Supabase Cloud DB and notifies admin command centre live.
     """
+    payload = payload or {}
+    if payload.get("is_disqualified"):
+        return await disqualify_exam_candidate(exam_id, payload)
+
     norm_id = _resolve_exam_id(exam_id)
     session = _get_or_create_session(norm_id)
+    cand_id = payload.get("candidate_id")
+    cand_name = payload.get("candidate_name") or session.get("candidate_name") or "Candidate"
+    reg_no = payload.get("reg_no") or session.get("reg_no") or "SSE-A-CBT-0001"
 
-    if session.get("status") == "submitted" and norm_id in LATEST_SUBMISSION_RESULT:
-        # Idempotent return of already submitted result
-        cached = LATEST_SUBMISSION_RESULT[norm_id]
-        return {
-            "status": "success",
-            "message": "Exam submitted successfully.",
-            "reference": cached["reference"],
-            "score": cached.get("score"),
-            "percentile": cached.get("percentile"),
-        }
+    db = get_db()
+    actual_cand_id = cand_id
+    if not actual_cand_id or len(str(actual_cand_id)) < 10:
+        actual_cand_id = get_or_create_candidate_id(db, reg_no, cand_name)
 
     # Fetch authoritative answer keys from database
-    db = get_db()
     questions_map = {}
     try:
-        res = db.table("question_bank").select("id, correct_answer, subject, type").execute()
+        res = db.table("question_bank").select("id, correct_answer, options, subject, type, status, is_dropped").execute()
         for r in (res.data or []):
             questions_map[str(r["id"])] = r
     except Exception as e:
         logger.warning("Could not fetch answer keys from database: %s", e)
 
-    # Run Scoring Engine directly on authoritative questions from Cloud DB
-    recorded_responses = list(session["responses"].values())
+    # Gather recorded responses from both Cloud DB and session
+    recorded_responses = []
+    if actual_cand_id:
+        try:
+            att_res = db.table("exam_attempts").select("id").eq("exam_id", norm_id).eq("candidate_id", actual_cand_id).limit(1).execute()
+            if att_res.data:
+                att_id = att_res.data[0]["id"]
+                resp_res = db.table("responses").select("question_id, response_data, status").eq("attempt_id", att_id).execute()
+                for r in (resp_res.data or []):
+                    r_data = r.get("response_data")
+                    ans_val = r_data.get("answer") if isinstance(r_data, dict) else r_data
+                    recorded_responses.append({
+                        "question_id": str(r["question_id"]),
+                        "answer": ans_val,
+                        "response_data": ans_val,
+                        "status": r.get("status"),
+                    })
+        except Exception as e:
+            logger.warning(f"Error reading responses from Cloud DB: {e}")
+
+    session_resps = session.get("responses", {})
+    existing_qids = {r["question_id"] for r in recorded_responses}
+    for qid, s_resp in session_resps.items():
+        if qid not in existing_qids:
+            recorded_responses.append(s_resp)
+        else:
+            for r in recorded_responses:
+                if r["question_id"] == qid and r.get("response_data") is None and s_resp.get("response_data") is not None:
+                    r["response_data"] = s_resp.get("response_data")
+                    r["answer"] = s_resp.get("answer")
+
     scoring_result = ScoringEngine.calculate_score(
         responses=recorded_responses,
         questions_map=questions_map,
@@ -2231,19 +2471,24 @@ async def submit_exam(exam_id: str):
     session["status"] = "submitted"
     session["submission_time"] = time.time()
     session["reference"] = ref
+    scoring_result["reference"] = ref
 
-    # 1. Update Cloud DB Attempt Status
+    # 1. Update Cloud DB Attempt Status & Candidate Metadata
     mark_attempt_submitted_cloud_db(
         db=db,
         tenant_id=DEFAULT_TENANT_ID,
         exam_id=exam_id,
+        candidate_id=actual_cand_id,
+        reg_no=reg_no,
+        scoring_result=scoring_result,
     )
 
     # 2. Broadcast Live Submission to Admin Command Centre
     await ws_manager.broadcast("admin_feed", {
         "type": "CANDIDATE_SUBMITTED",
         "exam_id": exam_id,
-        "candidate_name": "NARESH S",
+        "candidate_name": cand_name,
+        "reg_no": reg_no,
         "reference": ref,
         "score": scoring_result["total_score"],
         "max_possible": scoring_result["max_possible_score"],
@@ -2260,73 +2505,143 @@ async def submit_exam(exam_id: str):
         "max_possible": scoring_result["max_possible_score"],
         "percentage": scoring_result["percentage"],
         "percentile": scoring_result["percentile"],
+        "candidate_name": cand_name,
+        "registration_number": reg_no,
         "scoring_details": scoring_result,
     }
 
     LATEST_SUBMISSION_RESULT[norm_id] = result_payload
-    # Also store for legacy lookup
     LATEST_SUBMISSION_RESULT[exam_id] = result_payload
+    LATEST_SUBMISSION_RESULT[reg_no] = result_payload
+    LATEST_SUBMISSION_RESULT[str(actual_cand_id)] = result_payload
     LATEST_SUBMISSION_RESULT["latest"] = result_payload
 
     return result_payload
 
 
 @router.get("/{exam_id}/result")
-def get_exam_result(exam_id: str):
+def get_exam_result(
+    exam_id: str,
+    candidate_id: Optional[str] = None,
+    reg_no: Optional[str] = None,
+):
     """
     Returns authoritative scorecard data for display on scorecard.html.
-    Eliminates fake/mocked scorecard display.
+    Loads candidate data and scores directly from Supabase Cloud DB.
     """
     norm_id = _resolve_exam_id(exam_id)
-    result = LATEST_SUBMISSION_RESULT.get(norm_id) or LATEST_SUBMISSION_RESULT.get("latest")
+    db = get_db()
+    session = _get_or_create_session(norm_id)
 
-    if not result:
-        # Check DB for completed attempt
+    # 1. Check Cloud DB candidate record first
+    target_cand = None
+    if candidate_id:
         try:
-            db = get_db()
-            att = db.table("exam_attempts").select("*").eq("exam_id", norm_id).order("created_at", desc=True).limit(1).execute()
-            if att.data and len(att.data) > 0:
-                first = att.data[0]
-                tot_q = int(first.get("total_questions") or 20)
-                sc = float(first.get("score") or 0.0)
-                max_sc = float(tot_q * 4)
-                pct = round((sc / max_sc * 100.0), 2) if max_sc > 0 else 0.0
-                result = {
-                    "status": "success",
-                    "reference": f"SSE-{str(first.get('id', uuid.uuid4().hex[:6])).upper()[:8]}",
-                    "score": sc,
-                    "max_possible": max_sc,
-                    "percentage": pct,
-                    "percentile": 96.5,
-                    "scoring_details": {
-                        "total_score": sc,
-                        "correct_count": int(sc / 4) if sc > 0 else 0,
-                        "incorrect_count": 0,
-                        "unanswered_count": max(0, tot_q - int(sc / 4)),
-                    },
-                }
+            c_res = db.table("candidates").select("*").eq("id", candidate_id).limit(1).execute()
+            if c_res.data:
+                target_cand = c_res.data[0]
+        except Exception:
+            pass
+    if not target_cand and reg_no:
+        try:
+            c_res = db.table("candidates").select("*").eq("registration_number", reg_no.strip()).limit(1).execute()
+            if c_res.data:
+                target_cand = c_res.data[0]
+        except Exception:
+            pass
+    if not target_cand:
+        try:
+            c_res = db.table("candidates").select("*").order("created_at", desc=False).limit(1).execute()
+            if c_res.data:
+                target_cand = c_res.data[0]
         except Exception:
             pass
 
-    if not result:
-        return {
-            "status": "pending",
-            "candidate_name": "Registered Candidate",
-            "registration_number": "Awaiting Submission",
-            "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
-            "score": "-- / --",
-            "percentile": "--",
-            "reference": "N/A",
-            "scoring_details": None,
-        }
+    if target_cand:
+        meta = target_cand.get("metadata") or {}
+        cand_name = target_cand.get("full_name") or "Candidate"
+        cand_reg = target_cand.get("registration_number") or "SSE-A-CBT-0001"
 
+        # If candidate was disqualified due to violation:
+        if (
+            meta.get("disqualified") is True
+            or meta.get("exam_status") == "invalidated"
+            or cand_reg in session.get("disqualified_candidates", {})
+        ):
+            disq_reason = meta.get("disqualification_reason") or (session.get("disqualified_candidates", {}).get(cand_reg, {}).get("reason") if isinstance(session.get("disqualified_candidates", {}).get(cand_reg), dict) else None) or "4 Security Violations Exceeded"
+            return {
+                "status": "disqualified",
+                "disqualified": True,
+                "reason": disq_reason,
+                "candidate_name": cand_name,
+                "registration_number": cand_reg,
+                "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
+                "reference": meta.get("submission_reference") or f"DISQ-{str(target_cand['id'])[:6].upper()}",
+                "score": 0.0,
+                "max_possible": 0.0,
+                "percentage": 0.0,
+                "percentile": 0.0,
+                "scoring_details": {
+                    "total_score": 0.0,
+                    "max_possible_score": 0.0,
+                    "percentage": 0.0,
+                    "percentile": 0.0,
+                    "correct_count": 0,
+                    "incorrect_count": 0,
+                    "unanswered_count": 0,
+                    "total_questions": 0,
+                    "subject_breakdown": {},
+                }
+            }
+
+        # If candidate submitted and score is stored in DB:
+        if "score" in meta and meta.get("exam_status") == "submitted":
+            sc = float(meta.get("score", 0.0))
+            max_sc = float(meta.get("max_possible", 80.0))
+            return {
+                "status": "success",
+                "disqualified": False,
+                "candidate_name": cand_name,
+                "registration_number": cand_reg,
+                "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
+                "score": sc,
+                "max_possible": max_sc,
+                "percentage": float(meta.get("percentage", 0.0)),
+                "percentile": float(meta.get("percentile", 96.5)),
+                "reference": meta.get("submission_reference") or f"SSE-{str(target_cand['id'])[:6].upper()}",
+                "scoring_details": {
+                    "total_score": sc,
+                    "max_possible_score": max_sc,
+                    "percentage": float(meta.get("percentage", 0.0)),
+                    "percentile": float(meta.get("percentile", 96.5)),
+                    "correct_count": int(meta.get("correct_count", 0)),
+                    "incorrect_count": int(meta.get("incorrect_count", 0)),
+                    "unanswered_count": int(meta.get("unanswered_count", 0)),
+                    "total_questions": int(meta.get("total_questions", 20)),
+                    "subject_breakdown": meta.get("subject_breakdown", {}),
+                }
+            }
+
+    # 2. Check cached submission results
+    result = (
+        (reg_no and LATEST_SUBMISSION_RESULT.get(reg_no))
+        or (candidate_id and LATEST_SUBMISSION_RESULT.get(candidate_id))
+        or LATEST_SUBMISSION_RESULT.get(norm_id)
+        or LATEST_SUBMISSION_RESULT.get("latest")
+    )
+    if result:
+        return result
+
+    # 3. Default awaiting submission payload
     return {
+        "status": "pending",
+        "disqualified": False,
         "candidate_name": "Registered Candidate",
-        "registration_number": f"{result.get('reference', 'SSE-1001')}",
+        "registration_number": "Awaiting Submission",
         "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
-        "score": f"{result.get('score', 0)} / {result.get('max_possible', 20)}",
-        "percentile": f"{result.get('percentile', 90.0)}",
-        "reference": result.get("reference"),
-        "scoring_details": result.get("scoring_details"),
+        "score": "-- / --",
+        "percentile": "--",
+        "reference": "N/A",
+        "scoring_details": None,
     }
 

@@ -4,14 +4,15 @@ Supabase database client initialization.
 Uses the service-role key for server-side operations.
 The client is a singleton initialized on import.
 """
+from typing import Optional
 from supabase import create_client, Client
 from app.core.config import settings
 
 
-_supabase_client: Client | None = None
+_supabase_client: Optional[Client] = None
 
 
-def _init_client() -> Client | None:
+def _init_client() -> Optional[Client]:
     """Initialize Supabase client from settings. Returns None if config is missing."""
     url = settings.SUPABASE_URL
     key = settings.SUPABASE_SERVICE_ROLE_KEY
@@ -48,7 +49,7 @@ def get_db() -> Client:
     return _supabase_client
 
 
-def get_db_or_none() -> Client | None:
+def get_db_or_none() -> Optional[Client]:
     """
     Returns the Supabase client, or None if not initialized.
     Use this only where graceful degradation is acceptable (e.g., health checks).

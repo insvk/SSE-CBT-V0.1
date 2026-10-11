@@ -58,8 +58,8 @@ async def exam_websocket_endpoint(websocket: WebSocket, exam_id: str):
                     st = data.get("state", 1)
                     idemp_key = data.get("idempotency_key") or f"ws_{q_id}_{int(time.time()*1000)}"
                     cand_id = data.get("candidate_id")
-                    reg_no = data.get("reg_no") or "5254740(V4.3.7)"
-                    cand_name = data.get("candidate_name") or "NARESH S"
+                    reg_no = data.get("reg_no") or "SSE-A-CBT-0001"
+                    cand_name = data.get("candidate_name") or "Candidate"
 
                     # 1. Direct Cloud DB Persistence
                     persist_res = persist_response_cloud_db(
@@ -122,7 +122,7 @@ async def exam_websocket_endpoint(websocket: WebSocket, exam_id: str):
                 elif msg_type == "SUBMIT_EXAM":
                     cand_id = data.get("candidate_id")
                     reg_no = data.get("reg_no")
-                    cand_name = data.get("candidate_name") or "NARESH S"
+                    cand_name = data.get("candidate_name") or "Candidate"
 
                     mark_attempt_submitted_cloud_db(
                         db=db,

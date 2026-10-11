@@ -160,30 +160,57 @@ async function loadPortalData(): Promise<void> {
 
     // Fallback check for single exam attempt
     try {
-        const resRes = await fetch('/api/v1/exams/EX-1001/result', { headers: getHeaders() });
+        const reg = localStorage.getItem('reg_no') || '';
+        const candId = localStorage.getItem('candidate_id') || '';
+        const qParams = new URLSearchParams();
+        if (reg) qParams.set('reg_no', reg);
+        if (candId) qParams.set('candidate_id', candId);
+
+        const resRes = await fetch(`/api/v1/exams/EX-1001/result?${qParams.toString()}`, { headers: getHeaders() });
         if (resRes.ok) {
             const resultData = await resRes.json();
             if (resultData && resultData.score !== '-- / --' && ui.candAttemptsBody) {
-                if (ui.candStatStatus) {
-                    ui.candStatStatus.textContent = "Attempt Completed";
-                }
+                if (resultData.disqualified === true || resultData.status === 'disqualified') {
+                    if (ui.candStatStatus) {
+                        ui.candStatStatus.textContent = "Attempt Invalidated (Disqualified)";
+                    }
+                    ui.candAttemptsBody.innerHTML = `
+                        <tr>
+                            <td style="font-family: var(--font-mono); font-weight: 700; color: #dc2626;">EX-1001</td>
+                            <td><strong>${resultData.exam_title || 'NATIONAL ASSESSMENT EXAMINATION'}</strong></td>
+                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(239, 68, 68, 0.1); color: #dc2626; border-radius: 4px;">Disqualified</span></td>
+                            <td>
+                                <span class="status-pill status-suspended" style="background: #fee2e2; color: #b91c1c; font-weight: 700;">
+                                    Scores Annulled (Security Infraction)
+                                </span>
+                            </td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                <a href="/scorecard.html" class="btn btn-outline btn-sm">View Status</a>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    if (ui.candStatStatus) {
+                        ui.candStatStatus.textContent = "Attempt Completed";
+                    }
 
-                ui.candAttemptsBody.innerHTML = `
-                    <tr>
-                        <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">EX-1001</td>
-                        <td><strong>${resultData.exam_title || 'NATIONAL ASSESSMENT EXAMINATION'}</strong></td>
-                        <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot A</span></td>
-                        <td>
-                            <span class="status-pill status-active" style="background: #ecfdf5; color: #047857;">
-                                Score: ${resultData.score} (${resultData.percentile} PR)
-                            </span>
-                        </td>
-                        <td style="text-align: right; white-space: nowrap;">
-                            <a href="/scorecard.html" class="btn btn-outline btn-sm" style="margin-right: 0.35rem;">View Scorecard</a>
-                            <a href="/instructions.html" class="btn btn-primary btn-sm">Retake Exam</a>
-                        </td>
-                    </tr>
-                `;
+                    ui.candAttemptsBody.innerHTML = `
+                        <tr>
+                            <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">EX-1001</td>
+                            <td><strong>${resultData.exam_title || 'NATIONAL ASSESSMENT EXAMINATION'}</strong></td>
+                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot A</span></td>
+                            <td>
+                                <span class="status-pill status-active" style="background: #ecfdf5; color: #047857;">
+                                    Score: ${resultData.score} (${resultData.percentile} PR)
+                                </span>
+                            </td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                <a href="/scorecard.html" class="btn btn-outline btn-sm" style="margin-right: 0.35rem;">View Scorecard</a>
+                                <a href="/instructions.html" class="btn btn-primary btn-sm">Retake Exam</a>
+                            </td>
+                        </tr>
+                    `;
+                }
             }
         }
     } catch (_) {}
@@ -198,8 +225,8 @@ const admitReg = document.getElementById('admit-reg');
 
 if (btnViewAdmit && modalAdmit) {
     btnViewAdmit.addEventListener('click', async () => {
-        const name = localStorage.getItem('candidate_name') || 'NARESH S';
-        const reg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        const name = localStorage.getItem('candidate_name') || 'Candidate Name';
+        const reg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
         if (admitName) admitName.textContent = name;
         if (admitReg) admitReg.textContent = reg;
 

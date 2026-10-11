@@ -70,6 +70,10 @@ class ScoringEngine:
 
             resp = response_by_qid.get(q_id)
             cand_raw = resp.get("response_data") if resp else None
+            if isinstance(cand_raw, dict):
+                cand_raw = cand_raw.get("answer", cand_raw.get("response", None))
+            if cand_raw is None and resp and "answer" in resp:
+                cand_raw = resp["answer"]
 
             # Check if answered
             is_answered = cand_raw is not None and str(cand_raw).strip() != "" and cand_raw != "null"
@@ -122,6 +126,24 @@ class ScoringEngine:
                 cand_norm = cls.normalize_answer(cand_raw)
                 correct_norm = cls.normalize_answer(correct_raw)
                 is_correct = cand_norm == correct_norm
+
+                # Also match against option text or index if options list is present
+                options = q_data.get("options")
+                if not is_correct and options and isinstance(options, list):
+                    try:
+                        cand_idx = int(cand_raw)
+                        if 0 <= cand_idx < len(options):
+                            if str(options[cand_idx]).strip().lower() == str(correct_raw).strip().lower():
+                                is_correct = True
+                    except (ValueError, TypeError):
+                        pass
+
+                    if not is_correct and isinstance(cand_raw, str):
+                        for opt_idx, opt_text in enumerate(options):
+                            if str(opt_text).strip().lower() == cand_raw.strip().lower():
+                                if cls.normalize_answer(opt_idx) == correct_norm:
+                                    is_correct = True
+                                break
 
             if is_correct:
                 total_score += default_correct

@@ -19,7 +19,7 @@ let allQuestions: ExamQuestion[] = [];
 let currentQuestionIndex = 0;
 let activeSection = "MATH-1";
 let configuredSections: string[] = ["MATH-1", "MATH-2", "PHYSICS", "CHEMISTRY"];
-let isAiCameraEnabled = true;
+let isAiCameraEnabled = false;
 let activeCameraMediaStream: MediaStream | null = null;
 
 // States: 0=Not Visited, 1=Answered, 2=Marked for Review, 3=Answered & Marked for Review, 4=Not Answered
@@ -194,7 +194,12 @@ function renderPalette(): void {
             btn.classList.add('active');
         }
 
-        btn.onclick = () => loadQuestion(idx);
+        btn.onclick = () => {
+            loadQuestion(idx);
+            if (window.innerWidth < 1024) {
+                closeMobilePaletteDrawer();
+            }
+        };
         ui.palette.appendChild(btn);
     });
 
@@ -377,12 +382,63 @@ function triggerTerminalForceLock(reason: string): void {
         lockOverlay.classList.add('active');
     }
     if (timerInterval) clearInterval(timerInterval);
-    performFinalSubmission();
+    handleViolationTermination(reason);
+}
+
+async function handleViolationTermination(reason: string): Promise<void> {
+    if (isSubmitting) return;
+    isSubmitting = true;
+
+    const candId = localStorage.getItem('candidate_id') || '';
+    const candName = localStorage.getItem('candidate_name') || 'Candidate';
+    const regNo = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+
+    try {
+        const res = await fetch(`${API_BASE}/${EXAM_ID}/disqualify`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                candidate_id: candId,
+                candidate_name: candName,
+                reg_no: regNo,
+                reason: reason,
+                violation_count: violationCount
+            })
+        });
+        const data = res.ok ? await res.json() : null;
+        const resultRecord = {
+            status: 'disqualified',
+            score: 'DISQUALIFIED',
+            max_possible: 0,
+            percentile: 'N/A',
+            disqualified: true,
+            reason: reason,
+            reference: data?.reference || `DISQ-${Date.now().toString(36).toUpperCase()}`
+        };
+        sessionStorage.setItem('latest_result', JSON.stringify(resultRecord));
+        setTimeout(() => {
+            window.location.href = '/scorecard.html';
+        }, 2200);
+    } catch (_) {
+        const resultRecord = {
+            status: 'disqualified',
+            score: 'DISQUALIFIED',
+            max_possible: 0,
+            percentile: 'N/A',
+            disqualified: true,
+            reason: reason,
+            reference: `DISQ-${Date.now().toString(36).toUpperCase()}`
+        };
+        sessionStorage.setItem('latest_result', JSON.stringify(resultRecord));
+        setTimeout(() => {
+            window.location.href = '/scorecard.html';
+        }, 2200);
+    }
 }
 
 function handleExamSocketMessage(msg: any): void {
     if (msg.type === 'TIME_EXTENDED' || msg.type === 'INDIVIDUAL_TIME_EXTENDED') {
-        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
         if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg) {
             const extraMins = msg.extra_minutes || 15;
             currentRemainingSeconds += extraMins * 60;
@@ -394,7 +450,7 @@ function handleExamSocketMessage(msg: any): void {
             showLiveToast(`[ACCOMMODATION] COMPENSATORY TIME: +${extraMins} mins added to your exam! (${msg.reason || 'Accommodations'})`);
         }
     } else if (msg.type === 'EXAM_PAUSED') {
-        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
         if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg) {
             isExamPaused = true;
             const pauseModal = document.getElementById('modal-exam-paused');
@@ -406,7 +462,7 @@ function handleExamSocketMessage(msg: any): void {
             showLiveToast('[ON HOLD] EXAMINATION ON HOLD: Timer frozen by Invigilator.', true);
         }
     } else if (msg.type === 'EXAM_RESUMED') {
-        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
         if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg) {
             isExamPaused = false;
             const pauseModal = document.getElementById('modal-exam-paused');
@@ -417,14 +473,14 @@ function handleExamSocketMessage(msg: any): void {
             showLiveToast('[RESUMED] EXAMINATION RESUMED: Countdown timer restarted.');
         }
     } else if (msg.type === 'TERMINAL_RESEATED') {
-        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
         if (msg.reg_no === myReg) {
             const termEl = document.getElementById('term-display-id');
             if (termEl) termEl.textContent = msg.new_terminal || 'C-043';
             showLiveToast(`Terminal migrated to ${msg.new_terminal}. Answers preserved!`);
         }
     } else if (msg.type === 'TERMINAL_UNLOCKED') {
-        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
         if (!msg.reg_no || msg.reg_no === myReg) {
             const lockOverlay = document.getElementById('modal-terminal-locked');
             if (lockOverlay) lockOverlay.classList.remove('active');
@@ -432,7 +488,7 @@ function handleExamSocketMessage(msg: any): void {
             showLiveToast('Terminal unlocked by Proctor.');
         }
     } else if (msg.type === 'PROCTOR_DIRECTIVE' || msg.type === 'PROCTOR_WARNING') {
-        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
         if (!msg.reg_no || msg.reg_no === myReg) {
             showInvigilatorMessage("[NOTICE]", "Mandatory Proctor Directive", msg.message || "Please return your full attention to the exam terminal screen.", true);
         }
@@ -459,7 +515,7 @@ function handleExamSocketMessage(msg: any): void {
     } else if (msg.type === 'BROADCAST_ANNOUNCEMENT') {
         showInvigilatorMessage("[ALERT]", "Central Invigilator Announcement", msg.message || "Attention all candidates: Please maintain exam focus.");
     } else if (msg.type === 'FORCE_LOCK_TERMINAL' || msg.type === 'LOCK_TERMINAL' || msg.type === 'CANDIDATE_DISQUALIFIED') {
-        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
         const myId = localStorage.getItem('candidate_id') || '';
         if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg || (msg.candidate_id && msg.candidate_id === myId)) {
             triggerTerminalForceLock(msg.reason || "Terminal locked: Candidate disqualified under examination regulations.");
@@ -504,8 +560,8 @@ async function syncResponseToCloud(index: number, state: number): Promise<void> 
 
     const ans = responses[index];
     const candId = localStorage.getItem('candidate_id') || '018d1a55-2959-48c4-b2a4-8a72894512b9';
-    const candName = localStorage.getItem('candidate_name') || 'NARESH S';
-    const regNo = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+    const candName = localStorage.getItem('candidate_name') || 'Candidate';
+    const regNo = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
     const idempKey = `resp_${q.id}_${Date.now()}`;
 
     // 1. Ultra-fast WebSocket dispatch
@@ -677,9 +733,18 @@ async function performFinalSubmission(): Promise<void> {
     }
 
     try {
+        const candId = localStorage.getItem('candidate_id') || '';
+        const candName = localStorage.getItem('candidate_name') || 'Candidate';
+        const regNo = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+
         const res = await fetch(`${API_BASE}/${EXAM_ID}/submit`, {
             method: 'POST',
             headers: getAuthHeaders(),
+            body: JSON.stringify({
+                candidate_id: candId,
+                candidate_name: candName,
+                reg_no: regNo
+            })
         });
 
         if (res.ok) {
@@ -839,8 +904,8 @@ function openQuestionPaper(): void {
 
 // User Profile Initializer
 function initProfile(): void {
-    const name = localStorage.getItem('candidate_name') || 'NARESH S';
-    const reg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+    const name = localStorage.getItem('candidate_name') || 'Candidate';
+    const reg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
     if (ui.candDisplayName) ui.candDisplayName.textContent = name;
     if (ui.candDisplayReg) ui.candDisplayReg.textContent = reg;
 }
@@ -944,14 +1009,68 @@ if (langSelect) {
     });
 }
 
-// Palette Collapse/Expand Toggle
-if (ui.btnTogglePalette && ui.sidebarPane) {
-    ui.btnTogglePalette.onclick = () => {
-        const isHidden = ui.sidebarPane.style.display === 'none';
-        ui.sidebarPane.style.display = isHidden ? 'flex' : 'none';
-        ui.btnTogglePalette.textContent = isHidden ? '>' : '<';
-    };
+// Palette Collapse/Expand & Drawer Handling
+const examLayoutEl = document.querySelector('.exam-layout');
+const paletteDrawerBackdrop = document.getElementById('palette-drawer-backdrop');
+const btnMobilePaletteToggle = document.getElementById('btn-mobile-palette-toggle');
+const btnClosePaletteDrawer = document.getElementById('btn-close-palette-drawer');
+
+function openMobilePaletteDrawer(): void {
+    if (ui.sidebarPane) {
+        ui.sidebarPane.classList.add('mobile-open');
+    }
+    if (paletteDrawerBackdrop) {
+        paletteDrawerBackdrop.classList.add('active');
+    }
 }
+
+function closeMobilePaletteDrawer(): void {
+    if (ui.sidebarPane) {
+        ui.sidebarPane.classList.remove('mobile-open');
+    }
+    if (paletteDrawerBackdrop) {
+        paletteDrawerBackdrop.classList.remove('active');
+    }
+}
+
+function togglePalette(): void {
+    if (window.innerWidth < 1024) {
+        if (ui.sidebarPane && ui.sidebarPane.classList.contains('mobile-open')) {
+            closeMobilePaletteDrawer();
+        } else {
+            openMobilePaletteDrawer();
+        }
+    } else {
+        if (examLayoutEl) {
+            examLayoutEl.classList.toggle('sidebar-collapsed');
+            const isCollapsed = examLayoutEl.classList.contains('sidebar-collapsed');
+            if (ui.btnTogglePalette) {
+                ui.btnTogglePalette.textContent = isCollapsed ? '<' : '>';
+                ui.btnTogglePalette.setAttribute('aria-expanded', (!isCollapsed).toString());
+                ui.btnTogglePalette.title = isCollapsed ? 'Expand Question Palette' : 'Collapse Question Palette';
+            }
+        }
+    }
+}
+
+if (btnMobilePaletteToggle) {
+    btnMobilePaletteToggle.onclick = openMobilePaletteDrawer;
+}
+if (btnClosePaletteDrawer) {
+    btnClosePaletteDrawer.onclick = closeMobilePaletteDrawer;
+}
+if (paletteDrawerBackdrop) {
+    paletteDrawerBackdrop.onclick = closeMobilePaletteDrawer;
+}
+if (ui.btnTogglePalette) {
+    ui.btnTogglePalette.onclick = togglePalette;
+}
+
+window.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+        closeMobilePaletteDrawer();
+    }
+});
 
 // Manual Sync Button
 if (ui.btnManualSync) {
@@ -1199,8 +1318,8 @@ if (lockedTermTag) lockedTermTag.textContent = currentTerminalId;
 
 // 3. Dynamic Moving Watermark
 function initWatermark(): void {
-    const name = localStorage.getItem('candidate_name') || 'NARESH S';
-    const reg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+    const name = localStorage.getItem('candidate_name') || 'Candidate';
+    const reg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
     const row1 = document.getElementById('wm-row-1');
     const row2 = document.getElementById('wm-row-2');
     const row4 = document.getElementById('wm-row-4');
@@ -1271,10 +1390,6 @@ function initProctorPreview(): void {
             const isCol = card.classList.toggle('collapsed');
             if (minBtn) minBtn.textContent = isCol ? '+' : '−';
         });
-    }
-
-    if (isAiCameraEnabled) {
-        startWebcamStream();
     }
 
     const canvas = document.getElementById('proctor-canvas') as HTMLCanvasElement;
@@ -1388,14 +1503,14 @@ if (btnFontInc) btnFontInc.onclick = () => { if (currentFontScale < 24) setQuest
 
 // 6. Anti-Cheat Kiosk Enforcement (Tab Switch, Shortcuts & Fullscreen)
 let violationCount = 0;
-const MAX_VIOLATIONS = 3;
+const MAX_VIOLATIONS = 4;
 
 function reportSecurityViolation(reason: string): void {
     if (isSubmitting) return;
     violationCount++;
 
-    const candName = localStorage.getItem('candidate_name') || 'NARESH S';
-    const regNo = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+    const candName = localStorage.getItem('candidate_name') || 'Candidate';
+    const regNo = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
 
     // Transmit violation alert directly to Central Invigilator Command Centre
     if (examSocket && examSocket.readyState === WebSocket.OPEN) {
@@ -1411,12 +1526,12 @@ function reportSecurityViolation(reason: string): void {
     }
 
     if (violationCount >= MAX_VIOLATIONS) {
-        triggerTerminalForceLock(`3 Security Violations Exceeded (${reason}). Examination terminated.`);
+        triggerTerminalForceLock(`4 Security Violations Exceeded (${reason}). Examination terminated.`);
     } else {
         const violModal = document.getElementById('modal-violation-alert');
         const badgeText = document.getElementById('viol-badge-text');
         const descText = document.getElementById('viol-desc-text');
-        if (badgeText) badgeText.textContent = `Strike ${violationCount} of 3: ${reason}`;
+        if (badgeText) badgeText.textContent = `Strike ${violationCount} of 4: ${reason}`;
         if (descText) descText.textContent = `Active window focus was lost. This malpractice event was transmitted to Central Invigilator telemetry.`;
         if (violModal) violModal.style.display = 'flex';
     }
@@ -1532,8 +1647,8 @@ if (btnAckInvig) {
         if (invigModal) invigModal.style.display = 'none';
 
         if (lastDirectiveRequiresAck && examSocket && examSocket.readyState === WebSocket.OPEN) {
-            const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
-            const myName = localStorage.getItem('candidate_name') || 'NARESH S';
+            const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+            const myName = localStorage.getItem('candidate_name') || 'Candidate';
             examSocket.send(JSON.stringify({
                 type: 'DIRECTIVE_ACKNOWLEDGED',
                 reg_no: myReg,
