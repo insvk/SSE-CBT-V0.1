@@ -625,10 +625,11 @@ function handleExamSocketMessage(msg: any): void {
         showLiveToast(`⚠️ Examination session reset by Proctor.`);
     } else if (msg.type === 'BROADCAST_ANNOUNCEMENT') {
         showInvigilatorMessage("📢", "Central Invigilator Announcement", msg.message || "Attention all candidates: Please maintain exam focus.");
-    } else if (msg.type === 'FORCE_LOCK_TERMINAL') {
+    } else if (msg.type === 'FORCE_LOCK_TERMINAL' || msg.type === 'LOCK_TERMINAL' || msg.type === 'CANDIDATE_DISQUALIFIED') {
         const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
-        if (!msg.reg_no || msg.reg_no === myReg) {
-            triggerTerminalForceLock(msg.reason || "Terminal locked by Central Invigilator.");
+        const myId = localStorage.getItem('candidate_id') || '';
+        if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg || (msg.candidate_id && msg.candidate_id === myId)) {
+            triggerTerminalForceLock(msg.reason || "Terminal locked: Candidate disqualified under examination regulations.");
         }
     } else if (msg.type === 'ACK') {
         updateSyncTime();
@@ -1752,6 +1753,40 @@ if (canvasScratchpad && modalScratchpad) {
     window.addEventListener('touchend', stopDraw);
 }
 
+// --- AUTHORITATIVE MASTER CLOCK TICKER (time.google.com & IST) ---
+let ntpServerOffsetMs = 0;
+
+async function syncAuthoritativeClock(): Promise<void> {
+    try {
+        const tStart = Date.now();
+        const res = await fetch('/api/v1/system/time');
+        const tEnd = Date.now();
+        if (res.ok) {
+            const data = await res.json();
+            const serverTs = (data.clock?.unix_timestamp || Date.now() / 1000) * 1000;
+            const roundTrip = tEnd - tStart;
+            ntpServerOffsetMs = (serverTs + roundTrip / 2) - tEnd;
+            updateAuthoritativeClockDisplay();
+        }
+    } catch (_) {
+        // Fallback to local clock
+    }
+}
+
+function updateAuthoritativeClockDisplay(): void {
+    const nowWithOffset = Date.now() + ntpServerOffsetMs;
+    // IST is UTC+05:30
+    const istMs = nowWithOffset + (5.5 * 3600 * 1000) + (new Date().getTimezoneOffset() * 60 * 1000);
+    const istDate = new Date(istMs);
+    const hrs = String(istDate.getHours()).padStart(2, '0');
+    const mins = String(istDate.getMinutes()).padStart(2, '0');
+    const secs = String(istDate.getSeconds()).padStart(2, '0');
+    const clockEl = document.getElementById('exam-ist-clock');
+    if (clockEl) {
+        clockEl.textContent = `${hrs}:${mins}:${secs} IST`;
+    }
+}
+
 // INITIALIZE CONSOLE
 initAuthAndRole();
 initProfile();
@@ -1760,4 +1795,7 @@ initProctorPreview();
 startTimer();
 initExamWebSocket();
 fetchRemoteQuestions();
+syncAuthoritativeClock();
+setInterval(updateAuthoritativeClockDisplay, 1000);
+setInterval(syncAuthoritativeClock, 60000);
 

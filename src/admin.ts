@@ -221,91 +221,233 @@ async function loadDashboardSummary(): Promise<void> {
     }
 }
 
+// --- AUTHORITATIVE MASTER EXAM CLOCK (time.google.com & IST) ---
+let ntpOffsetMs = 0;
+let ntpSynced = false;
+
+async function syncMasterClock(): Promise<void> {
+    try {
+        const tStart = Date.now();
+        const res = await fetch('/api/v1/system/time', { headers: getHeaders() });
+        const tEnd = Date.now();
+        if (res.ok) {
+            const data = await res.json();
+            const clock = data.clock || {};
+            const serverTsMs = (clock.unix_timestamp || Date.now() / 1000) * 1000;
+            const roundTrip = tEnd - tStart;
+            ntpOffsetMs = (serverTsMs + roundTrip / 2) - tEnd;
+            ntpSynced = clock.ntp_synced !== false;
+            updateMasterClockDisplay();
+        }
+    } catch (_) {
+        // Local clock fallback
+    }
+}
+
+function updateMasterClockDisplay(): void {
+    const nowWithOffset = Date.now() + ntpOffsetMs;
+    // IST is UTC+05:30: +5.5 hours relative to UTC
+    const istMs = nowWithOffset + (5.5 * 3600 * 1000) + (new Date().getTimezoneOffset() * 60 * 1000);
+    const istDate = new Date(istMs);
+    const hrs = String(istDate.getHours()).padStart(2, '0');
+    const mins = String(istDate.getMinutes()).padStart(2, '0');
+    const secs = String(istDate.getSeconds()).padStart(2, '0');
+    
+    const timeEl = document.getElementById('master-clock-time');
+    if (timeEl) {
+        timeEl.textContent = `${hrs}:${mins}:${secs} IST`;
+    }
+    const badgeEl = document.getElementById('master-clock-badge');
+    if (badgeEl) {
+        badgeEl.textContent = ntpSynced ? 'time.google.com NTP Synced' : 'IST Server Clock Active';
+    }
+}
+
+// --- FILTERING & SELECTION ENGINE ---
+function getFilteredCandidates(): any[] {
+    let list = [...cachedCandidates];
+    const q = (ui.searchInput?.value || ui.topSearchInput?.value || '').trim().toLowerCase();
+    const slotFilter = (document.getElementById('filter-slot') as HTMLSelectElement)?.value || 'ALL';
+    const statusFilter = (document.getElementById('filter-status') as HTMLSelectElement)?.value || 'ALL';
+    const pwdFilter = (document.getElementById('filter-pwd') as HTMLSelectElement)?.value || 'ALL';
+
+    if (q) {
+        list = list.filter((c: any) => 
+            (c.full_name || '').toLowerCase().includes(q) || 
+            (c.registration_number || '').toLowerCase().includes(q) ||
+            (c.roll_number || '').toLowerCase().includes(q) ||
+            (c.assigned_terminal || '').toLowerCase().includes(q) ||
+            (c.email || '').toLowerCase().includes(q)
+        );
+    }
+
+    if (slotFilter !== 'ALL') {
+        list = list.filter((c: any) => (c.batch || 'A').toUpperCase() === slotFilter);
+    }
+
+    if (statusFilter !== 'ALL') {
+        list = list.filter((c: any) => (c.status || 'active').toLowerCase() === statusFilter.toLowerCase());
+    }
+
+    if (pwdFilter === 'PWD') {
+        list = list.filter((c: any) => c.is_pwd === true || c.has_scribe === true);
+    } else if (pwdFilter === 'STANDARD') {
+        list = list.filter((c: any) => !c.is_pwd && !c.has_scribe);
+    }
+
+    return list;
+}
+
+function updateBulkSelectionToolbar(): void {
+    const checked = document.querySelectorAll('.row-check:checked');
+    const toolbar = document.getElementById('bulk-actions-toolbar');
+    const countEl = document.getElementById('bulk-selected-count');
+    if (toolbar && countEl) {
+        if (checked.length > 0) {
+            toolbar.classList.add('active');
+            countEl.textContent = `${checked.length} candidate${checked.length > 1 ? 's' : ''} selected`;
+        } else {
+            toolbar.classList.remove('active');
+        }
+    }
+    if (ui.btnAssign) {
+        ui.btnAssign.disabled = checked.length === 0;
+        ui.btnAssign.textContent = checked.length > 0 ? `Assign to Exam (${checked.length})` : "Assign to Exam";
+    }
+}
+
+function renderCandidateTable(): void {
+    const data = getFilteredCandidates();
+    ui.tbody.innerHTML = '';
+
+    if (data.length === 0) {
+        ui.tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                    No candidates match the active search/filter criteria.
+                </td>
+            </tr>
+        `;
+        updateBulkSelectionToolbar();
+        return;
+    }
+
+    data.forEach((c: any) => {
+        const tr = document.createElement('tr');
+        const initials = (c.full_name || 'CD').split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
+        const status = (c.status || 'active').toLowerCase();
+        const isActive = status === 'active';
+        const isDisqualified = status === 'disqualified';
+        const slot = (c.batch || 'A').toUpperCase();
+        const rollNo = c.roll_number || c.registration_number || `2601${slot}0001`;
+        const category = c.category || 'General';
+        const terminal = c.assigned_terminal || `T-${slot}-01`;
+        const slotTiming = c.slot_timing_ist || '08:30 - 11:30 IST';
+        const reporting = c.reporting_time_ist || '07:30 IST';
+        const isPwd = c.is_pwd || false;
+        const extraMins = c.compensatory_minutes || 0;
+
+        let statusClass = 'status-active';
+        let statusDot = '#10b981';
+        let statusLabel = 'Active';
+        if (isDisqualified) {
+            statusClass = 'status-suspended';
+            statusDot = '#ef4444';
+            statusLabel = 'Debarred';
+        } else if (!isActive) {
+            statusClass = 'status-suspended';
+            statusDot = '#f59e0b';
+            statusLabel = 'Suspended';
+        }
+
+        tr.innerHTML = `
+            <td><input type="checkbox" class="row-check" value="${escapeHtml(c.id)}" data-cand-id="${escapeHtml(c.id)}"></td>
+            <td>
+                <div class="user-cell">
+                    <div class="user-cell-avatar">${initials}</div>
+                    <div class="user-cell-info">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span class="user-cell-name">${escapeHtml(c.full_name)}</span>
+                            <span style="font-size: 0.68rem; font-weight: 700; background: rgba(50, 31, 219, 0.08); color: var(--brand-blue); padding: 1px 5px; border-radius: 4px;">${escapeHtml(category)}</span>
+                        </div>
+                        <span class="user-cell-sub">
+                            Roll: <strong style="color: var(--text-heading); font-family: var(--font-mono);">${escapeHtml(rollNo)}</strong> &bull; ${escapeHtml(c.registration_number)}
+                        </span>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-weight: 800; padding: 0.15rem 0.5rem; background: rgba(79, 70, 229, 0.12); color: var(--brand-blue); border-radius: 4px; font-size: 0.75rem;">
+                            Slot ${escapeHtml(slot)}
+                        </span>
+                        <span style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(reporting)} Rep</span>
+                    </div>
+                    <span style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted);">${escapeHtml(slotTiming)}</span>
+                </div>
+            </td>
+            <td>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-family: var(--font-mono); font-weight: 800; font-size: 0.82rem; color: var(--text-heading);">
+                        💺 ${escapeHtml(terminal)}
+                    </span>
+                    <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">IP: ${escapeHtml(c.ip_address || '10.0.4.12')}</span>
+                </div>
+            </td>
+            <td>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 0.72rem; font-weight: 700; color: #059669;">
+                        ✅ ${escapeHtml(c.biometric_status || 'verified')} (${c.biometric_score || 98.4}%)
+                    </span>
+                    ${isPwd ? `<span style="font-size: 0.68rem; font-weight: 700; color: #b45309; background: #fef3c7; padding: 1px 5px; border-radius: 4px; display: inline-block;">♿ PwD (+${extraMins}m)</span>` : '<span style="font-size: 0.7rem; color: var(--text-muted);">Standard</span>'}
+                </div>
+            </td>
+            <td>
+                <span class="status-pill ${statusClass}">
+                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background: ${statusDot};"></span>
+                    ${statusLabel}
+                </span>
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+                <div class="action-btn-group">
+                    <button class="btn-action-icon" title="View Full Candidate Dossier" onclick="openCandidateDossier('${escapeHtml(c.id)}')">
+                        🪪 Dossier
+                    </button>
+                    <button class="btn-action-icon" title="View & Print Official Admit Card / Hall Ticket" onclick="openAdmitCard('${escapeHtml(c.id)}')">
+                        🎫 Admit Card
+                    </button>
+                    <button class="btn-action-icon" title="Migrate Candidate Shift / Slot" onclick="openShiftReallocation('${escapeHtml(c.id)}')">
+                        🔄 Shift
+                    </button>
+                    <button class="btn-action-icon" title="Manage PwD & Scribe Accommodations" onclick="openAccommodationsManager('${escapeHtml(c.id)}')">
+                        ♿ PwD
+                    </button>
+                    <button class="btn-action-icon" title="Generate Emergency Access PIN" onclick="regenerateEmergencyPin('${escapeHtml(c.id)}')">
+                        🔑 PIN
+                    </button>
+                    <button class="btn-action-icon" style="color: #ef4444;" title="Debar Candidate for Infraction" onclick="openDebarModal('${escapeHtml(c.id)}')">
+                        ⛔ Debar
+                    </button>
+                </div>
+            </td>
+        `;
+        ui.tbody.appendChild(tr);
+    });
+
+    bindCheckboxes();
+    updateBulkSelectionToolbar();
+    renderProctorTerminals();
+}
+
 // --- LOAD CANDIDATES LIST ---
-async function loadCandidates(query = ""): Promise<void> {
+async function loadCandidates(): Promise<void> {
     try {
         const res = await fetch(API_BASE, { headers: getHeaders() });
         let data = await res.json();
-
-        if (!Array.isArray(data)) {
-            data = [];
-        }
-
+        if (!Array.isArray(data)) data = [];
         cachedCandidates = data;
-
-        if (query) {
-            const q = query.toLowerCase();
-            data = data.filter((c: any) => 
-                (c.full_name || "").toLowerCase().includes(q) || 
-                (c.registration_number || "").toLowerCase().includes(q) ||
-                (c.email || "").toLowerCase().includes(q)
-            );
-        }
-
-        ui.tbody.innerHTML = "";
-        
-        if (data.length === 0) {
-            ui.tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
-                        No candidates found. Use <strong>+ Add new candidate</strong> above to provision credentials.
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        data.forEach((c: any) => {
-            const tr = document.createElement('tr');
-            const initials = (c.full_name || 'CD').split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
-            const isActive = (c.status || 'active') === 'active';
-            const pwd = c.password || '12345678';
-            const email = c.email || `${(c.registration_number || '').toLowerCase()}@ssecbt.in`;
-            const slot = c.batch || 'A';
-
-            tr.innerHTML = `
-                <td><input type="checkbox" class="row-check" value="${escapeHtml(c.id)}"></td>
-                <td>
-                    <div class="user-cell">
-                        <div class="user-cell-avatar">${initials}</div>
-                        <div class="user-cell-info">
-                            <span class="user-cell-name">${escapeHtml(c.full_name)}</span>
-                            <span class="user-cell-sub">Slot ${escapeHtml(slot)} &bull; ${escapeHtml(c.registration_number)}</span>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <span style="font-weight: 700; padding: 0.25rem 0.65rem; background: rgba(79, 70, 229, 0.1); color: var(--brand-blue); border-radius: 6px; font-size: 0.78rem;">
-                        Slot ${escapeHtml(slot)}
-                    </span>
-                </td>
-                <td style="font-size: 0.825rem; font-family: var(--font-mono); color: var(--text-muted);">${escapeHtml(email)}</td>
-                <td>
-                    <div style="display: inline-flex; align-items: center; gap: 0.35rem; background: var(--bg-body); padding: 0.25rem 0.55rem; border-radius: 6px; border: 1px solid var(--border-color); font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700;">
-                        <span>${escapeHtml(pwd)}</span>
-                        <button style="background: none; border: none; cursor: pointer; font-size: 0.8rem;" title="Copy Password" onclick="copyPassword('${escapeHtml(pwd)}')">📋</button>
-                    </div>
-                </td>
-                <td>
-                    <span class="status-pill ${isActive ? 'status-active' : 'status-suspended'}">
-                        <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background: ${isActive ? '#10b981' : '#ef4444'};"></span>
-                        ${escapeHtml(c.status || 'active')}
-                    </span>
-                </td>
-                <td style="text-align: right; white-space: nowrap;">
-                    <button class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-right: 0.35rem;" onclick="resetAttempt('${escapeHtml(c.id)}')">
-                        🔄 Retake
-                    </button>
-                    <button class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; color: ${isActive ? '#ef4444' : '#10b981'}; border-color: ${isActive ? '#fca5a5' : '#86efac'};" onclick="toggleStatus('${escapeHtml(c.id)}')">
-                        ${isActive ? 'Suspend' : 'Activate'}
-                    </button>
-                </td>
-            `;
-            ui.tbody.appendChild(tr);
-        });
-        
-        bindCheckboxes();
-        renderProctorTerminals();
+        renderCandidateTable();
     } catch (err) {
         showToast("Failed to load candidates from Supabase", true);
     }
@@ -595,6 +737,398 @@ if (ui.btnAssign) {
             loadDashboardSummary();
         }
     };
+}
+
+// --- CANDIDATE MANAGEMENT SUITE MODAL HANDLERS ---
+function openCandidateDossier(id: string): void {
+    const c = cachedCandidates.find(item => item.id === id);
+    if (!c) {
+        showToast("Candidate record not found", true);
+        return;
+    }
+    const modal = document.getElementById('modal-candidate-dossier');
+    if (!modal) return;
+
+    (document.getElementById('dos-full-name') as HTMLElement).textContent = c.full_name || '--';
+    (document.getElementById('dos-reg-no') as HTMLElement).textContent = c.registration_number || '--';
+    (document.getElementById('dos-roll-no') as HTMLElement).textContent = c.roll_number || c.registration_number || '--';
+    (document.getElementById('dos-category') as HTMLElement).textContent = c.category || 'General';
+    (document.getElementById('dos-gender') as HTMLElement).textContent = c.gender || 'Male';
+    (document.getElementById('dos-email') as HTMLElement).textContent = c.email || `${(c.registration_number || '').toLowerCase()}@ssecbt.in`;
+    (document.getElementById('dos-slot') as HTMLElement).textContent = `Slot ${c.batch || 'A'}`;
+    (document.getElementById('dos-slot-timing') as HTMLElement).textContent = c.slot_timing_ist || '08:30 - 11:30 IST';
+    (document.getElementById('dos-reporting') as HTMLElement).textContent = c.reporting_time_ist || '07:30 IST';
+    (document.getElementById('dos-terminal') as HTMLElement).textContent = c.assigned_terminal || `T-${c.batch || 'A'}-01`;
+    (document.getElementById('dos-ip') as HTMLElement).textContent = c.ip_address || '10.0.4.12';
+    (document.getElementById('dos-pwd') as HTMLElement).textContent = c.is_pwd ? 'Yes (Benchmark Disability)' : 'No (Standard)';
+    (document.getElementById('dos-scribe') as HTMLElement).textContent = c.has_scribe ? 'Permitted / Assigned' : 'Not Required';
+    (document.getElementById('dos-extra-time') as HTMLElement).textContent = `${c.compensatory_minutes || 0} Minutes`;
+    (document.getElementById('dos-created-at') as HTMLElement).textContent = c.created_at_ist || 'Authoritative Record';
+    (document.getElementById('dos-bio-score') as HTMLElement).textContent = `✅ Match ${c.biometric_score || 98.4}%`;
+
+    const statusPill = document.getElementById('dos-status-pill');
+    if (statusPill) {
+        statusPill.textContent = (c.status || 'ACTIVE').toUpperCase();
+    }
+
+    const btnAdmit = document.getElementById('dos-btn-print-admit');
+    if (btnAdmit) btnAdmit.onclick = () => { modal.style.display = 'none'; openAdmitCard(id); };
+
+    const btnRealloc = document.getElementById('dos-btn-reallocate');
+    if (btnRealloc) btnRealloc.onclick = () => { modal.style.display = 'none'; openShiftReallocation(id); };
+
+    const btnAcc = document.getElementById('dos-btn-accommodations');
+    if (btnAcc) btnAcc.onclick = () => { modal.style.display = 'none'; openAccommodationsManager(id); };
+
+    const btnPin = document.getElementById('dos-btn-pin');
+    if (btnPin) btnPin.onclick = () => { modal.style.display = 'none'; regenerateEmergencyPin(id); };
+
+    const btnDebar = document.getElementById('dos-btn-debar');
+    if (btnDebar) btnDebar.onclick = () => { modal.style.display = 'none'; openDebarModal(id); };
+
+    modal.style.display = 'flex';
+}
+
+async function openAdmitCard(id: string): Promise<void> {
+    try {
+        const res = await fetch(`${API_BASE}/${id}/admit-card`, { headers: getHeaders() });
+        if (!res.ok) {
+            showToast("Failed to fetch official admit card", true);
+            return;
+        }
+        const data = await res.json();
+        const modal = document.getElementById('modal-admit-card');
+        if (!modal) return;
+
+        (document.getElementById('admit-number') as HTMLElement).textContent = data.admit_card_number;
+        (document.getElementById('admit-barcode') as HTMLElement).textContent = data.barcode_data;
+        (document.getElementById('admit-name') as HTMLElement).textContent = data.full_name;
+        (document.getElementById('admit-roll') as HTMLElement).textContent = data.roll_number;
+        (document.getElementById('admit-reg') as HTMLElement).textContent = data.registration_number;
+        (document.getElementById('admit-cat-gen') as HTMLElement).textContent = `${data.category} / ${data.gender}`;
+        (document.getElementById('admit-pwd') as HTMLElement).textContent = data.is_pwd ? 'Yes (Benchmark Disability)' : 'No (Standard)';
+        (document.getElementById('admit-extra-time') as HTMLElement).textContent = `${data.compensatory_minutes} Minutes`;
+        (document.getElementById('admit-slot') as HTMLElement).textContent = data.slot;
+        (document.getElementById('admit-reporting') as HTMLElement).textContent = data.reporting_time_ist;
+        (document.getElementById('admit-gate-close') as HTMLElement).textContent = data.gate_closure_ist;
+        (document.getElementById('admit-exam-timings') as HTMLElement).textContent = data.slot_timing_ist;
+        (document.getElementById('admit-venue-name') as HTMLElement).textContent = data.test_center_name;
+        (document.getElementById('admit-lab') as HTMLElement).textContent = data.lab_number;
+        (document.getElementById('admit-terminal') as HTMLElement).textContent = data.assigned_terminal;
+
+        const btnPrint = document.getElementById('btn-print-admit');
+        if (btnPrint) {
+            btnPrint.onclick = () => {
+                window.print();
+            };
+        }
+
+        modal.style.display = 'flex';
+    } catch (_) {
+        showToast("Error retrieving admit card", true);
+    }
+}
+
+function openShiftReallocation(id: string): void {
+    const c = cachedCandidates.find(item => item.id === id);
+    if (!c) return;
+    const modal = document.getElementById('modal-reallocate-slot');
+    if (!modal) return;
+
+    (document.getElementById('realloc-cand-id') as HTMLInputElement).value = id;
+    (document.getElementById('realloc-cand-name') as HTMLElement).textContent = c.full_name;
+    (document.getElementById('realloc-cand-current-slot') as HTMLElement).textContent = `Current Shift: Slot ${c.batch || 'A'} (${c.slot_timing_ist || '08:30 - 11:30 IST'})`;
+    (document.getElementById('realloc-target-slot') as HTMLSelectElement).value = c.batch === 'A' ? 'B' : 'A';
+
+    modal.style.display = 'flex';
+}
+
+function openAccommodationsManager(id: string): void {
+    const c = cachedCandidates.find(item => item.id === id);
+    if (!c) return;
+    const modal = document.getElementById('modal-candidate-accommodations');
+    if (!modal) return;
+
+    (document.getElementById('acc-cand-id') as HTMLInputElement).value = id;
+    (document.getElementById('acc-cand-name') as HTMLElement).textContent = c.full_name;
+    (document.getElementById('acc-is-pwd') as HTMLInputElement).checked = !!c.is_pwd;
+    (document.getElementById('acc-has-scribe') as HTMLInputElement).checked = !!c.has_scribe;
+    (document.getElementById('acc-disability-type') as HTMLSelectElement).value = c.disability_type || 'None';
+    (document.getElementById('acc-compensatory-mins') as HTMLInputElement).value = String(c.compensatory_minutes || (c.is_pwd ? 60 : 0));
+
+    modal.style.display = 'flex';
+}
+
+async function regenerateEmergencyPin(id: string): Promise<void> {
+    try {
+        const res = await fetch(`${API_BASE}/${id}/regenerate-credentials`, {
+            method: 'POST',
+            headers: getHeaders(),
+        });
+        if (!res.ok) {
+            showToast("Failed to regenerate credentials", true);
+            return;
+        }
+        const data = await res.json();
+        const c = cachedCandidates.find(item => item.id === id);
+        const modal = document.getElementById('modal-emergency-pin');
+        if (!modal) return;
+
+        (document.getElementById('pin-display') as HTMLElement).textContent = data.temporary_pin;
+        (document.getElementById('pin-meta-time') as HTMLElement).textContent = `Generated: ${data.generated_at_ist} • Valid until Shift End`;
+        (document.getElementById('pin-cand-name') as HTMLElement).textContent = c?.full_name || 'Candidate';
+        (document.getElementById('pin-cand-reg') as HTMLElement).textContent = data.registration_number;
+        (document.getElementById('pin-cand-roll') as HTMLElement).textContent = data.roll_number;
+
+        const btnCopy = document.getElementById('btn-copy-pin-slip');
+        if (btnCopy) {
+            btnCopy.onclick = () => {
+                const text = `SSE CBT EMERGENCY PIN SLIP\nCandidate: ${c?.full_name}\nRoll No: ${data.roll_number}\nReg No: ${data.registration_number}\nTemporary PIN: ${data.temporary_pin}\nIssued at: ${data.generated_at_ist}`;
+                copyText(text, "Emergency PIN Slip");
+            };
+        }
+
+        modal.style.display = 'flex';
+        showToast(`🔑 Temporary PIN ${data.temporary_pin} generated!`);
+        loadCandidates();
+    } catch (_) {
+        showToast("Error generating emergency credentials", true);
+    }
+}
+
+function openDebarModal(id: string): void {
+    const c = cachedCandidates.find(item => item.id === id);
+    if (!c) return;
+    const modal = document.getElementById('modal-debar-candidate');
+    if (!modal) return;
+
+    (document.getElementById('debar-cand-id') as HTMLInputElement).value = id;
+    (document.getElementById('debar-cand-name') as HTMLElement).textContent = c.full_name;
+    (document.getElementById('debar-cand-reg') as HTMLElement).textContent = `Reg: ${c.registration_number} • Roll: ${c.roll_number || c.registration_number}`;
+
+    modal.style.display = 'flex';
+}
+
+// Bind to window for HTML table action buttons
+(window as any).openCandidateDossier = openCandidateDossier;
+(window as any).openAdmitCard = openAdmitCard;
+(window as any).openShiftReallocation = openShiftReallocation;
+(window as any).openAccommodationsManager = openAccommodationsManager;
+(window as any).regenerateEmergencyPin = regenerateEmergencyPin;
+(window as any).openDebarModal = openDebarModal;
+
+// --- FILTER LISTENERS ---
+const filterSlotEl = document.getElementById('filter-slot');
+const filterStatusEl = document.getElementById('filter-status');
+const filterPwdEl = document.getElementById('filter-pwd');
+const btnResetFilters = document.getElementById('btn-reset-filters');
+
+if (filterSlotEl) filterSlotEl.addEventListener('change', renderCandidateTable);
+if (filterStatusEl) filterStatusEl.addEventListener('change', renderCandidateTable);
+if (filterPwdEl) filterPwdEl.addEventListener('change', renderCandidateTable);
+
+if (btnResetFilters) {
+    btnResetFilters.addEventListener('click', () => {
+        if (filterSlotEl) (filterSlotEl as HTMLSelectElement).value = 'ALL';
+        if (filterStatusEl) (filterStatusEl as HTMLSelectElement).value = 'ALL';
+        if (filterPwdEl) (filterPwdEl as HTMLSelectElement).value = 'ALL';
+        if (ui.searchInput) ui.searchInput.value = '';
+        if (ui.topSearchInput) ui.topSearchInput.value = '';
+        renderCandidateTable();
+        showToast("Candidate filters reset");
+    });
+}
+
+// --- BULK ACTION HANDLERS ---
+const btnBulkMigrateSlot = document.getElementById('btn-bulk-migrate-slot');
+const btnBulkExportSel = document.getElementById('btn-bulk-export-sel');
+const btnClearSelection = document.getElementById('btn-clear-selection');
+
+if (btnBulkMigrateSlot) {
+    btnBulkMigrateSlot.addEventListener('click', () => {
+        const checked = Array.from(document.querySelectorAll('.row-check:checked')).map((c: any) => c.value);
+        if (checked.length === 0) return;
+        const modal = document.getElementById('modal-bulk-reallocate');
+        const countEl = document.getElementById('bulk-realloc-cand-count');
+        if (countEl) countEl.textContent = `${checked.length} Candidates Selected`;
+        if (modal) modal.style.display = 'flex';
+    });
+}
+
+if (btnBulkExportSel) {
+    btnBulkExportSel.addEventListener('click', () => {
+        const checkedIds = new Set(Array.from(document.querySelectorAll('.row-check:checked')).map((c: any) => c.value));
+        const selected = cachedCandidates.filter(c => checkedIds.has(c.id));
+        if (selected.length === 0) {
+            showToast("No candidates selected to export", true);
+            return;
+        }
+
+        let csv = "Roll_Number,Registration_Number,Full_Name,Slot,Category,Gender,PwD,Compensatory_Minutes,Terminal,Status,Reporting_Time_IST,Slot_Timing_IST\n";
+        selected.forEach(c => {
+            const roll = (c.roll_number || c.registration_number || '').replace(/"/g, '""');
+            const reg = (c.registration_number || '').replace(/"/g, '""');
+            const name = (c.full_name || '').replace(/"/g, '""');
+            const slot = (c.batch || 'A').replace(/"/g, '""');
+            const cat = (c.category || 'General').replace(/"/g, '""');
+            const gen = (c.gender || 'Male').replace(/"/g, '""');
+            const pwd = c.is_pwd ? "Yes" : "No";
+            const extra = c.compensatory_minutes || 0;
+            const term = (c.assigned_terminal || '').replace(/"/g, '""');
+            const status = (c.status || 'active').replace(/"/g, '""');
+            const rep = (c.reporting_time_ist || '').replace(/"/g, '""');
+            const timing = (c.slot_timing_ist || '').replace(/"/g, '""');
+            csv += `"${roll}","${reg}","${name}","${slot}","${cat}","${gen}","${pwd}",${extra},"${term}","${status}","${rep}","${timing}"\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `selected_candidates_roster_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Exported ${selected.length} candidate records to CSV!`);
+    });
+}
+
+if (btnClearSelection) {
+    btnClearSelection.addEventListener('click', () => {
+        if (ui.checkAll) ui.checkAll.checked = false;
+        document.querySelectorAll('.row-check').forEach((chk: any) => chk.checked = false);
+        updateBulkSelectionToolbar();
+    });
+}
+
+// --- FORM SUBMISSION WIRING ---
+const formReallocSlot = document.getElementById('form-reallocate-slot') as HTMLFormElement;
+if (formReallocSlot) {
+    formReallocSlot.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const cid = (document.getElementById('realloc-cand-id') as HTMLInputElement).value;
+        const targetSlot = (document.getElementById('realloc-target-slot') as HTMLSelectElement).value;
+        const reason = (document.getElementById('realloc-reason') as HTMLSelectElement).value;
+
+        try {
+            const res = await fetch(`${API_BASE}/${cid}/reallocate-slot`, {
+                method: 'PATCH',
+                headers: getHeaders(),
+                body: JSON.stringify({ slot: targetSlot, reason: reason }),
+            });
+            if (res.ok) {
+                showToast(`Candidate migrated to Slot ${targetSlot}!`);
+                (document.getElementById('modal-reallocate-slot') as HTMLElement).style.display = 'none';
+                loadCandidates();
+                loadDashboardSummary();
+            } else {
+                const err = await res.json();
+                showToast(err.detail || "Slot reallocation failed", true);
+            }
+        } catch (_) {
+            showToast("Network error updating shift slot", true);
+        }
+    });
+}
+
+const formAccommodations = document.getElementById('form-candidate-accommodations') as HTMLFormElement;
+if (formAccommodations) {
+    formAccommodations.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const cid = (document.getElementById('acc-cand-id') as HTMLInputElement).value;
+        const isPwd = (document.getElementById('acc-is-pwd') as HTMLInputElement).checked;
+        const hasScribe = (document.getElementById('acc-has-scribe') as HTMLInputElement).checked;
+        const disabilityType = (document.getElementById('acc-disability-type') as HTMLSelectElement).value;
+        const extraMins = parseInt((document.getElementById('acc-compensatory-mins') as HTMLInputElement).value, 10) || 0;
+
+        try {
+            const res = await fetch(`${API_BASE}/${cid}/accommodations`, {
+                method: 'PATCH',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    is_pwd: isPwd,
+                    has_scribe: hasScribe,
+                    disability_type: disabilityType,
+                    compensatory_minutes: extraMins,
+                }),
+            });
+            if (res.ok) {
+                showToast("Accommodations updated successfully!");
+                (document.getElementById('modal-candidate-accommodations') as HTMLElement).style.display = 'none';
+                loadCandidates();
+            } else {
+                const err = await res.json();
+                showToast(err.detail || "Failed to update accommodations", true);
+            }
+        } catch (_) {
+            showToast("Network error updating accommodations", true);
+        }
+    });
+}
+
+const formDebar = document.getElementById('form-debar-candidate') as HTMLFormElement;
+if (formDebar) {
+    formDebar.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const cid = (document.getElementById('debar-cand-id') as HTMLInputElement).value;
+        const reason = (document.getElementById('debar-reason-select') as HTMLSelectElement).value;
+
+        try {
+            const res = await fetch(`${API_BASE}/${cid}/debar`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ reason: reason }),
+            });
+            if (res.ok) {
+                showToast("Candidate officially debarred. Terminal session locked!");
+                appendIncidentLog(`FORMAL DEBARMENT: Candidate debarred under ${reason}`, true);
+                (document.getElementById('modal-debar-candidate') as HTMLElement).style.display = 'none';
+                loadCandidates();
+                loadDashboardSummary();
+            } else {
+                const err = await res.json();
+                showToast(err.detail || "Failed to debar candidate", true);
+            }
+        } catch (_) {
+            showToast("Network error executing debarment", true);
+        }
+    });
+}
+
+const formBulkRealloc = document.getElementById('form-bulk-reallocate') as HTMLFormElement;
+if (formBulkRealloc) {
+    formBulkRealloc.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const checked = Array.from(document.querySelectorAll('.row-check:checked')).map((c: any) => c.value);
+        const slot = (document.getElementById('bulk-realloc-target-slot') as HTMLSelectElement).value;
+        const reason = (document.getElementById('bulk-realloc-reason') as HTMLInputElement).value;
+
+        try {
+            const res = await fetch(`${API_BASE}/bulk-reallocate`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    candidate_ids: checked,
+                    slot: slot,
+                    reason: reason,
+                }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                showToast(data.message || `Reallocated ${checked.length} candidates to Slot ${slot}!`);
+                (document.getElementById('modal-bulk-reallocate') as HTMLElement).style.display = 'none';
+                if (ui.checkAll) ui.checkAll.checked = false;
+                loadCandidates();
+                loadDashboardSummary();
+            } else {
+                const err = await res.json();
+                showToast(err.detail || "Bulk reallocation failed", true);
+            }
+        } catch (_) {
+            showToast("Network error executing bulk reallocation", true);
+        }
+    });
 }
 
 // --- TCS iON PROCTORING LAB & TERMINALS GRID ---
@@ -1160,6 +1694,33 @@ function initAdminWebSocket(): void {
                     showToast(`🔄 Candidate status updated: ${msg.status}`);
                     loadCandidates();
                     loadDashboardSummary();
+
+                } else if (msg.type === 'CANDIDATE_SLOT_REALLOCATED') {
+                    showToast(`🔄 Shift Reallocated: ${msg.candidate_name || 'Candidate'} migrated to Slot ${msg.new_slot}`);
+                    appendIncidentLog(`Shift Reallocated: ${msg.candidate_name || 'Candidate'} reallocated to Slot ${msg.new_slot} (${msg.reason || 'Admin'})`);
+                    loadCandidates();
+                    loadDashboardSummary();
+
+                } else if (msg.type === 'CANDIDATE_ACCOMMODATIONS_UPDATED') {
+                    showToast(`♿ Accommodations Updated: ${msg.candidate_name || 'Candidate'}`);
+                    appendIncidentLog(`Accommodations updated for ${msg.candidate_name || 'Candidate'}: Extra time ${msg.compensatory_minutes}m, Scribe=${msg.has_scribe}`);
+                    loadCandidates();
+
+                } else if (msg.type === 'CANDIDATE_CREDENTIALS_REGENERATED') {
+                    showToast(`🔑 Emergency PIN generated for ${msg.candidate_name || 'Candidate'}`);
+                    loadCandidates();
+
+                } else if (msg.type === 'CANDIDATE_DISQUALIFIED') {
+                    showToast(`⛔ MALPRACTICE DEBARMENT: ${msg.candidate_name || 'Candidate'} officially debarred!`, true);
+                    appendIncidentLog(`MALPRACTICE DEBARMENT: Candidate ${msg.candidate_name || 'Candidate'} debarred under ${msg.reason}`, true);
+                    loadCandidates();
+                    loadDashboardSummary();
+
+                } else if (msg.type === 'BULK_CANDIDATES_REALLOCATED') {
+                    showToast(`🔄 Bulk Migration: ${msg.count} candidates reallocated to Slot ${msg.target_slot}`);
+                    appendIncidentLog(`Bulk Migration: ${msg.count} candidates moved to Slot ${msg.target_slot}`);
+                    loadCandidates();
+                    loadDashboardSummary();
                 }
             } catch (_) {}
         };
@@ -1180,19 +1741,19 @@ function initAdminWebSocket(): void {
 // Search debounce
 let timeout: any;
 if (ui.searchInput) {
-    ui.searchInput.addEventListener('input', (e) => {
+    ui.searchInput.addEventListener('input', () => {
         clearTimeout(timeout);
         timeout = setTimeout(() => {
-            loadCandidates((e.target as HTMLInputElement).value);
+            renderCandidateTable();
         }, 300);
     });
 }
 
 if (ui.topSearchInput) {
-    ui.topSearchInput.addEventListener('input', (e) => {
+    ui.topSearchInput.addEventListener('input', () => {
         clearTimeout(timeout);
         timeout = setTimeout(() => {
-            loadCandidates((e.target as HTMLInputElement).value);
+            renderCandidateTable();
         }, 300);
     });
 }
@@ -1202,4 +1763,7 @@ initTheme();
 loadDashboardSummary();
 loadCandidates();
 initAdminWebSocket();
+syncMasterClock();
+setInterval(updateMasterClockDisplay, 1000);
+setInterval(syncMasterClock, 60000);
 
