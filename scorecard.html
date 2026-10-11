@@ -185,6 +185,55 @@
       justify-content: space-between;
       align-items: center;
     }
+
+    /* ============================================================
+       RESPONSIVE DESIGN SYSTEM (MOBILE & TABLET REPAIR)
+       ============================================================ */
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem 0.5rem;
+      }
+      .doc-header {
+        padding: 1.25rem 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      .doc-subhead {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.35rem;
+      }
+      .candidate-profile-grid {
+        grid-template-columns: 1fr;
+        padding: 1.25rem 1rem;
+        gap: 1rem;
+      }
+      .candidate-photo-box {
+        margin: 0 auto;
+      }
+      .overall-score-banner {
+        margin: 1rem;
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      .score-table {
+        margin: 0 1rem 1.5rem 1rem;
+        width: calc(100% - 2rem);
+      }
+      .doc-actions {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .doc-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 

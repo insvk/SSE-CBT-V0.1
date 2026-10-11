@@ -473,38 +473,133 @@
       flex: 1;
     }
 
-    .breadcrumb-row {
+    /* Dashboard Header Region */
+    .dashboard-header-container {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
+      align-items: flex-start;
+      gap: 1.5rem;
+      margin-bottom: 1.75rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
     }
 
-    .breadcrumb-title h1 {
+    .page-title-region {
+      flex: 1 1 320px;
+      min-width: 280px;
+    }
+
+    .page-title-heading-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0.25rem 0 0.35rem 0;
+      flex-wrap: wrap;
+    }
+
+    .page-title-region h1 {
       font-size: 1.65rem;
       font-weight: 800;
       color: var(--text-heading);
       letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    .page-title-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin: 0;
+      max-width: 580px;
     }
 
     .breadcrumb-path {
-      font-size: 0.8rem;
+      font-size: 0.775rem;
       color: var(--text-muted);
-      margin-top: 0.2rem;
       font-weight: 500;
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
     }
 
     .breadcrumb-path a {
       color: var(--brand-blue);
       text-decoration: none;
+      font-weight: 600;
     }
 
-    /* Action Strip */
-    .action-toolbar {
+    .breadcrumb-separator {
+      color: var(--text-muted);
+      opacity: 0.6;
+    }
+
+    /* ACTION TOOLBAR REGION */
+    .action-toolbar-region {
       display: flex;
-      gap: 0.65rem;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.6rem;
+      flex: 2 1 540px;
+      min-width: 0;
+    }
+
+    .toolbar-row {
+      display: flex;
+      gap: 0.5rem;
       align-items: center;
       flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .toolbar-overflow-wrap {
+      position: relative;
+    }
+
+    .overflow-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+      z-index: 200;
+      min-width: 250px;
+      padding: 0.35rem 0;
+    }
+
+    .overflow-menu.show {
+      display: block;
+    }
+
+    .overflow-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.6rem 1rem;
+      background: none;
+      border: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-heading);
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .overflow-menu-item:hover {
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--brand-blue);
+    }
+
+    [data-theme="dark"] .overflow-menu-item:hover {
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .btn {
@@ -1316,6 +1411,127 @@
       background: #f1f5f9;
       border: 1px dashed #94a3b8;
       display: inline-block;
+    /* ============================================================
+       RESPONSIVE DESIGN SYSTEM (MOBILE, TABLET, DESKTOP)
+       ============================================================ */
+    @media (max-width: 1280px) {
+      .page-body {
+        padding: 1.5rem 1.75rem;
+      }
+      .action-toolbar-region {
+        flex: 1 1 100%;
+        align-items: flex-start;
+      }
+      .toolbar-row {
+        justify-content: flex-start;
+      }
+      .overflow-menu {
+        left: 0;
+        right: auto;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-header-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.25rem;
+      }
+      .action-toolbar-region {
+        width: 100%;
+        align-items: flex-start;
+      }
+      .toolbar-row {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .top-header {
+        padding: 0 1.25rem;
+      }
+      .header-search input {
+        width: 180px;
+      }
+      .exam-card-box {
+        padding: 1rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .app-layout {
+        flex-direction: column;
+      }
+      .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        width: 260px;
+        height: 100vh;
+        z-index: 1000;
+        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+      }
+      .sidebar.mobile-open {
+        left: 0;
+      }
+      .main-view {
+        width: 100%;
+        min-width: 100%;
+      }
+      .page-body {
+        padding: 1rem 0.85rem;
+      }
+      .top-header {
+        padding: 0 0.85rem;
+      }
+      .master-clock-widget {
+        display: none;
+      }
+      .header-search {
+        display: none;
+      }
+      .modal-box {
+        width: 95vw !important;
+        max-width: 95vw !important;
+        margin: 1rem auto !important;
+        padding: 1.25rem !important;
+        max-height: 90vh !important;
+        overflow-y: auto !important;
+      }
+      .table-responsive,
+      .exam-card-box div[style*="overflow-x"],
+      table {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .page-body {
+        padding: 0.85rem 0.5rem;
+      }
+      .page-title-region h1 {
+        font-size: 1.35rem;
+      }
+      .toolbar-primary-row {
+        width: 100%;
+      }
+      .toolbar-primary-row .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      .toolbar-secondary-row {
+        width: 100%;
+      }
+      .toolbar-secondary-row .btn,
+      .toolbar-overflow-wrap,
+      .toolbar-overflow-wrap .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      .overflow-menu {
+        width: 100%;
+        min-width: unset;
+      }
     }
 
     @media print {
@@ -1342,7 +1558,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/admin-39e63caf.js"></script>
+  <script type="module" crossorigin src="/assets/admin-694ac465.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
 </head>
 
@@ -1521,34 +1737,74 @@
 
       <!-- PAGE BODY -->
       <main class="page-body">
-        <div class="breadcrumb-row">
-          <div class="breadcrumb-title">
-            <h1>Dashboard</h1>
-            <div class="breadcrumb-path">
-              <a href="/admin.html">Home</a> / Dashboard
+        <!-- DASHBOARD HEADER REGION (STRUCTURED TWO-REGION LAYOUT) -->
+        <div class="dashboard-header-container">
+          <div class="page-title-region">
+            <nav class="breadcrumb-path" aria-label="Breadcrumb">
+              <a href="/admin.html">Home</a>
+              <span class="breadcrumb-separator">/</span>
+              <span>Dashboard</span>
+            </nav>
+            <div class="page-title-heading-wrap">
+              <h1>Dashboard</h1>
+              <span class="badge-pill"
+                style="background: rgba(16, 185, 129, 0.12); color: #047857; font-weight: 800; font-size: 0.72rem; letter-spacing: 0.04em;">
+                CENTRAL COMMAND &bull; ACTIVE
+              </span>
             </div>
+            <p class="page-title-sub">
+              Multi-test scheduling, live invigilation console, candidate credentialing, and exam lifecycle control.
+            </p>
           </div>
 
-          <!-- ACTION TOOLBAR -->
-          <div class="action-toolbar">
-            <button class="btn btn-primary" id="btn-open-create-exam-top"
-              style="background: #059669; border-color: #059669; font-weight: 700;">
-              Create New Test
-            </button>
-            <button class="btn btn-outline" id="btn-share-cand-reg-top"
-              style="color: #4f46e5; border-color: #c7d2fe; font-weight: 700;">
-              Share Registration Portal Link
-            </button>
-            <button class="btn btn-outline" id="btn-infra-audit">Pre-Flight Infra Audit</button>
-            <button class="btn btn-outline" id="btn-admissions-checkin">Biometric Admissions</button>
-            <button class="btn btn-outline" id="btn-closing-report">Form 24-B Closing Report</button>
-            <button class="btn btn-outline" id="btn-open-settings-modal" style="font-weight: 700; border-color: #2563eb; color: #2563eb;">Exam Center &amp; Controller Settings</button>
-            <button class="btn btn-outline" id="btn-export-attendance">Export Attendance Roster CSV</button>
-            <button class="btn btn-outline" id="btn-export-csv">Export Credentials CSV</button>
-            <button class="btn btn-outline" id="btn-import">Bulk Import CSV</button>
-            <button class="btn btn-primary" id="btn-create">
-              Authorize Candidate Account
-            </button>
+          <!-- ACTION TOOLBAR REGION -->
+          <div class="action-toolbar-region">
+            <!-- Primary Operations Row -->
+            <div class="toolbar-row toolbar-primary-row">
+              <button class="btn btn-primary" id="btn-open-create-exam-top"
+                style="background: #059669; border-color: #059669; font-weight: 700;">
+                Create New Test
+              </button>
+              <button class="btn btn-primary" id="btn-create"
+                style="font-weight: 700;">
+                Authorize Candidate Account
+              </button>
+            </div>
+
+            <!-- Secondary Operations Row & Overflow Menu -->
+            <div class="toolbar-row toolbar-secondary-row">
+              <button class="btn btn-outline" id="btn-share-cand-reg-top"
+                style="color: #4f46e5; border-color: #c7d2fe; font-weight: 700;">
+                Share Registration Portal Link
+              </button>
+              <button class="btn btn-outline" id="btn-open-settings-modal"
+                style="font-weight: 700; border-color: #2563eb; color: #2563eb;">
+                Exam Center &amp; Controller Settings
+              </button>
+              <button class="btn btn-outline" id="btn-infra-audit">Pre-Flight Infra Audit</button>
+              <button class="btn btn-outline" id="btn-admissions-checkin">Biometric Admissions</button>
+              <button class="btn btn-outline" id="btn-closing-report">Form 24-B Closing Report</button>
+
+              <!-- Overflow Menu Container for Export/Import -->
+              <div class="toolbar-overflow-wrap">
+                <button type="button" class="btn btn-outline" id="btn-more-actions"
+                  style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                  <span>More Operations</span>
+                  <span style="font-size: 0.65rem;">▼</span>
+                </button>
+                <div class="overflow-menu" id="menu-more-actions">
+                  <button type="button" class="overflow-menu-item" id="btn-export-attendance">
+                    Export Attendance Roster CSV
+                  </button>
+                  <button type="button" class="overflow-menu-item" id="btn-export-csv">
+                    Export Credentials CSV
+                  </button>
+                  <button type="button" class="overflow-menu-item" id="btn-import">
+                    Bulk Import Candidates CSV
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2247,7 +2503,7 @@
   <!-- COMPENSATORY TIME GRANT MODAL -->
   <div class="modal-backdrop" id="modal-extend-candidate-time">
     <div class="modal-box">
-      <h2>⏱️ Grant Compensatory Time Accommodation</h2>
+      <h2>Grant Compensatory Time Accommodation</h2>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
         Official Examination Controller Accommodation (PwD / Scribe / Hardware Glitch Relief).
       </p>

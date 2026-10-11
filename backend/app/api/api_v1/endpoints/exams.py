@@ -189,7 +189,7 @@ def _format_exam_item(e: dict, total_candidates: int = 1) -> dict:
         "code": code,
         "exam_code": code,
         "title": e.get("title", "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION"),
-        "description": cfg.get("description", "National Testing Agency pattern Computer Based Test."),
+        "description": cfg.get("description", "Standard Computer Based Examination Assessment."),
         "state": current_state,
         "schedule_status": current_state,
         "duration_minutes": e.get("duration_minutes", 180),
@@ -292,7 +292,11 @@ async def create_exam(payload: ExamCreateAdvanced):
     ensure_tenant_exists(db, DEFAULT_TENANT_ID)
 
     new_id = str(uuid.uuid4())
-    code = (payload.exam_code or f"EX-{new_id[:4].upper()}").strip()
+    cfg_in = payload.config or {}
+    code = (payload.exam_code or cfg_in.get("exam_code") or f"EX-{new_id[:4].upper()}").strip()
+    q_ids = payload.question_ids or cfg_in.get("question_ids") or []
+    correct_m = float(payload.correct_marks if payload.correct_marks is not None else cfg_in.get("correct_marks", 4.0))
+    negative_m = float(payload.negative_marks if payload.negative_marks is not None else cfg_in.get("negative_marks", 1.0))
 
     st_val = payload.start_time or payload.start_time_ist
     et_val = payload.end_time or payload.end_time_ist
@@ -310,16 +314,16 @@ async def create_exam(payload: ExamCreateAdvanced):
 
     cfg = {
         "exam_code": code,
-        "description": payload.description or "",
+        "description": payload.description or cfg_in.get("description", ""),
         "start_time_ist": st_val,
         "end_time_ist": et_val,
-        "auto_submit_on_expiry": payload.auto_submit_on_expiry,
-        "question_ids": payload.question_ids or [],
-        "correct_marks": float(payload.correct_marks or 4.0),
-        "negative_marks": float(payload.negative_marks or 1.0),
-        "sections": payload.sections or ["Physics", "Chemistry", "Mathematics", "General"],
-        "assigned_batches": payload.assigned_batches or ["A", "B", "C", "D"],
-        "assigned_candidate_ids": payload.assigned_candidate_ids or [],
+        "auto_submit_on_expiry": payload.auto_submit_on_expiry if payload.auto_submit_on_expiry is not None else cfg_in.get("auto_submit_on_expiry", True),
+        "question_ids": q_ids,
+        "correct_marks": correct_m,
+        "negative_marks": negative_m,
+        "sections": payload.sections or cfg_in.get("sections", ["Physics", "Chemistry", "Mathematics", "General"]),
+        "assigned_batches": payload.assigned_batches or cfg_in.get("assigned_batches", ["A", "B", "C", "D"]),
+        "assigned_candidate_ids": payload.assigned_candidate_ids or cfg_in.get("assigned_candidate_ids", []),
     }
 
     exam_record = {
@@ -427,18 +431,19 @@ async def update_exam(exam_id: str, payload: ExamUpdateAdvanced):
         updates["end_time"] = et_dt.isoformat() if et_dt else None
         cfg["end_time_ist"] = et_val
 
-    if payload.exam_code is not None:
-        cfg["exam_code"] = payload.exam_code.strip()
-    if payload.description is not None:
-        cfg["description"] = payload.description.strip()
-    if payload.auto_submit_on_expiry is not None:
-        cfg["auto_submit_on_expiry"] = payload.auto_submit_on_expiry
-    if payload.question_ids is not None:
-        cfg["question_ids"] = payload.question_ids
-    if payload.correct_marks is not None:
-        cfg["correct_marks"] = float(payload.correct_marks)
-    if payload.negative_marks is not None:
-        cfg["negative_marks"] = float(payload.negative_marks)
+    cfg_in = payload.config or {}
+    if payload.exam_code or cfg_in.get("exam_code"):
+        cfg["exam_code"] = (payload.exam_code or cfg_in.get("exam_code")).strip()
+    if payload.description or cfg_in.get("description"):
+        cfg["description"] = (payload.description or cfg_in.get("description")).strip()
+    if payload.auto_submit_on_expiry is not None or "auto_submit_on_expiry" in cfg_in:
+        cfg["auto_submit_on_expiry"] = payload.auto_submit_on_expiry if payload.auto_submit_on_expiry is not None else cfg_in.get("auto_submit_on_expiry", True)
+    if payload.question_ids or cfg_in.get("question_ids"):
+        cfg["question_ids"] = payload.question_ids or cfg_in.get("question_ids")
+    if payload.correct_marks is not None or "correct_marks" in cfg_in:
+        cfg["correct_marks"] = float(payload.correct_marks if payload.correct_marks is not None else cfg_in["correct_marks"])
+    if payload.negative_marks is not None or "negative_marks" in cfg_in:
+        cfg["negative_marks"] = float(payload.negative_marks if payload.negative_marks is not None else cfg_in["negative_marks"])
     if payload.sections is not None:
         cfg["sections"] = payload.sections
     if payload.assigned_batches is not None:

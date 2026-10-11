@@ -315,6 +315,7 @@ class ExamCreateAdvanced(BaseModel):
     sections: Optional[List[str]] = ["Physics", "Chemistry", "Mathematics", "General"]
     assigned_candidate_ids: Optional[List[str]] = []
     assigned_batches: Optional[List[str]] = []
+    config: Optional[Dict[str, Any]] = None
 
 
 class ExamUpdateAdvanced(BaseModel):
@@ -334,6 +335,7 @@ class ExamUpdateAdvanced(BaseModel):
     sections: Optional[List[str]] = None
     assigned_candidate_ids: Optional[List[str]] = None
     assigned_batches: Optional[List[str]] = None
+    config: Optional[Dict[str, Any]] = None
 
 
 class CandidateSelfRegisterRequest(BaseModel):

@@ -62,10 +62,26 @@
       .site-footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0; text-align: center; font-size: 0.8rem; color: #64748b; }
       .site-footer a { color: #1e3a8a; text-decoration: none; margin: 0 0.5rem; font-weight: 600; }
       .site-footer a:hover { text-decoration: underline; }
+
+      /* ============================================================
+         RESPONSIVE DESIGN SYSTEM (MOBILE, TABLET, LAPTOP)
+         ============================================================ */
+      @media (max-width: 900px) {
+        .page-container { padding: 0 1rem; margin: 1rem auto; }
+        .qb-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+        .filters { position: static; width: 100%; box-sizing: border-box; }
+        .header-actions { flex-direction: column; align-items: stretch; gap: 1rem; }
+      }
+      @media (max-width: 600px) {
+        .options-grid { grid-template-columns: 1fr; }
+        .page-container { padding: 0 0.5rem; margin: 0.5rem auto; }
+        .header-actions .btn { width: 100%; justify-content: center; }
+        .modal-content { padding: 1.25rem; width: 95vw; }
+      }
     </style>
-    <script type="module" crossorigin src="/assets/question_bank-5b1fc3b7.js"></script>
+    <script type="module" crossorigin src="/assets/question_bank-46eff847.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
-    <link rel="stylesheet" href="/assets/style-6365eba7.css">
+    <link rel="stylesheet" href="/assets/style-8418e68e.css">
   </head>
   <body>
     

@@ -72,9 +72,13 @@ const sidebarEl = ui.sidebar;
 const toggleBtnEl = ui.sidebarToggleBtn;
 if (toggleBtnEl && sidebarEl) {
     toggleBtnEl.addEventListener('click', () => {
-        sidebarEl.classList.toggle('collapsed');
-        const isCollapsed = sidebarEl.classList.contains('collapsed');
-        toggleBtnEl.innerHTML = isCollapsed ? '<span>&gt;</span>' : '<span>&lt;</span>';
+        if (window.innerWidth <= 768) {
+            sidebarEl.classList.toggle('mobile-open');
+        } else {
+            sidebarEl.classList.toggle('collapsed');
+            const isCollapsed = sidebarEl.classList.contains('collapsed');
+            toggleBtnEl.innerHTML = isCollapsed ? '<span>&gt;</span>' : '<span>&lt;</span>';
+        }
     });
 }
 

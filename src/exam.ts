@@ -388,7 +388,7 @@ function handleExamSocketMessage(msg: any): void {
             if (ui.timerDisplay) {
                 ui.timerDisplay.textContent = `${mins} : ${secs.toString().padStart(2, '0')}`;
             }
-            showLiveToast(`⏱️ COMPENSATORY TIME: +${extraMins} mins added to your exam! (${msg.reason || 'Accommodations'})`);
+            showLiveToast(`[ACCOMMODATION] COMPENSATORY TIME: +${extraMins} mins added to your exam! (${msg.reason || 'Accommodations'})`);
         }
     } else if (msg.type === 'EXAM_PAUSED') {
         const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
@@ -400,7 +400,7 @@ function handleExamSocketMessage(msg: any): void {
                 if (pauseReason && msg.reason) pauseReason.textContent = msg.reason;
                 pauseModal.classList.add('active');
             }
-            showLiveToast('⏸️ EXAMINATION ON HOLD: Timer frozen by Invigilator.', true);
+            showLiveToast('[ON HOLD] EXAMINATION ON HOLD: Timer frozen by Invigilator.', true);
         }
     } else if (msg.type === 'EXAM_RESUMED') {
         const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
@@ -411,7 +411,7 @@ function handleExamSocketMessage(msg: any): void {
             if (msg.time_remaining_seconds) {
                 currentRemainingSeconds = msg.time_remaining_seconds;
             }
-            showLiveToast('▶️ EXAMINATION RESUMED: Countdown timer restarted.');
+            showLiveToast('[RESUMED] EXAMINATION RESUMED: Countdown timer restarted.');
         }
     } else if (msg.type === 'TERMINAL_RESEATED') {
         const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';

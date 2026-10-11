@@ -1265,7 +1265,7 @@ function renderProctorTerminals(): void {
         if (isLocked) {
             statusBadgeHtml = '<span class="status-pill status-suspended" style="background:#fee2e2; color:#b91c1c;">Locked</span>';
         } else if (isPaused) {
-            statusBadgeHtml = '<span class="status-pill" style="background:#fef3c7; color:#b45309;">⏸️ On Hold</span>';
+            statusBadgeHtml = '<span class="status-pill" style="background:#fef3c7; color:#b45309;">[HOLD] On Hold</span>';
         } else if (violations > 0) {
             statusBadgeHtml = `<span class="status-pill status-suspended">Strike #${violations}</span>`;
         }
@@ -1305,10 +1305,10 @@ function renderProctorTerminals(): void {
             <!-- Enterprise Action Suite -->
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; margin-top: 0.25rem;">
                 <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem;" onclick="openCompensatoryModal('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}')">
-                    ⏱️ +Time
+                    +Time
                 </button>
                 <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem; color: ${isPaused ? '#10b981' : '#d97706'}; border-color: ${isPaused ? '#a7f3d0' : '#fde68a'};" onclick="toggleCandidatePause('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}')">
-                    ${isPaused ? '▶️ Resume' : '⏸️ Hold'}
+                    ${isPaused ? 'Resume' : 'Hold'}
                 </button>
                 <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem;" onclick="openReseatModal('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}', '${escapeHtml(terminalId)}')">
                     Re-seat
@@ -1378,7 +1378,7 @@ if (formExtendCandidateTime) {
 
             if (res.ok) {
                 candidateAccommodations[regNo] = (candidateAccommodations[regNo] || 0) + mins;
-                showToast(`⏱️ Granted +${mins}m compensatory time to ${regNo}`);
+                showToast(`[ACCOMMODATION] Granted +${mins}m compensatory time to ${regNo}`);
                 appendIncidentLog(`Granted +${mins}m accommodation to ${regNo} (${reason})`);
                 document.getElementById('modal-extend-candidate-time')!.style.display = 'none';
                 renderProctorTerminals();
@@ -1462,7 +1462,7 @@ if (formReseatCandidate) {
 
         if (res.ok) {
             candidatePausedStates[regNo] = !currentlyPaused;
-            showToast(`${currentlyPaused ? '▶️ Resumed' : '⏸️ Paused'} session for ${name}`);
+            showToast(`${currentlyPaused ? '[RESUMED] Resumed' : '[HOLD] Paused'} session for ${name}`);
             appendIncidentLog(`${currentlyPaused ? 'Resumed' : 'Paused'} test session for ${name} (${regNo})`);
             renderProctorTerminals();
         } else {
@@ -1488,7 +1488,7 @@ if (btnHallPause) {
                 })
             });
             if (res.ok) {
-                showToast("⏸️ Hall hold signal dispatched: All countdowns frozen.");
+                showToast("[HOLD] Hall hold signal dispatched: All countdowns frozen.");
                 appendIncidentLog("Central Invigilator placed the entire examination hall on HOLD.");
             }
         } catch (_) {
@@ -1672,7 +1672,7 @@ function initAdminWebSocket(): void {
 
                 } else if (msg.type === 'INDIVIDUAL_TIME_EXTENDED') {
                     candidateAccommodations[msg.reg_no] = msg.total_compensatory_minutes || ((candidateAccommodations[msg.reg_no] || 0) + msg.extra_minutes);
-                    showToast(`⏱️ Compensatory Time Granted: +${msg.extra_minutes}m to ${msg.reg_no}`);
+                    showToast(`[ACCOMMODATION] Compensatory Time Granted: +${msg.extra_minutes}m to ${msg.reg_no}`);
                     appendIncidentLog(`Granted +${msg.extra_minutes}m compensatory accommodation to ${msg.reg_no} (${msg.reason || 'Official'})`);
                     renderProctorTerminals();
 
@@ -1688,11 +1688,11 @@ function initAdminWebSocket(): void {
                             const r = c.registration_number || c.id;
                             candidatePausedStates[r] = true;
                         });
-                        showToast('⏸️ All active exam sessions put on proctor hold');
+                        showToast('[HOLD] All active exam sessions put on proctor hold');
                         appendIncidentLog(`Entire examination hall put on HOLD by Invigilator: ${msg.reason}`);
                     } else {
                         candidatePausedStates[msg.reg_no] = true;
-                        showToast(`⏸️ Session paused for candidate ${msg.reg_no}`);
+                        showToast(`[HOLD] Session paused for candidate ${msg.reg_no}`);
                         appendIncidentLog(`Paused session for ${msg.reg_no}: ${msg.reason}`);
                     }
                     renderProctorTerminals();
@@ -1703,11 +1703,11 @@ function initAdminWebSocket(): void {
                             const r = c.registration_number || c.id;
                             candidatePausedStates[r] = false;
                         });
-                        showToast('▶️ All active exam sessions resumed');
+                        showToast('[RESUMED] All active exam sessions resumed');
                         appendIncidentLog(`Examination hall RESUMED by Invigilator`);
                     } else {
                         candidatePausedStates[msg.reg_no] = false;
-                        showToast(`▶️ Session resumed for candidate ${msg.reg_no}`);
+                        showToast(`[RESUMED] Session resumed for candidate ${msg.reg_no}`);
                         appendIncidentLog(`Resumed session for ${msg.reg_no}`);
                     }
                     renderProctorTerminals();
@@ -2323,7 +2323,7 @@ function renderExamsTable(): void {
                         <div><strong style="color: #047857;">Start:</strong> ${startIST}</div>
                         <div><strong style="color: #b91c1c;">End:</strong> ${endIST}</div>
                         <div style="color: var(--text-muted); font-size: 0.72rem; margin-top: 2px;">
-                            ⏱️ Duration: <strong>${duration} Minutes</strong>
+                            Duration: <strong>${duration} Minutes</strong>
                         </div>
                     </div>
                 </td>
@@ -3088,6 +3088,70 @@ if (formExamSettings) {
             }
         }
     };
+}
+
+// --- OVERFLOW ACTIONS DROPDOWN SUITE ---
+const btnMoreActions = document.getElementById('btn-more-actions');
+const menuMoreActions = document.getElementById('menu-more-actions');
+if (btnMoreActions && menuMoreActions) {
+    btnMoreActions.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuMoreActions.classList.toggle('show');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!menuMoreActions.contains(e.target as Node) && e.target !== btnMoreActions) {
+            menuMoreActions.classList.remove('show');
+        }
+    });
+
+    menuMoreActions.querySelectorAll('.overflow-menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+            menuMoreActions.classList.remove('show');
+        });
+    });
+}
+
+// --- RESPONSIVE SIDEBAR TOGGLE ---
+const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+const sidebarEl = document.getElementById('sidebar');
+if (sidebarToggleBtn && sidebarEl) {
+    sidebarToggleBtn.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+            sidebarEl.classList.toggle('mobile-open');
+        } else {
+            sidebarEl.classList.toggle('collapsed');
+        }
+    });
+}
+
+// --- SMOOTH SCROLL NAVIGATION HANDLERS ---
+const navLinkExams = document.getElementById('nav-link-exams');
+if (navLinkExams) {
+    navLinkExams.addEventListener('click', (e) => {
+        e.preventDefault();
+        const sec = document.getElementById('exam-management-section');
+        if (sec) {
+            sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (window.innerWidth <= 768 && sidebarEl) {
+                sidebarEl.classList.remove('mobile-open');
+            }
+        }
+    });
+}
+
+const navLinkCandidates = document.querySelector('a[href="#candidate-section"]');
+if (navLinkCandidates) {
+    navLinkCandidates.addEventListener('click', (e) => {
+        e.preventDefault();
+        const sec = document.getElementById('candidate-section');
+        if (sec) {
+            sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (window.innerWidth <= 768 && sidebarEl) {
+                sidebarEl.classList.remove('mobile-open');
+            }
+        }
+    });
 }
 
 // Initialize on page ready

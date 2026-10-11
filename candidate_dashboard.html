@@ -707,6 +707,78 @@
         visibility: visible;
         opacity: 1;
       }
+
+      /* ============================================================
+         RESPONSIVE DESIGN SYSTEM (MOBILE, TABLET, LAPTOP)
+         ============================================================ */
+      @media (max-width: 1024px) {
+        .dashboard-top-grid,
+        .stats-duo-grid,
+        .dashboard-bottom-grid {
+          grid-template-columns: 1fr;
+          gap: 1.25rem;
+        }
+        .table-card-box {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .header-search input {
+          width: 180px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .app-layout {
+          flex-direction: column;
+        }
+        .sidebar {
+          position: fixed;
+          left: -280px;
+          top: 0;
+          width: 260px;
+          height: 100vh;
+          z-index: 1000;
+          box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+        }
+        .sidebar.mobile-open {
+          left: 0;
+        }
+        .main-view {
+          width: 100%;
+          min-width: 100%;
+        }
+        .page-body {
+          padding: 1rem 0.85rem;
+        }
+        .top-header {
+          padding: 0 0.85rem;
+        }
+        .header-search {
+          display: none;
+        }
+        .solid-card {
+          min-height: auto;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .page-body {
+          padding: 0.85rem 0.5rem;
+        }
+        .breadcrumb-row {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.5rem;
+        }
+        .breadcrumb-title h1 {
+          font-size: 1.35rem;
+        }
+        .table-header-bar {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.5rem;
+        }
+      }
     </style>
   </head>
   <body>
@@ -838,7 +910,7 @@
               <div class="card-header-flex">
                 <div class="card-title-group">
                   <h3>Enrolled Examination</h3>
-                  <p>National Testing Agency Pattern &bull; Computer Based Test (CBT)</p>
+                  <p>Official Computer Based Test (CBT) &bull; Standard Assessment Pattern</p>
                 </div>
                 <span class="status-pill status-active">Active Enrollment</span>
               </div>
