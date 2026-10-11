@@ -265,3 +265,58 @@ async def update_question(
     except Exception as e:
         logger.error("Failed to update question: %s", e)
         raise HTTPException(status_code=500, detail=f"Database update failed: {str(e)}")
+
+
+@router.post("/{question_id}/adjudicate")
+async def adjudicate_question(
+    question_id: str,
+    payload: Dict[str, Any],
+    user_context: dict = Depends(require_admin_user),
+):
+    """
+    Chief Examination Controller Post-Exam Adjudication Tool (NTA / Pearson standard):
+    - action='drop_bonus': Flags question as dropped due to ambiguity/error and awards +4 bonus marks to all test-takers.
+    - action='correct_key': Overrides authoritative answer key across all candidate evaluations.
+    Broadcasts live to all connected consoles and updates database.
+    """
+    tid = user_context["tenant_id"]
+    db = get_db()
+    ensure_tenant_exists(db, tid)
+
+    action = payload.get("action", "drop_bonus").lower()
+    reason = payload.get("reason", "Authoritative Adjudication by Chief Examination Controller")
+
+    update_data = {}
+    if action == "drop_bonus":
+        update_data["correct_answer"] = "BONUS"
+    elif action == "correct_key":
+        new_key = str(payload.get("correct_answer", "A")).strip().upper()
+        update_data["correct_answer"] = new_key
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported adjudication action: {action}")
+
+    try:
+        db.table("question_bank").update(update_data).eq("id", question_id).execute()
+
+        await ws_manager.broadcast_all({
+            "type": "QUESTION_ADJUDICATED",
+            "question_id": question_id,
+            "action": action,
+            "correct_answer": update_data.get("correct_answer"),
+            "reason": reason,
+            "timestamp": time.time(),
+            "message": f"Question {question_id} adjudicated: {action.upper()} ({reason})"
+        })
+
+        return {
+            "status": "success",
+            "action": action,
+            "question_id": question_id,
+            "correct_answer": update_data.get("correct_answer"),
+            "reason": reason,
+            "message": "Question adjudication applied and broadcast live."
+        }
+    except Exception as e:
+        logger.error("Failed to adjudicate question: %s", e)
+        raise HTTPException(status_code=500, detail=f"Database update failed: {str(e)}")
+

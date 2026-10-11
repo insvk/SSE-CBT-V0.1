@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
-    <script type="module" crossorigin src="/assets/exam-203c0fe9.js"></script>
+    <script type="module" crossorigin src="/assets/exam-4359dc1f.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
     <link rel="stylesheet" href="/assets/style-5f067ebd.css">
   </head>
@@ -101,6 +101,12 @@
           <div class="candidate-profile-chip">
             <div class="candidate-name-bold" id="cand-display-name">NARESH S</div>
             <div class="candidate-roll-sub" id="cand-display-reg">5254740(V4.3.7)</div>
+          </div>
+
+          <!-- Terminal Node Badge -->
+          <div class="header-action-item" id="terminal-badge" style="background: rgba(30, 58, 138, 0.06); border-color: rgba(37, 99, 235, 0.3); font-family: var(--font-mono); font-weight: 700; color: #1e40af;" title="Physical CBT Terminal Node">
+            <span style="font-size: 0.85rem;">💺</span>
+            <span id="term-display-id">C-042</span>
           </div>
 
           <!-- Exit / Logout -->
@@ -644,6 +650,27 @@
         </p>
         <div style="font-family: var(--font-mono); font-size: 0.8rem; background: #f8fafc; padding: 0.5rem; border-radius: 6px; border: 1px solid #e2e8f0; color: #475569;">
           Terminal: <span id="locked-term-id">C-042</span> &bull; Status: LOCKED &bull; Code: ION-SEC-403
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTRAL INVIGILATOR EXAM PAUSE / HOLD OVERLAY -->
+    <div class="kiosk-lock-overlay" id="modal-exam-paused" style="background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px);">
+      <div style="background: white; color: #0f172a; padding: 2.5rem; border-radius: 16px; max-width: 560px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; border-top: 6px solid #d97706;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 1.25rem;">⏸️</div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: #b45309; margin-bottom: 0.5rem;">EXAMINATION ON HOLD</h2>
+        <div style="font-size: 0.85rem; font-weight: 800; color: #d97706; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+          TIMER FROZEN BY CENTRAL INVIGILATOR
+        </div>
+        <p style="font-size: 0.95rem; font-weight: 600; color: #475569; margin-bottom: 0.75rem;" id="pause-reason-text">
+          Physical identity verification or administrative room pause in progress.
+        </p>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.5;">
+          Do not close this window. Your remaining time has been stopped and all saved answers are protected in the cloud database. The test will automatically resume once the proctor releases the hold.
+        </p>
+        <div style="display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.8rem; background: #fffbeb; padding: 0.5rem 1rem; border-radius: 9999px; border: 1px solid #fde68a; color: #b45309;">
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#d97706; animation: pulse 1.5s infinite;"></span>
+          Awaiting Proctor Release Signal...
         </div>
       </div>
     </div>

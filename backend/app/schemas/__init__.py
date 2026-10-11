@@ -124,3 +124,13 @@ class ExamSubmitResponse(BaseModel):
     score: Optional[float] = None
     total_questions: Optional[int] = None
     attempt_id: Optional[str] = None
+
+
+class CandidateInterventionRequest(BaseModel):
+    action: str  # "extend_time", "pause_session", "resume_session", "reseat_terminal", "direct_warning", "lock_terminal", "unlock_terminal"
+    reg_no: Optional[str] = "ALL"
+    extra_minutes: Optional[int] = 15
+    reason: Optional[str] = None
+    target_terminal: Optional[str] = None
+    message: Optional[str] = None
+

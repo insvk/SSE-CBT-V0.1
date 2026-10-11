@@ -513,17 +513,25 @@ function initExamWebSocket(): void {
     }
 }
 
-function showInvigilatorMessage(icon: string, title: string, text: string): void {
+let isExamPaused = false;
+let lastDirectiveRequiresAck = false;
+
+function showInvigilatorMessage(icon: string, title: string, text: string, requiresAck = false): void {
+    lastDirectiveRequiresAck = requiresAck;
     const modal = document.getElementById('modal-invigilator-msg');
     const elIcon = document.getElementById('invig-icon');
     const elTitle = document.getElementById('invig-title');
     const elBody = document.getElementById('invig-msg-body');
     const elTime = document.getElementById('invig-msg-time');
+    const btnAck = document.getElementById('btn-ack-invig');
     if (modal && elBody) {
         if (elIcon) elIcon.textContent = icon;
         if (elTitle) elTitle.textContent = title;
         elBody.textContent = text;
         if (elTime) elTime.textContent = `Received at ${new Date().toLocaleTimeString()}`;
+        if (btnAck) {
+            btnAck.textContent = requiresAck ? "I Acknowledge and Comply" : "Acknowledge";
+        }
         modal.style.display = 'flex';
     }
 }
@@ -540,10 +548,61 @@ function triggerTerminalForceLock(reason: string): void {
 }
 
 function handleExamSocketMessage(msg: any): void {
-    if (msg.type === 'TIME_EXTENDED') {
-        const extraMins = msg.extra_minutes || 15;
-        currentRemainingSeconds += extraMins * 60;
-        showLiveToast(`⏱️ PROCTOR NOTICE: +${extraMins} minutes extra time added to your exam!`);
+    if (msg.type === 'TIME_EXTENDED' || msg.type === 'INDIVIDUAL_TIME_EXTENDED') {
+        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg) {
+            const extraMins = msg.extra_minutes || 15;
+            currentRemainingSeconds += extraMins * 60;
+            const mins = Math.floor(currentRemainingSeconds / 60);
+            const secs = currentRemainingSeconds % 60;
+            if (ui.timerDisplay) {
+                ui.timerDisplay.textContent = `${mins} : ${secs.toString().padStart(2, '0')}`;
+            }
+            showLiveToast(`⏱️ COMPENSATORY TIME: +${extraMins} mins added to your exam! (${msg.reason || 'Accommodations'})`);
+        }
+    } else if (msg.type === 'EXAM_PAUSED') {
+        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg) {
+            isExamPaused = true;
+            const pauseModal = document.getElementById('modal-exam-paused');
+            const pauseReason = document.getElementById('pause-reason-text');
+            if (pauseModal) {
+                if (pauseReason && msg.reason) pauseReason.textContent = msg.reason;
+                pauseModal.classList.add('active');
+            }
+            showLiveToast('⏸️ EXAMINATION ON HOLD: Timer frozen by Invigilator.', true);
+        }
+    } else if (msg.type === 'EXAM_RESUMED') {
+        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg) {
+            isExamPaused = false;
+            const pauseModal = document.getElementById('modal-exam-paused');
+            if (pauseModal) pauseModal.classList.remove('active');
+            if (msg.time_remaining_seconds) {
+                currentRemainingSeconds = msg.time_remaining_seconds;
+            }
+            showLiveToast('▶️ EXAMINATION RESUMED: Countdown timer restarted.');
+        }
+    } else if (msg.type === 'TERMINAL_RESEATED') {
+        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        if (msg.reg_no === myReg) {
+            const termEl = document.getElementById('term-display-id');
+            if (termEl) termEl.textContent = msg.new_terminal || 'C-043';
+            showLiveToast(`💺 Terminal migrated to ${msg.new_terminal}. Answers preserved!`);
+        }
+    } else if (msg.type === 'TERMINAL_UNLOCKED') {
+        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        if (!msg.reg_no || msg.reg_no === myReg) {
+            const lockOverlay = document.getElementById('modal-terminal-locked');
+            if (lockOverlay) lockOverlay.classList.remove('active');
+            startTimer();
+            showLiveToast('🔓 Terminal unlocked by Proctor.');
+        }
+    } else if (msg.type === 'PROCTOR_DIRECTIVE' || msg.type === 'PROCTOR_WARNING') {
+        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+        if (!msg.reg_no || msg.reg_no === myReg) {
+            showInvigilatorMessage("⚠️", "Mandatory Proctor Directive", msg.message || "Please return your full attention to the exam terminal screen.", true);
+        }
     } else if (msg.type === 'QUESTION_UPDATED') {
         // Examination Controller Live Question Edit applied to all consoles
         const qIdx = allQuestions.findIndex(q => q.id === msg.question_id);
@@ -556,6 +615,8 @@ function handleExamSocketMessage(msg: any): void {
             }
             showLiveToast(`✏️ Live Board Correction: Question ${qIdx + 1} updated!`);
         }
+    } else if (msg.type === 'QUESTION_ADJUDICATED') {
+        showLiveToast(`⚖️ Board Adjudication: ${msg.message}`);
     } else if (msg.type === 'EXAM_RESET') {
         questionState = new Array(20).fill(0);
         responses = new Array(20).fill(null);
@@ -564,11 +625,6 @@ function handleExamSocketMessage(msg: any): void {
         showLiveToast(`⚠️ Examination session reset by Proctor.`);
     } else if (msg.type === 'BROADCAST_ANNOUNCEMENT') {
         showInvigilatorMessage("📢", "Central Invigilator Announcement", msg.message || "Attention all candidates: Please maintain exam focus.");
-    } else if (msg.type === 'PROCTOR_WARNING') {
-        const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
-        if (!msg.reg_no || msg.reg_no === myReg) {
-            showInvigilatorMessage("⚠️", "Direct Warning From Central Invigilator", msg.message || "Please return your full attention to the exam terminal screen.");
-        }
     } else if (msg.type === 'FORCE_LOCK_TERMINAL') {
         const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
         if (!msg.reg_no || msg.reg_no === myReg) {
@@ -692,6 +748,10 @@ function startTimer(): void {
     if (timerInterval) clearInterval(timerInterval);
 
     timerInterval = setInterval(() => {
+        if (isExamPaused) {
+            return; // Timer frozen while on proctor hold
+        }
+
         if (currentRemainingSeconds <= 0) {
             clearInterval(timerInterval);
             if (ui.timerDisplay) ui.timerDisplay.textContent = "00 : 00";
@@ -1330,6 +1390,18 @@ if (btnAckInvig) {
     btnAckInvig.onclick = () => {
         const invigModal = document.getElementById('modal-invigilator-msg');
         if (invigModal) invigModal.style.display = 'none';
+
+        if (lastDirectiveRequiresAck && examSocket && examSocket.readyState === WebSocket.OPEN) {
+            const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
+            const myName = localStorage.getItem('candidate_name') || 'NARESH S';
+            examSocket.send(JSON.stringify({
+                type: 'DIRECTIVE_ACKNOWLEDGED',
+                reg_no: myReg,
+                candidate_name: myName,
+            }));
+            showLiveToast('✅ Directive compliance acknowledged to Proctor.');
+            lastDirectiveRequiresAck = false;
+        }
     };
 }
 

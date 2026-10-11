@@ -647,6 +647,11 @@ if (btnExportIncidents) {
     });
 }
 
+const candidateAccommodations: Record<string, number> = {};
+const candidatePausedStates: Record<string, boolean> = {};
+const candidateAssignedTerminals: Record<string, string> = {};
+const candidateLockedStates: Record<string, boolean> = {};
+
 function renderProctorTerminals(): void {
     const grid = document.getElementById('terminals-grid');
     const countEl = document.getElementById('active-terminals-count');
@@ -662,15 +667,19 @@ function renderProctorTerminals(): void {
     grid.innerHTML = '';
 
     cachedCandidates.forEach((c: any, idx: number) => {
-        const terminalId = `Terminal C-04${idx + 1}`;
+        const fallbackTerm = `Terminal C-04${idx + 1}`;
         const regNo = c.registration_number || `SSEC-${c.batch || 'A'}-000${idx + 1}`;
+        const terminalId = candidateAssignedTerminals[regNo] || c.metadata?.assigned_terminal || fallbackTerm;
         const violations = terminalViolations[regNo] || 0;
+        const isPaused = candidatePausedStates[regNo] || false;
+        const isLocked = candidateLockedStates[regNo] || false;
+        const extraMins = candidateAccommodations[regNo] || 0;
         const initials = (c.full_name || 'CD').split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
 
         const card = document.createElement('div');
         card.id = `terminal-card-${escapeHtml(regNo)}`;
         card.style.background = 'var(--bg-body)';
-        card.style.border = violations > 0 ? '1.5px solid #ef4444' : '1px solid var(--border-color)';
+        card.style.border = isLocked ? '2px solid #ef4444' : violations > 0 ? '1.5px solid #ef4444' : isPaused ? '1.5px solid #d97706' : '1px solid var(--border-color)';
         card.style.borderRadius = 'var(--radius)';
         card.style.padding = '1rem';
         card.style.display = 'flex';
@@ -678,19 +687,33 @@ function renderProctorTerminals(): void {
         card.style.gap = '0.65rem';
         card.style.transition = 'all 0.2s';
 
+        let statusBadgeHtml = '<span class="status-pill status-active">🟢 Active in Exam</span>';
+        if (isLocked) {
+            statusBadgeHtml = '<span class="status-pill status-suspended" style="background:#fee2e2; color:#b91c1c;">🔒 Locked</span>';
+        } else if (isPaused) {
+            statusBadgeHtml = '<span class="status-pill" style="background:#fef3c7; color:#b45309;">⏸️ On Hold</span>';
+        } else if (violations > 0) {
+            statusBadgeHtml = `<span class="status-pill status-suspended">⚠️ Strike #${violations}</span>`;
+        }
+
+        const accommodationBadge = extraMins > 0
+            ? `<span style="font-size: 0.72rem; color: #166534; background: #dcfce7; padding: 2px 6px; border-radius: 4px; font-weight: 700;">+${extraMins}m PwD/Glitch</span>`
+            : '';
+
         card.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 0.75rem; font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">${terminalId}</span>
-                <span id="term-status-${escapeHtml(regNo)}" class="status-pill ${violations > 0 ? 'status-suspended' : 'status-active'}">
-                    ${violations > 0 ? `⚠️ ${violations} Violation${violations > 1 ? 's' : ''}` : '🟢 Active in Exam'}
-                </span>
+                <span id="term-label-${escapeHtml(regNo)}" style="font-size: 0.75rem; font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">${escapeHtml(terminalId)}</span>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    ${accommodationBadge}
+                    <span id="term-status-${escapeHtml(regNo)}">${statusBadgeHtml}</span>
+                </div>
             </div>
 
             <div style="display: flex; align-items: center; gap: 0.75rem;">
                 <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #321fdb, #818cf8); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem;">
                     ${initials}
                 </div>
-                <div style="display: flex; flex-direction: column; overflow: hidden;">
+                <div style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
                     <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                         ${escapeHtml(c.full_name)}
                     </span>
@@ -705,14 +728,24 @@ function renderProctorTerminals(): void {
                 <span id="term-progress-${escapeHtml(regNo)}" style="font-weight: 600; color: var(--brand-blue);">Ready</span>
             </div>
 
-            <div style="display: flex; gap: 0.45rem; margin-top: 0.25rem;">
-                <button class="btn btn-outline btn-sm" style="flex: 1; padding: 0.3rem 0.4rem; font-size: 0.72rem; color: #d97706; border-color: #fde68a;" onclick="sendCandidateWarning('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}')">
-                    ⚠️ Warn
+            <!-- Enterprise Action Suite -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; margin-top: 0.25rem;">
+                <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem;" onclick="openCompensatoryModal('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}')">
+                    ⏱️ +Time
                 </button>
-                <button class="btn btn-outline btn-sm" style="flex: 1; padding: 0.3rem 0.4rem; font-size: 0.72rem; color: #ef4444; border-color: #fca5a5;" onclick="lockCandidateTerminal('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}')">
-                    🔒 Lock
+                <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem; color: ${isPaused ? '#10b981' : '#d97706'}; border-color: ${isPaused ? '#a7f3d0' : '#fde68a'};" onclick="toggleCandidatePause('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}')">
+                    ${isPaused ? '▶️ Resume' : '⏸️ Hold'}
                 </button>
-                <button class="btn btn-outline btn-sm" style="flex: 1; padding: 0.3rem 0.4rem; font-size: 0.72rem;" onclick="resetAttempt('${escapeHtml(c.id)}')">
+                <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem;" onclick="openReseatModal('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}', '${escapeHtml(terminalId)}')">
+                    💺 Re-seat
+                </button>
+                <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem; color: #d97706; border-color: #fde68a;" onclick="sendCandidateDirective('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}')">
+                    ⚠️ Directive
+                </button>
+                <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem; color: #ef4444; border-color: #fca5a5;" onclick="toggleLockTerminal('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}')">
+                    ${isLocked ? '🔓 Unlock' : '🔒 Lock'}
+                </button>
+                <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem;" onclick="resetAttempt('${escapeHtml(c.id)}')">
                     🔄 Reset
                 </button>
             </div>
@@ -722,8 +755,210 @@ function renderProctorTerminals(): void {
     });
 }
 
-(window as any).sendCandidateWarning = (regNo: string, name: string) => {
-    const customMsg = prompt(`Enter warning message to display immediately on ${name}'s terminal:`, "Invigilator Alert: Please maintain exam focus on your terminal screen.");
+// 1. COMPENSATORY TIME GRANT MODAL LOGIC
+(window as any).openCompensatoryModal = (regNo: string, name: string) => {
+    const modal = document.getElementById('modal-extend-candidate-time');
+    const inputReg = document.getElementById('ext-cand-reg') as HTMLInputElement;
+    const labelName = document.getElementById('ext-cand-name');
+    const labelReg = document.getElementById('ext-cand-reg-label');
+    const customInput = document.getElementById('ext-custom-mins') as HTMLInputElement;
+
+    if (modal && inputReg && labelName && labelReg) {
+        inputReg.value = regNo;
+        labelName.textContent = name;
+        labelReg.textContent = `Registration Number: ${regNo}`;
+        if (customInput) customInput.value = '15';
+        modal.style.display = 'flex';
+    }
+};
+
+document.querySelectorAll('.ext-quick-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const mins = (e.currentTarget as HTMLElement).getAttribute('data-mins') || '15';
+        const customInput = document.getElementById('ext-custom-mins') as HTMLInputElement;
+        if (customInput) customInput.value = mins;
+        document.querySelectorAll('.ext-quick-btn').forEach(b => b.className = 'btn btn-outline btn-sm ext-quick-btn');
+        (e.currentTarget as HTMLElement).className = 'btn btn-primary btn-sm ext-quick-btn';
+    });
+});
+
+const formExtendCandidateTime = document.getElementById('form-extend-candidate-time') as HTMLFormElement;
+if (formExtendCandidateTime) {
+    formExtendCandidateTime.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const regNo = (document.getElementById('ext-cand-reg') as HTMLInputElement).value;
+        const mins = parseInt((document.getElementById('ext-custom-mins') as HTMLInputElement).value) || 15;
+        const reason = (document.getElementById('ext-reason-select') as HTMLSelectElement).value;
+
+        try {
+            const res = await fetch(`/api/v1/exams/EX-1001/candidate-intervention`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    action: 'extend_time',
+                    reg_no: regNo,
+                    extra_minutes: mins,
+                    reason: reason,
+                })
+            });
+
+            if (res.ok) {
+                candidateAccommodations[regNo] = (candidateAccommodations[regNo] || 0) + mins;
+                showToast(`⏱️ Granted +${mins}m compensatory time to ${regNo}`);
+                appendIncidentLog(`Granted +${mins}m accommodation to ${regNo} (${reason})`);
+                document.getElementById('modal-extend-candidate-time')!.style.display = 'none';
+                renderProctorTerminals();
+            } else {
+                showToast("Failed to grant compensatory time", true);
+            }
+        } catch (_) {
+            showToast("Network error while granting time", true);
+        }
+    });
+}
+
+// 2. EMERGENCY TERMINAL RE-SEATING MODAL LOGIC
+(window as any).openReseatModal = (regNo: string, name: string, currentTerm: string) => {
+    const modal = document.getElementById('modal-reseat-candidate');
+    const inputReg = document.getElementById('reseat-cand-reg') as HTMLInputElement;
+    const labelName = document.getElementById('reseat-cand-name');
+    const labelTerm = document.getElementById('reseat-cand-current-term');
+    const targetInput = document.getElementById('reseat-target-node') as HTMLInputElement;
+
+    if (modal && inputReg && labelName && labelTerm) {
+        inputReg.value = regNo;
+        labelName.textContent = name;
+        labelTerm.textContent = `Current Active Node: ${currentTerm}`;
+        if (targetInput) targetInput.value = 'Terminal C-049';
+        modal.style.display = 'flex';
+    }
+};
+
+const formReseatCandidate = document.getElementById('form-reseat-candidate') as HTMLFormElement;
+if (formReseatCandidate) {
+    formReseatCandidate.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const regNo = (document.getElementById('reseat-cand-reg') as HTMLInputElement).value;
+        const targetNode = (document.getElementById('reseat-target-node') as HTMLInputElement).value.trim();
+        const reason = (document.getElementById('reseat-reason') as HTMLSelectElement).value;
+
+        try {
+            const res = await fetch(`/api/v1/exams/EX-1001/candidate-intervention`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    action: 'reseat_terminal',
+                    reg_no: regNo,
+                    target_terminal: targetNode,
+                    reason: reason,
+                })
+            });
+
+            if (res.ok) {
+                candidateAssignedTerminals[regNo] = targetNode;
+                showToast(`💺 Terminal re-seated to ${targetNode} for ${regNo}`);
+                appendIncidentLog(`Migrated session for ${regNo} to ${targetNode} (${reason})`);
+                document.getElementById('modal-reseat-candidate')!.style.display = 'none';
+                renderProctorTerminals();
+            } else {
+                showToast("Failed to re-seat terminal", true);
+            }
+        } catch (_) {
+            showToast("Network error while re-seating terminal", true);
+        }
+    });
+}
+
+// 3. CANDIDATE & HALL REMOTE PAUSE / RESUME LOGIC
+(window as any).toggleCandidatePause = async (regNo: string, name: string) => {
+    const currentlyPaused = candidatePausedStates[regNo] || false;
+    const action = currentlyPaused ? 'resume_session' : 'pause_session';
+    const reason = currentlyPaused ? 'Proctor inspection cleared' : 'Central Invigilator verification hold';
+
+    try {
+        const res = await fetch(`/api/v1/exams/EX-1001/candidate-intervention`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({
+                action: action,
+                reg_no: regNo,
+                reason: reason,
+            })
+        });
+
+        if (res.ok) {
+            candidatePausedStates[regNo] = !currentlyPaused;
+            showToast(`${currentlyPaused ? '▶️ Resumed' : '⏸️ Paused'} session for ${name}`);
+            appendIncidentLog(`${currentlyPaused ? 'Resumed' : 'Paused'} test session for ${name} (${regNo})`);
+            renderProctorTerminals();
+        } else {
+            showToast("Failed to toggle session hold", true);
+        }
+    } catch (_) {
+        showToast("Network error toggling session hold", true);
+    }
+};
+
+const btnHallPause = document.getElementById('btn-hall-pause');
+if (btnHallPause) {
+    btnHallPause.addEventListener('click', async () => {
+        if (!confirm("Are you sure you want to PAUSE examination countdown for ALL connected test-takers?")) return;
+        try {
+            const res = await fetch(`/api/v1/exams/EX-1001/candidate-intervention`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    action: 'pause_session',
+                    reg_no: 'ALL',
+                    reason: 'Examination Hall Verification Pause',
+                })
+            });
+            if (res.ok) {
+                showToast("⏸️ Hall hold signal dispatched: All countdowns frozen.");
+                appendIncidentLog("Central Invigilator placed the entire examination hall on HOLD.");
+            }
+        } catch (_) {
+            showToast("Network error dispatching hall hold", true);
+        }
+    });
+}
+
+const btnHallResume = document.getElementById('btn-hall-resume');
+if (btnHallResume) {
+    btnHallResume.addEventListener('click', async () => {
+        if (!confirm("Resume examination countdown for all connected candidates?")) return;
+        try {
+            const res = await fetch(`/api/v1/exams/EX-1001/candidate-intervention`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    action: 'resume_session',
+                    reg_no: 'ALL',
+                    reason: 'Verification completed - Resuming exam',
+                })
+            });
+            if (res.ok) {
+                showToast("▶️ Hall resumed: All candidate countdown timers restarted.");
+                appendIncidentLog("Central Invigilator RESUMED all examination sessions.");
+            }
+        } catch (_) {
+            showToast("Network error resuming hall", true);
+        }
+    });
+}
+
+// 4. ATTENDANCE ROSTER DOWNLOAD
+const btnExportAttendance = document.getElementById('btn-export-attendance');
+if (btnExportAttendance) {
+    btnExportAttendance.addEventListener('click', () => {
+        window.location.href = '/api/v1/exams/EX-1001/attendance-roster?format=csv';
+        showToast("📋 Official Attendance Roster CSV downloaded!");
+    });
+}
+
+// 5. DIRECTIVE & TERMINAL LOCK DISPATCH
+(window as any).sendCandidateDirective = (regNo: string, name: string) => {
+    const customMsg = prompt(`Enter high-priority directive for ${name} (${regNo}) requiring compliance acknowledgement:`, "Invigilator Directive: Keep your face centered in the webcam frame and maintain focus.");
     if (!customMsg) return;
 
     if (adminSocket && adminSocket.readyState === WebSocket.OPEN) {
@@ -733,25 +968,41 @@ function renderProctorTerminals(): void {
             reg_no: regNo,
             message: customMsg
         }));
-        showToast(`⚠️ Warning dispatched to ${name} (${regNo})`);
-        appendIncidentLog(`Dispatched Invigilator Warning to ${name} (${regNo}): "${customMsg}"`);
+        showToast(`⚠️ Priority Directive dispatched to ${name} (${regNo})`);
+        appendIncidentLog(`Dispatched Invigilator Directive to ${name} (${regNo}): "${customMsg}"`);
     } else {
-        showToast("WebSocket disconnected, unable to send live warning", true);
+        showToast("WebSocket disconnected, unable to send directive", true);
     }
 };
 
-(window as any).lockCandidateTerminal = (regNo: string, name: string) => {
-    if (!confirm(`Are you sure you want to forcibly LOCK the terminal of ${name} (${regNo})?`)) return;
+(window as any).toggleLockTerminal = async (regNo: string, name: string) => {
+    const isLocked = candidateLockedStates[regNo] || false;
+    const action = isLocked ? 'unlock_terminal' : 'lock_terminal';
+    const reason = isLocked ? 'Terminal unlocked by Invigilator' : 'Malpractice investigation lock by Central Invigilator';
 
-    if (adminSocket && adminSocket.readyState === WebSocket.OPEN) {
-        adminSocket.send(JSON.stringify({
-            type: "LOCK_TERMINAL",
-            exam_id: "EX-1001",
-            reg_no: regNo,
-            reason: "Malpractice investigation lock by Central Invigilator."
-        }));
-        showToast(`🔒 Terminal locked for ${name} (${regNo})`);
-        appendIncidentLog(`Forcibly LOCKED terminal for ${name} (${regNo})`, true);
+    if (!isLocked && !confirm(`Are you sure you want to forcibly LOCK the terminal of ${name} (${regNo})?`)) return;
+
+    try {
+        const res = await fetch(`/api/v1/exams/EX-1001/candidate-intervention`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({
+                action: action,
+                reg_no: regNo,
+                reason: reason,
+            })
+        });
+
+        if (res.ok) {
+            candidateLockedStates[regNo] = !isLocked;
+            showToast(`${isLocked ? '🔓 Terminal unlocked' : '🔒 Terminal locked'} for ${name}`);
+            appendIncidentLog(`${isLocked ? 'Unlocked' : 'Forcibly LOCKED'} terminal for ${name} (${regNo})`, !isLocked);
+            renderProctorTerminals();
+        } else {
+            showToast("Failed to update terminal lock status", true);
+        }
+    } catch (_) {
+        showToast("Network error updating terminal lock", true);
     }
 };
 
@@ -835,6 +1086,57 @@ function initAdminWebSocket(): void {
                         termStatus.className = 'status-pill status-suspended';
                         termStatus.textContent = `⚠️ Strike #${terminalViolations[reg]}`;
                     }
+
+                } else if (msg.type === 'DIRECTIVE_ACKNOWLEDGED') {
+                    showToast(`✅ Compliance Confirmed: Candidate ${msg.candidate_name || msg.reg_no} acknowledged directive!`);
+                    appendIncidentLog(`✅ Candidate ${msg.candidate_name || msg.reg_no} confirmed compliance with Proctor directive.`);
+                    const termCard = document.getElementById(`terminal-card-${msg.reg_no}`);
+                    if (termCard) {
+                        termCard.style.border = '1px solid #10b981';
+                        termCard.style.background = 'rgba(16, 185, 129, 0.05)';
+                    }
+
+                } else if (msg.type === 'INDIVIDUAL_TIME_EXTENDED') {
+                    candidateAccommodations[msg.reg_no] = msg.total_compensatory_minutes || ((candidateAccommodations[msg.reg_no] || 0) + msg.extra_minutes);
+                    showToast(`⏱️ Compensatory Time Granted: +${msg.extra_minutes}m to ${msg.reg_no}`);
+                    appendIncidentLog(`Granted +${msg.extra_minutes}m compensatory accommodation to ${msg.reg_no} (${msg.reason || 'Official'})`);
+                    renderProctorTerminals();
+
+                } else if (msg.type === 'TERMINAL_RESEATED') {
+                    candidateAssignedTerminals[msg.reg_no] = msg.new_terminal;
+                    showToast(`💺 Terminal Re-seated: ${msg.reg_no} migrated to ${msg.new_terminal}`);
+                    appendIncidentLog(`Migrated candidate ${msg.reg_no} to node ${msg.new_terminal} (${msg.reason || 'Hardware switch'})`);
+                    renderProctorTerminals();
+
+                } else if (msg.type === 'EXAM_PAUSED') {
+                    if (msg.reg_no === 'ALL') {
+                        cachedCandidates.forEach((c: any) => {
+                            const r = c.registration_number || c.id;
+                            candidatePausedStates[r] = true;
+                        });
+                        showToast('⏸️ All active exam sessions put on proctor hold');
+                        appendIncidentLog(`Entire examination hall put on HOLD by Invigilator: ${msg.reason}`);
+                    } else {
+                        candidatePausedStates[msg.reg_no] = true;
+                        showToast(`⏸️ Session paused for candidate ${msg.reg_no}`);
+                        appendIncidentLog(`Paused session for ${msg.reg_no}: ${msg.reason}`);
+                    }
+                    renderProctorTerminals();
+
+                } else if (msg.type === 'EXAM_RESUMED') {
+                    if (msg.reg_no === 'ALL') {
+                        cachedCandidates.forEach((c: any) => {
+                            const r = c.registration_number || c.id;
+                            candidatePausedStates[r] = false;
+                        });
+                        showToast('▶️ All active exam sessions resumed');
+                        appendIncidentLog(`Examination hall RESUMED by Invigilator`);
+                    } else {
+                        candidatePausedStates[msg.reg_no] = false;
+                        showToast(`▶️ Session resumed for candidate ${msg.reg_no}`);
+                        appendIncidentLog(`Resumed session for ${msg.reg_no}`);
+                    }
+                    renderProctorTerminals();
 
                 } else if (msg.type === 'CANDIDATE_RESPONSE') {
                     showToast(`🟢 Live Response: Candidate ${msg.candidate_name || 'Candidate'} - Q${msg.question_id || '1'}`);

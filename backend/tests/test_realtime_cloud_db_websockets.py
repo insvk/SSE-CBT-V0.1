@@ -79,10 +79,109 @@ def test_cloud_db_rest_save_response_realtime():
 
 
 def test_cloud_db_extend_time_broadcast():
-    """Validates God MAXX time extension endpoint."""
+    """Validates exam time extension endpoint."""
     res = client.post("/api/v1/exams/EX-1001/extend-time?extra_minutes=15")
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "success"
     assert "Added +15 minutes" in data["message"]
     assert data["time_remaining_seconds"] > 0
+
+
+def test_enterprise_candidate_intervention_suite():
+    """Validates compensatory time, pause, resume, reseat, warning, and locking endpoints."""
+    # 1. Compensatory Time Grant (PwD / Glitch Relief)
+    res = client.post("/api/v1/exams/EX-1001/candidate-intervention", json={
+        "action": "extend_time",
+        "reg_no": "5254740(V4.3.7)",
+        "extra_minutes": 20,
+        "reason": "PwD Scribe Mandated Compensatory Time"
+    })
+    assert res.status_code == 200
+    d = res.json()
+    assert d["status"] == "success"
+    assert d["extra_minutes"] == 20
+    assert d["total_compensatory_minutes"] >= 20
+
+    # 2. Remote Session Pause (Hold)
+    res_pause = client.post("/api/v1/exams/EX-1001/candidate-intervention", json={
+        "action": "pause_session",
+        "reg_no": "5254740(V4.3.7)",
+        "reason": "Biometric verification hold"
+    })
+    assert res_pause.status_code == 200
+    assert res_pause.json()["status"] == "success"
+
+    # 3. Remote Session Resume
+    res_resume = client.post("/api/v1/exams/EX-1001/candidate-intervention", json={
+        "action": "resume_session",
+        "reg_no": "5254740(V4.3.7)",
+        "reason": "Verification cleared"
+    })
+    assert res_resume.status_code == 200
+    assert res_resume.json()["status"] == "success"
+
+    # 4. Terminal Re-seating / Migration
+    res_reseat = client.post("/api/v1/exams/EX-1001/candidate-intervention", json={
+        "action": "reseat_terminal",
+        "reg_no": "5254740(V4.3.7)",
+        "target_terminal": "Terminal C-049",
+        "reason": "Keyboard defect"
+    })
+    assert res_reseat.status_code == 200
+    assert res_reseat.json()["new_terminal"] == "Terminal C-049"
+
+    # 5. Direct Proctor Warning
+    res_warn = client.post("/api/v1/exams/EX-1001/candidate-intervention", json={
+        "action": "direct_warning",
+        "reg_no": "5254740(V4.3.7)",
+        "message": "Maintain exam focus on screen."
+    })
+    assert res_warn.status_code == 200
+    assert res_warn.json()["status"] == "success"
+
+
+def test_attendance_roster_generation():
+    """Validates real-time attendance roster in both JSON and CSV formats."""
+    # JSON format
+    res_json = client.get("/api/v1/exams/EX-1001/attendance-roster")
+    assert res_json.status_code == 200
+    data = res_json.json()
+    assert data["status"] == "success"
+    assert "roster" in data
+    assert len(data["roster"]) >= 1
+    cand = data["roster"][0]
+    assert "registration_number" in cand
+    assert "terminal_node" in cand
+    assert "biometric_status" in cand
+
+    # CSV format
+    res_csv = client.get("/api/v1/exams/EX-1001/attendance-roster?format=csv")
+    assert res_csv.status_code == 200
+    assert "text/csv" in res_csv.headers["content-type"]
+    assert "registration_number" in res_csv.text
+    assert "NARESH S" in res_csv.text
+
+
+def test_question_adjudication_and_bonus():
+    """Validates Chief Controller post-exam question adjudication (bonus to all)."""
+    # 1. Authenticate with official admin account
+    login_res = client.post(
+        "/api/v1/auth/login",
+        json={"username_or_email": "admin@sse.cbt.in", "password": "Admin.sse@123"},
+    )
+    assert login_res.status_code == 200
+    token = login_res.json()["access_token"]
+
+    # 2. Adjudicate Question 3 as Dropped / Bonus
+    res = client.post(
+        "/api/v1/questions/00000000-0000-0000-0000-000000000013/adjudicate",
+        json={"action": "drop_bonus", "reason": "Ambiguous option wording"},
+        headers={"x-tenant-id": "00000000-0000-0000-0000-000000000001", "Authorization": f"Bearer {token}"}
+    )
+    assert res.status_code == 200
+    d = res.json()
+    assert d["status"] == "success"
+    assert d["action"] == "drop_bonus"
+    assert d["correct_answer"] == "BONUS"
+

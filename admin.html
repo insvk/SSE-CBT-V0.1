@@ -1173,6 +1173,7 @@
 
             <!-- ACTION TOOLBAR -->
             <div class="action-toolbar">
+              <button class="btn btn-outline" id="btn-export-attendance">📋 Export Attendance Roster CSV</button>
               <button class="btn btn-outline" id="btn-export-csv">📥 Export Credentials CSV</button>
               <button class="btn btn-outline" id="btn-import">📂 Bulk Import CSV</button>
               <button class="btn btn-primary" id="btn-create">
@@ -1190,6 +1191,12 @@
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               <button class="btn btn-outline btn-sm" id="btn-extend-time" title="Add 15 minutes to all active exams">
                 ⏱️ +15 Min Extension
+              </button>
+              <button class="btn btn-outline btn-sm" id="btn-hall-pause" style="color: #d97706; border-color: #fde68a;" title="Pause countdown timer across active exams">
+                ⏸️ Hall Hold (Pause All)
+              </button>
+              <button class="btn btn-outline btn-sm" id="btn-hall-resume" style="color: #10b981; border-color: #a7f3d0;" title="Resume countdown timer across active exams">
+                ▶️ Resume Hall
               </button>
               <button class="btn btn-outline btn-sm" id="btn-unlock-sessions" title="Release tab collisions and duplicate locks">
                 🔄 Release Concurrency Locks
@@ -1494,6 +1501,90 @@
           <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
             <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-import').style.display='none'">Cancel</button>
             <button type="submit" class="btn btn-primary">Start Import</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- COMPENSATORY TIME GRANT MODAL -->
+    <div class="modal-backdrop" id="modal-extend-candidate-time">
+      <div class="modal-box">
+        <h2>⏱️ Grant Compensatory Time Accommodation</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Official Examination Controller Accommodation (PwD / Scribe / Hardware Glitch Relief).
+        </p>
+
+        <form id="form-extend-candidate-time">
+          <input type="hidden" id="ext-cand-reg" />
+          <div style="background: var(--bg-body); padding: 0.75rem 1rem; border-radius: var(--radius); margin-bottom: 1rem; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Target Candidate:</div>
+            <div style="font-size: 1rem; font-weight: 700; color: var(--text-heading);" id="ext-cand-name">--</div>
+            <div style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--brand-blue);" id="ext-cand-reg-label">--</div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">Compensatory Duration</label>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 0.75rem;">
+              <button type="button" class="btn btn-outline btn-sm ext-quick-btn" data-mins="5">+5 Mins</button>
+              <button type="button" class="btn btn-outline btn-sm ext-quick-btn" data-mins="10">+10 Mins</button>
+              <button type="button" class="btn btn-primary btn-sm ext-quick-btn" data-mins="15">+15 Mins</button>
+              <button type="button" class="btn btn-outline btn-sm ext-quick-btn" data-mins="20">+20 Mins</button>
+            </div>
+            <input type="number" class="form-input-ctrl" id="ext-custom-mins" value="15" min="1" max="120" placeholder="Custom minutes" required />
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <label class="form-label">Official Regulatory Reason / Justification</label>
+            <select class="form-input-ctrl" id="ext-reason-select">
+              <option value="PwD / Scribe Mandated Compensatory Time (Govt Guidelines)">PwD / Scribe Mandated Compensatory Time (Govt Guidelines)</option>
+              <option value="Terminal Hardware Glitch / Peripheral Malfunction Relief">Terminal Hardware Glitch / Peripheral Malfunction Relief</option>
+              <option value="Network Disconnect / Re-login Latency Adjustment">Network Disconnect / Re-login Latency Adjustment</option>
+              <option value="Central Invigilator Physical Verification Hold Relief">Central Invigilator Physical Verification Hold Relief</option>
+            </select>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-extend-candidate-time').style.display='none'">Cancel</button>
+            <button type="submit" class="btn btn-primary">Grant &amp; Push Live &rarr;</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- EMERGENCY TERMINAL RE-SEATING MODAL -->
+    <div class="modal-backdrop" id="modal-reseat-candidate">
+      <div class="modal-box">
+        <h2>💺 Emergency Terminal Node Re-seating</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Migrate candidate active session to a standby terminal node without disrupting recorded responses or timers.
+        </p>
+
+        <form id="form-reseat-candidate">
+          <input type="hidden" id="reseat-cand-reg" />
+          <div style="background: var(--bg-body); padding: 0.75rem 1rem; border-radius: var(--radius); margin-bottom: 1rem; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Candidate:</div>
+            <div style="font-size: 1rem; font-weight: 700; color: var(--text-heading);" id="reseat-cand-name">--</div>
+            <div style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--brand-blue);" id="reseat-cand-current-term">Current Terminal: C-041</div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">Standby Target Terminal Node</label>
+            <input type="text" class="form-input-ctrl" id="reseat-target-node" value="C-049" placeholder="e.g. C-049, C-050" required />
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <label class="form-label">Migration Reason</label>
+            <select class="form-input-ctrl" id="reseat-reason">
+              <option value="Hardware Keyboard / Mouse Peripheral Malfunction">Hardware Keyboard / Mouse Peripheral Malfunction</option>
+              <option value="Monitor Display Flickering / Power Defect">Monitor Display Flickering / Power Defect</option>
+              <option value="Physical Terminal Isolation for Invigilation Inspection">Physical Terminal Isolation for Invigilation Inspection</option>
+              <option value="Network Port Switch Over">Network Port Switch Over</option>
+            </select>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-reseat-candidate').style.display='none'">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #1e3a8a, #2563eb);">Authorize Migration &rarr;</button>
           </div>
         </form>
       </div>

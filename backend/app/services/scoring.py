@@ -74,6 +74,27 @@ class ScoringEngine:
             # Check if answered
             is_answered = cand_raw is not None and str(cand_raw).strip() != "" and cand_raw != "null"
 
+            # Check for Official Dropped Question / Bonus to All Adjudication (NTA / Pearson standard)
+            is_bonus = (
+                str(correct_raw).strip().upper() in ("BONUS", "DROPPED")
+                or q_data.get("is_dropped") is True
+                or str(q_data.get("status", "")).strip().lower() in ("dropped", "bonus")
+            )
+            if is_bonus:
+                total_score += default_correct
+                correct_count += 1
+                subject_scores[subject]["score"] += default_correct
+                subject_scores[subject]["correct"] += 1
+                details.append({
+                    "question_id": q_id,
+                    "subject": subject,
+                    "status": "bonus",
+                    "marks_awarded": default_correct,
+                    "candidate_answer": cand_raw,
+                    "correct_answer": "BONUS",
+                })
+                continue
+
             if not is_answered:
                 unanswered_count += 1
                 subject_scores[subject]["unanswered"] += 1

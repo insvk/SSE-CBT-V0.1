@@ -146,6 +146,17 @@ async def exam_websocket_endpoint(websocket: WebSocket, exam_id: str):
                         "timestamp": time.time()
                     }))
 
+                elif msg_type == "DIRECTIVE_ACKNOWLEDGED":
+                    reg_no = data.get("reg_no")
+                    cand_name = data.get("candidate_name") or "Candidate"
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "DIRECTIVE_ACKNOWLEDGED",
+                        "reg_no": reg_no,
+                        "candidate_name": cand_name,
+                        "timestamp": time.time(),
+                        "message": f"Candidate {cand_name} ({reg_no}) confirmed compliance with directive."
+                    })
+
             except json.JSONDecodeError:
                 pass
 
@@ -193,6 +204,86 @@ async def admin_websocket_endpoint(websocket: WebSocket):
                         "extra_minutes": extra_mins,
                         "timestamp": time.time()
                     })
+                elif msg_type == "EXTEND_CANDIDATE_TIME":
+                    exam_id = data.get("exam_id", "EX-1001")
+                    reg_no = data.get("reg_no")
+                    extra_mins = int(data.get("extra_minutes", 15))
+                    reason = data.get("reason", "Compensatory time grant")
+                    await ws_manager.broadcast(f"exam_{exam_id}", {
+                        "type": "INDIVIDUAL_TIME_EXTENDED",
+                        "reg_no": reg_no,
+                        "extra_minutes": extra_mins,
+                        "reason": reason,
+                        "timestamp": time.time()
+                    })
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "INDIVIDUAL_TIME_EXTENDED",
+                        "reg_no": reg_no,
+                        "extra_minutes": extra_mins,
+                        "reason": reason,
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "PAUSE_SESSION":
+                    exam_id = data.get("exam_id", "EX-1001")
+                    reg_no = data.get("reg_no", "ALL")
+                    reason = data.get("reason", "Invigilator Verification Hold")
+                    await ws_manager.broadcast(f"exam_{exam_id}", {
+                        "type": "EXAM_PAUSED",
+                        "reg_no": reg_no,
+                        "reason": reason,
+                        "timestamp": time.time()
+                    })
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "EXAM_PAUSED",
+                        "reg_no": reg_no,
+                        "reason": reason,
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "RESUME_SESSION":
+                    exam_id = data.get("exam_id", "EX-1001")
+                    reg_no = data.get("reg_no", "ALL")
+                    await ws_manager.broadcast(f"exam_{exam_id}", {
+                        "type": "EXAM_RESUMED",
+                        "reg_no": reg_no,
+                        "timestamp": time.time()
+                    })
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "EXAM_RESUMED",
+                        "reg_no": reg_no,
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "RESEAT_TERMINAL":
+                    exam_id = data.get("exam_id", "EX-1001")
+                    reg_no = data.get("reg_no")
+                    new_term = data.get("new_terminal", "C-043")
+                    reason = data.get("reason", "Terminal Swap")
+                    await ws_manager.broadcast(f"exam_{exam_id}", {
+                        "type": "TERMINAL_RESEATED",
+                        "reg_no": reg_no,
+                        "new_terminal": new_term,
+                        "reason": reason,
+                        "timestamp": time.time()
+                    })
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "TERMINAL_RESEATED",
+                        "reg_no": reg_no,
+                        "new_terminal": new_term,
+                        "reason": reason,
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "UNLOCK_TERMINAL":
+                    exam_id = data.get("exam_id", "EX-1001")
+                    reg_no = data.get("reg_no")
+                    await ws_manager.broadcast(f"exam_{exam_id}", {
+                        "type": "TERMINAL_UNLOCKED",
+                        "reg_no": reg_no,
+                        "timestamp": time.time()
+                    })
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "TERMINAL_UNLOCKED",
+                        "reg_no": reg_no,
+                        "timestamp": time.time()
+                    })
                 elif msg_type == "BROADCAST_ANNOUNCEMENT":
                     broadcast_msg = data.get("message", "Attention all candidates: Invigilator Announcement.")
                     await ws_manager.broadcast_all({
@@ -204,9 +295,10 @@ async def admin_websocket_endpoint(websocket: WebSocket):
                 elif msg_type == "SEND_CANDIDATE_WARNING":
                     target_exam = data.get("exam_id", "EX-1001")
                     await ws_manager.broadcast(f"exam_{target_exam}", {
-                        "type": "PROCTOR_WARNING",
+                        "type": "PROCTOR_DIRECTIVE",
                         "reg_no": data.get("reg_no"),
                         "message": data.get("message", "Proctor Alert: Return to your test terminal immediately."),
+                        "requires_ack": True,
                         "timestamp": time.time()
                     })
                 elif msg_type == "LOCK_TERMINAL":
