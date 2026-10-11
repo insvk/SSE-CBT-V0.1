@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Candidate Online Registration | SSE CBT PLATFORM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --primary-blue: #0066ff;
+        --primary-blue-hover: #0052cc;
+        --brand-indigo: #4f46e5;
+        --text-dark: #0f172a;
+        --text-body: #334155;
+        --text-muted: #64748b;
+        --border-color: #cbd5e1;
+        --border-focus: #2563eb;
+        --bg-body: #f8fafc;
+        --bg-card: #ffffff;
+        --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--bg-body);
+        color: var(--text-dark);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Top Header */
+      .portal-header {
+        background: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      }
+
+      .portal-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .brand-badge {
+        background: #1e3a8a;
+        color: white;
+        font-weight: 800;
+        font-size: 0.95rem;
+        padding: 0.4rem 0.65rem;
+        border-radius: 4px;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #1e293b;
+      }
+
+      .brand-subtitle {
+        font-size: 0.72rem;
+        color: #64748b;
+        font-weight: 600;
+        display: block;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .header-link {
+        font-size: 0.825rem;
+        font-weight: 600;
+        color: #2563eb;
+        text-decoration: none;
+      }
+
+      .header-link:hover {
+        text-decoration: underline;
+      }
+
+      /* Main Container */
+      .reg-wrapper {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2.5rem 1.5rem;
+      }
+
+      .reg-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+        max-width: 680px;
+        width: 100%;
+        padding: 2.5rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .target-exam-banner {
+        display: none;
+        background: rgba(37, 99, 235, 0.08);
+        border: 1.5px solid rgba(37, 99, 235, 0.3);
+        border-radius: 10px;
+        padding: 0.85rem 1.25rem;
+        margin-bottom: 1.5rem;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .banner-icon {
+        font-size: 1.5rem;
+      }
+
+      .banner-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #1d4ed8;
+      }
+
+      .banner-desc {
+        font-size: 0.75rem;
+        color: #475569;
+        margin-top: 2px;
+      }
+
+      .reg-header {
+        margin-bottom: 2rem;
+      }
+
+      .reg-title {
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.02em;
+      }
+
+      .reg-desc {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.35rem;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+      }
+
+      .form-group-full {
+        grid-column: 1 / -1;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .form-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 0.4rem;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .required-star {
+        color: #ef4444;
+      }
+
+      .form-input, .form-select {
+        height: 44px;
+        padding: 0 12px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-family: inherit;
+        color: #0f172a;
+        background: #ffffff;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+
+      .form-input:focus, .form-select:focus {
+        border-color: var(--border-focus);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      }
+
+      .pwd-section {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+      }
+
+      .pwd-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin-top: 0.5rem;
+        cursor: pointer;
+        font-size: 0.825rem;
+        font-weight: 600;
+        color: #334155;
+      }
+
+      .checkbox-row input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--primary-blue);
+      }
+
+      .submit-btn {
+        width: 100%;
+        height: 48px;
+        background: #1e3a8a;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 1.75rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+        transition: background 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .submit-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+      }
+
+      .submit-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      .alert-box {
+        display: none;
+        padding: 0.75rem 1rem;
+        border-radius: 4px;
+        font-size: 0.825rem;
+        margin-bottom: 1.25rem;
+      }
+
+      .alert-danger {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+      }
+
+      .alert-success {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #15803d;
+      }
+
+      /* Success Modal Card */
+      .success-card {
+        display: none;
+        text-align: center;
+        padding: 1rem 0;
+      }
+
+      .success-badge-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: #dcfce7;
+        color: #15803d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto 1.25rem;
+      }
+
+      .cred-box {
+        background: #f8fafc;
+        border: 1.5px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin: 1.5rem 0;
+        text-align: left;
+      }
+
+      .cred-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.85rem;
+      }
+
+      .cred-row:last-child {
+        border-bottom: none;
+      }
+
+      .cred-val {
+        font-family: var(--font-mono);
+        font-weight: 700;
+        color: #1e40af;
+      }
+
+      .footer-note {
+        text-align: center;
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-top: 1.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- HEADER -->
+    <header class="portal-header">
+      <div class="portal-brand">
+        <div class="brand-badge">SSE CBT</div>
+        <div>
+          <span class="brand-title">SSE CBT ASSESSMENT PORTAL</span>
+          <span class="brand-subtitle">Candidate Online Self-Registration</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span style="font-size: 0.8rem; color: #64748b;">Already have an account?</span>
+        <a href="/login.html" class="header-link">Sign In &rarr;</a>
+      </div>
+    </header>
+
+    <!-- WRAPPER -->
+    <div class="reg-wrapper">
+      <div class="reg-card">
+        
+        <!-- TARGET EXAM NOTIFICATION BANNER -->
+        <div class="target-exam-banner" id="target-exam-banner">
+          <span style="font-weight: 800; color: #1e3a8a; margin-right: 8px;">[REG]</span>
+          <div>
+            <div class="banner-title" id="banner-exam-title">Special Assessment Examination</div>
+            <div class="banner-desc" id="banner-exam-desc">Completing registration will immediately grant access to take this scheduled test.</div>
+          </div>
+        </div>
+
+        <div class="reg-header">
+          <h1 class="reg-title">Create Candidate Account</h1>
+          <p class="reg-desc">Enter your details to register for the Computer Based Examination. Credentials will be securely recorded in the cloud database.</p>
+        </div>
+
+        <div id="alert-msg" class="alert-box alert-danger"></div>
+
+        <!-- REGISTRATION FORM -->
+        <form id="form-candidate-register">
+          <div class="form-grid">
+            
+            <!-- Full Name -->
+            <div class="form-group form-group-full">
+              <label class="form-label">Full Name <span class="required-star">*</span></label>
+              <input type="text" class="form-input" id="reg-fullname" placeholder="Enter your full legal name (e.g. NARESH S)" required />
+            </div>
+
+            <!-- Email Address -->
+            <div class="form-group">
+              <label class="form-label">Email Address <span class="required-star">*</span></label>
+              <input type="email" class="form-input" id="reg-email" placeholder="e.g. candidate@gmail.com" required />
+            </div>
+
+            <!-- Mobile Phone -->
+            <div class="form-group">
+              <label class="form-label">Mobile Number</label>
+              <input type="tel" class="form-input" id="reg-mobile" placeholder="e.g. +91 98765 43210" />
+            </div>
+
+            <!-- Category -->
+            <div class="form-group">
+              <label class="form-label">Social Category</label>
+              <select class="form-select" id="reg-category">
+                <option value="General" selected>General (UR)</option>
+                <option value="OBC-NCL">OBC-NCL (Central List)</option>
+                <option value="SC">Scheduled Caste (SC)</option>
+                <option value="ST">Scheduled Tribe (ST)</option>
+                <option value="EWS">General - EWS</option>
+              </select>
+            </div>
+
+            <!-- Gender -->
+            <div class="form-group">
+              <label class="form-label">Gender</label>
+              <select class="form-select" id="reg-gender">
+                <option value="Male" selected>Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other / Third Gender</option>
+              </select>
+            </div>
+
+            <!-- Examination Shift / Batch Preference -->
+            <div class="form-group form-group-full">
+              <label class="form-label">Preferred Shift / Batch Slot</label>
+              <select class="form-select" id="reg-slot">
+                <option value="A" selected>Slot A : 08:30 to 11:30 IST (Morning Session)</option>
+                <option value="B">Slot B : 12:30 to 15:30 IST (Afternoon Session)</option>
+                <option value="C">Slot C : 16:30 to 19:30 IST (Evening Session)</option>
+                <option value="D">Slot D : 20:00 to 23:00 IST (Night Shift Session)</option>
+              </select>
+            </div>
+
+            <!-- Password Container -->
+            <div class="form-group-full pwd-section">
+              <div style="font-size: 0.78rem; font-weight: 700; color: #1e293b; margin-bottom: 0.65rem;">
+                CREATE SECURITY PASSWORD FOR EXAMINATION ACCESS
+              </div>
+              <div class="pwd-grid">
+                <div>
+                  <label class="form-label">Password <span class="required-star">*</span></label>
+                  <input type="password" class="form-input" id="reg-password" placeholder="Minimum 4 characters" required />
+                </div>
+                <div>
+                  <label class="form-label">Confirm Password <span class="required-star">*</span></label>
+                  <input type="password" class="form-input" id="reg-confirm-password" placeholder="Re-enter password" required />
+                </div>
+              </div>
+            </div>
+
+            <!-- PwD Accessibility Option -->
+            <div class="form-group-full">
+              <label class="checkbox-row">
+                <input type="checkbox" id="reg-pwd-check" />
+                <span>Candidate with Disabilities (PwD) : Automatically allocates +60 minutes compensatory time</span>
+              </label>
+            </div>
+
+            <div class="form-group-full" id="pwd-extra-fields" style="display: none; background: #eff6ff; padding: 0.85rem; border-radius: 4px; border: 1px solid #bfdbfe;">
+              <label class="form-label" style="color: #1e40af;">Disability Classification</label>
+              <select class="form-select" id="reg-disability-type">
+                <option value="Locomotor Disability">Locomotor Disability (>=40%)</option>
+                <option value="Visual Impairment">Visual Impairment / Low Vision</option>
+                <option value="Hearing Impairment">Hearing Impairment</option>
+                <option value="Dyslexia">Specific Learning Disability</option>
+                <option value="Other">Other PwD Concession</option>
+              </select>
+            </div>
+
+          </div>
+
+          <button type="submit" class="submit-btn" id="btn-reg-submit">
+            <span>Submit Registration &amp; Issue Credentials &rarr;</span>
+          </button>
+        </form>
+
+        <!-- SUCCESS CONFIRMATION STATE -->
+        <div class="success-card" id="success-view">
+          <div class="success-badge-icon" style="font-weight: 800; color: #10b981; font-size: 1.5rem;">SUCCESS</div>
+          <h2 style="font-size: 1.5rem; font-weight: 800; color: #15803d;">Registration Successful!</h2>
+          <p style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">Your candidate account is created in Cloud DB. Keep your credentials safe for taking tests.</p>
+
+          <div class="cred-box">
+            <div class="cred-row">
+              <span style="color: #64748b;">Candidate Name:</span>
+              <strong id="conf-name">--</strong>
+            </div>
+            <div class="cred-row">
+              <span style="color: #64748b;">Roll Number:</span>
+              <span class="cred-val" id="conf-roll">--</span>
+            </div>
+            <div class="cred-row">
+              <span style="color: #64748b;">Registration ID:</span>
+              <span class="cred-val" id="conf-reg">--</span>
+            </div>
+            <div class="cred-row">
+              <span style="color: #64748b;">Login Username:</span>
+              <strong id="conf-email">--</strong>
+            </div>
+            <div class="cred-row">
+              <span style="color: #64748b;">Assigned Shift:</span>
+              <strong id="conf-slot">Slot A</strong>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.85rem; justify-content: center; flex-wrap: wrap;">
+            <a href="#" id="btn-launch-exam-now" class="submit-btn" style="text-decoration: none; max-width: 280px; margin-top: 0;">
+              Launch Examination &rarr;
+            </a>
+            <a href="/candidate_dashboard.html" class="submit-btn" style="text-decoration: none; background: #334155; max-width: 240px; margin-top: 0;">
+              Go to Dashboard
+            </a>
+          </div>
+        </div>
+
+        <div class="footer-note" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: center;">
+          <div>Protected by AES-256 Cloud Integrity &bull; Official Saveetha School of Engineering CBT Platform 2026</div>
+          <div style="display: flex; gap: 1.5rem; font-size: 0.8rem; margin-top: 0.5rem;">
+            <a href="/privacy.html" style="color: #64748b; text-decoration: none;">Privacy Policy</a>
+            <a href="/terms.html" style="color: #64748b; text-decoration: none;">Terms &amp; Regulations</a>
+            <a href="/login.html" style="color: #64748b; text-decoration: none;">Candidate Login</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <script>
+      (function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const examId = urlParams.get('exam_id') || urlParams.get('id') || '';
+
+        const form = document.getElementById('form-candidate-register');
+        const alertBox = document.getElementById('alert-msg');
+        const btnSubmit = document.getElementById('btn-reg-submit');
+        const successView = document.getElementById('success-view');
+        const pwdCheck = document.getElementById('reg-pwd-check');
+        const pwdExtra = document.getElementById('pwd-extra-fields');
+        const examBanner = document.getElementById('target-exam-banner');
+        const bannerTitle = document.getElementById('banner-exam-title');
+
+        // Check if exam was passed in URL and show banner
+        if (examId) {
+          fetch(`/api/v1/exams/${examId}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.title) {
+                examBanner.style.display = 'flex';
+                bannerTitle.textContent = `Target Exam: ${data.title}`;
+              }
+            })
+            .catch(() => {});
+        }
+
+        // Toggle PwD fields
+        pwdCheck.addEventListener('change', () => {
+          pwdExtra.style.display = pwdCheck.checked ? 'block' : 'none';
+        });
+
+        function showAlert(msg, isSuccess = false) {
+          alertBox.textContent = msg;
+          alertBox.className = 'alert-box ' + (isSuccess ? 'alert-success' : 'alert-danger');
+          alertBox.style.display = 'block';
+        }
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          alertBox.style.display = 'none';
+
+          const fullName = document.getElementById('reg-fullname').value.trim();
+          const email = document.getElementById('reg-email').value.trim();
+          const mobile = document.getElementById('reg-mobile').value.trim();
+          const category = document.getElementById('reg-category').value;
+          const gender = document.getElementById('reg-gender').value;
+          const slot = document.getElementById('reg-slot').value;
+          const pwd = document.getElementById('reg-password').value.trim();
+          const pwdConfirm = document.getElementById('reg-confirm-password').value.trim();
+          const isPwd = pwdCheck.checked;
+          const disType = isPwd ? document.getElementById('reg-disability-type').value : null;
+
+          if (pwd !== pwdConfirm) {
+            showAlert('Passwords do not match. Please verify your password entry.');
+            document.getElementById('reg-confirm-password').focus();
+            return;
+          }
+
+          if (pwd.length < 4) {
+            showAlert('Password must be at least 4 characters long.');
+            return;
+          }
+
+          btnSubmit.disabled = true;
+          btnSubmit.innerHTML = '<span>Committing to Cloud DB...</span>';
+
+          try {
+            const res = await fetch('/api/v1/auth/register-candidate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                full_name: fullName,
+                email: email,
+                password: pwd,
+                mobile: mobile,
+                category: category,
+                gender: gender,
+                preferred_slot: slot,
+                is_pwd: isPwd,
+                disability_type: disType,
+                exam_id: examId || null
+              })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+              throw new Error(data.detail || 'Registration failed. Please verify your input.');
+            }
+
+            // Save authenticated session in browser
+            localStorage.setItem('access_token', data.access_token);
+            localStorage.setItem('user_role', 'candidate');
+            localStorage.setItem('god_mode', 'false');
+            localStorage.setItem('candidate_id', data.candidate_id);
+            localStorage.setItem('candidate_name', data.full_name);
+            localStorage.setItem('reg_no', data.registration_number);
+            localStorage.setItem('roll_no', data.roll_number);
+            localStorage.setItem('tenant_id', '00000000-0000-0000-0000-000000000001');
+
+            // Render success confirmation card
+            form.style.display = 'none';
+            document.querySelector('.reg-header').style.display = 'none';
+            if (examBanner) examBanner.style.display = 'none';
+
+            document.getElementById('conf-name').textContent = data.full_name;
+            document.getElementById('conf-roll').textContent = data.roll_number;
+            document.getElementById('conf-reg').textContent = data.registration_number;
+            document.getElementById('conf-email').textContent = data.email;
+            document.getElementById('conf-slot').textContent = `Slot ${slot}`;
+
+            const launchBtn = document.getElementById('btn-launch-exam-now');
+            const destUrl = data.redirect_url || (examId ? `/instructions.html?exam_id=${examId}` : '/candidate_dashboard.html');
+            launchBtn.href = destUrl;
+
+            successView.style.display = 'block';
+
+          } catch (err) {
+            showAlert(err.message || 'Registration error occurred. Please try again.');
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<span>Submit Registration &amp; Issue Credentials &rarr;</span>';
+          }
+        });
+
+      })();
+    </script>
+  </body>
+</html>

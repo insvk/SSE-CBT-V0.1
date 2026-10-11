@@ -76,7 +76,7 @@ def test_paper_decryption_security():
     good_res = client.post(
         f"/api/v1/exams/{EXAM_ID}/paper/decrypt",
         headers=ADMIN_HEADERS,
-        json={"custody_key": "SSEC-NTA-KEY-2026", "decryption_pin": "2026"},
+        json={"custody_key": "SSEC-CBT-KEY-2026", "decryption_pin": "2026"},
     )
     assert good_res.status_code == 200
     dec_data = good_res.json()

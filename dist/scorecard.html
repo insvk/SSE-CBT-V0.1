@@ -1,316 +1,364 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Official NTA Score Card | JEE (Main) 2026</title>
-    <script>
-      (function() {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          window.location.replace('/login.html');
-        }
-      })();
-    </script>
-    
-    <style>
-      body {
-        background: #f1f5f9;
-        padding: 2.5rem 1rem;
-      }
-      .scorecard-document {
-        max-width: 880px;
-        margin: 0 auto;
-        background: white;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-lg);
-        border: 2px solid #e2e8f0;
-        overflow: hidden;
-        position: relative;
-      }
-      .doc-header {
-        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%);
-        color: white;
-        padding: 2rem 2.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .agency-title h1 {
-        font-size: 1.45rem;
-        font-weight: 800;
-        letter-spacing: 0.02em;
-      }
-      .agency-title h2 {
-        font-size: 0.95rem;
-        font-weight: 500;
-        opacity: 0.9;
-        margin-top: 0.25rem;
-      }
-      .nta-seal {
-        width: 60px;
-        height: 60px;
-        border: 2px solid rgba(255, 255, 255, 0.4);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.75rem;
-        font-weight: 800;
-        text-align: center;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(4px);
-      }
-      .doc-subhead {
-        background: #f8fafc;
-        border-bottom: 2px solid #e2e8f0;
-        padding: 1rem 2.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.85rem;
-        font-weight: 600;
-      }
-      .candidate-profile-grid {
-        display: grid;
-        grid-template-columns: 140px 1fr 1fr;
-        gap: 1.5rem;
-        padding: 2rem 2.5rem;
-        border-bottom: 1px solid var(--border-color);
-        background: white;
-      }
-      .candidate-photo-box {
-        width: 130px;
-        height: 155px;
-        background: #f1f5f9;
-        border: 1px solid #cbd5e1;
-        border-radius: var(--radius);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #64748b;
-        font-size: 0.8rem;
-        font-weight: 600;
-      }
-      .field-group {
-        margin-bottom: 0.85rem;
-      }
-      .field-label {
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--text-muted);
-        letter-spacing: 0.05em;
-      }
-      .field-value {
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: var(--text-main);
-      }
 
-      /* Score Highlighting Box */
-      .overall-score-banner {
-        background: linear-gradient(135deg, #eff6ff, #dbeafe);
-        border: 1.5px solid #bfdbfe;
-        border-radius: var(--radius);
-        padding: 1.5rem 2.5rem;
-        margin: 1.5rem 2.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Official Score Card | MCQ ASSESSMENT [ SSE CBT 2026 ]</title>
+  <script>
+    (function () {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        window.location.replace('/login.html');
       }
-      .score-big {
-        font-size: 3rem;
-        font-weight: 800;
-        color: #1e40af;
-        font-family: var(--font-mono);
-        line-height: 1;
-      }
-      .percentile-badge {
-        background: #10b981;
-        color: white;
-        padding: 0.5rem 1.25rem;
-        border-radius: var(--radius-full);
-        font-size: 1.15rem;
-        font-weight: 800;
-        box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-      }
+    })();
+  </script>
+  
+  <style>
+    body {
+      background: #f1f5f9;
+      padding: 2.5rem 1rem;
+    }
 
-      /* Subject breakdown table */
-      .score-table {
-        margin: 0 2.5rem 2rem 2.5rem;
-        width: calc(100% - 5rem);
-        border-collapse: collapse;
-      }
-      .score-table th, .score-table td {
-        padding: 0.85rem 1rem;
-        border: 1px solid var(--border-color);
-        text-align: left;
-      }
-      .score-table th {
-        background: #f8fafc;
-        font-weight: 700;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        color: #475569;
-      }
-      .score-table td {
-        font-size: 0.95rem;
-      }
+    .scorecard-document {
+      max-width: 880px;
+      margin: 0 auto;
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      border: 2px solid #e2e8f0;
+      overflow: hidden;
+      position: relative;
+    }
 
-      .doc-actions {
-        padding: 1.5rem 2.5rem;
-        background: #f8fafc;
-        border-top: 1px solid var(--border-color);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-    </style>
-    <script type="module" crossorigin src="/assets/scorecard-5ee8f55d.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
-    <link rel="stylesheet" href="/assets/style-5f067ebd.css">
-  </head>
-  <body>
-    
-    <div class="scorecard-document">
-      <!-- HEADER -->
-      <div class="doc-header">
-        <div class="agency-title">
-          <h1>NATIONAL TESTING AGENCY (NTA)</h1>
-          <h2>Joint Entrance Examination (Main) 2026 — Official Score Card</h2>
+    .doc-header {
+      background: #1e3a8a;
+      color: white;
+      padding: 2rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .agency-title h1 {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .agency-title h2 {
+      font-size: 0.95rem;
+      font-weight: 500;
+      opacity: 0.9;
+      margin-top: 0.25rem;
+    }
+
+    .cbt-seal {
+      width: 70px;
+      height: 60px;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(4px);
+    }
+
+    .doc-subhead {
+      background: #f8fafc;
+      border-bottom: 2px solid #e2e8f0;
+      padding: 1rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .candidate-profile-grid {
+      display: grid;
+      grid-template-columns: 140px 1fr 1fr;
+      gap: 1.5rem;
+      padding: 2rem 2.5rem;
+      border-bottom: 1px solid var(--border-color);
+      background: white;
+    }
+
+    .candidate-photo-box {
+      width: 130px;
+      height: 155px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .field-group {
+      margin-bottom: 0.85rem;
+    }
+
+    .field-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .field-value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* Score Highlighting Box */
+    .overall-score-banner {
+      background: #eff6ff;
+      border: 1.5px solid #bfdbfe;
+      border-radius: var(--radius);
+      padding: 1.5rem 2.5rem;
+      margin: 1.5rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .score-big {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #1e40af;
+      font-family: var(--font-mono);
+      line-height: 1;
+    }
+
+    .percentile-badge {
+      background: #10b981;
+      color: white;
+      padding: 0.5rem 1.25rem;
+      border-radius: 4px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Subject breakdown table */
+    .score-table {
+      margin: 0 2.5rem 2rem 2.5rem;
+      width: calc(100% - 5rem);
+      border-collapse: collapse;
+    }
+
+    .score-table th,
+    .score-table td {
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--border-color);
+      text-align: left;
+    }
+
+    .score-table th {
+      background: #f8fafc;
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: #475569;
+    }
+
+    .score-table td {
+      font-size: 0.95rem;
+    }
+
+    .doc-actions {
+      padding: 1.5rem 2.5rem;
+      background: #f8fafc;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/scorecard-cf26e0cf.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
+  <link rel="stylesheet" href="/assets/style-6365eba7.css">
+</head>
+
+<body>
+
+  <div class="scorecard-document">
+    <!-- HEADER -->
+    <div class="doc-header">
+      <div class="agency-title">
+        <h1 id="sc-agency">SSE CBT PLATFORM</h1>
+        <h2 id="sc-title">MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card</h2>
+      </div>
+      <div class="cbt-seal">
+        SSE CBT<br>OFFICIAL
+      </div>
+    </div>
+
+    <div class="doc-subhead">
+      <div>Assessment: <span style="color: var(--primary);" id="sc-subhead-exam">MCQ Assessment 2026</span></div>
+      <div>Date of Exam: <span>October 2026</span></div>
+      <div style="color: #16a34a;">Status: Authenticated &amp; Verified</div>
+    </div>
+
+    <!-- CANDIDATE INFO -->
+    <div class="candidate-profile-grid">
+      <div class="candidate-photo-box">
+        <div style="font-size: 0.85rem; font-weight: 800; color: #1e3a8a; margin-bottom: 0.25rem;">[PHOTO]</div>
+        <span>Candidate</span>
+      </div>
+
+      <div>
+        <div class="field-group">
+          <div class="field-label">Candidate's Name</div>
+          <div class="field-value" id="sc-name">Loading...</div>
         </div>
-        <div class="nta-seal">
-          NTA<br>OFFICIAL
+        <div class="field-group">
+          <div class="field-label">Application Number</div>
+          <div class="field-value" id="sc-app-no" style="font-family: var(--font-mono);">260310084920</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Roll / Registration Number</div>
+          <div class="field-value" id="sc-reg" style="font-family: var(--font-mono); color: #1e3a8a;">Loading...</div>
         </div>
       </div>
 
-      <div class="doc-subhead">
-        <div>Exam: <span style="color: var(--primary);">B.E. / B.Tech (Paper 1)</span></div>
-        <div>Date of Exam: <span>October 2026</span></div>
-        <div style="color: #16a34a;">Status: Authenticated &amp; Verified</div>
-      </div>
-
-      <!-- CANDIDATE INFO -->
-      <div class="candidate-profile-grid">
-        <div class="candidate-photo-box">
-          <div style="font-size: 2.5rem; margin-bottom: 0.25rem;">👤</div>
-          <span>Candidate</span>
+      <div>
+        <div class="field-group">
+          <div class="field-label">Examination Title</div>
+          <div class="field-value" id="sc-exam">MCQ ASSESSMENT [ SSE CBT 2026 ]</div>
         </div>
-
-        <div>
-          <div class="field-group">
-            <div class="field-label">Candidate's Name</div>
-            <div class="field-value" id="sc-name">Loading...</div>
-          </div>
-          <div class="field-group">
-            <div class="field-label">Application Number</div>
-            <div class="field-value" id="sc-app-no" style="font-family: var(--font-mono);">260310084920</div>
-          </div>
-          <div class="field-group">
-            <div class="field-label">Roll / Registration Number</div>
-            <div class="field-value" id="sc-reg" style="font-family: var(--font-mono); color: #1e3a8a;">Loading...</div>
-          </div>
+        <div class="field-group">
+          <div class="field-label">Test Center Node</div>
+          <div class="field-value" id="sc-center-node">SSE Digital Assessment Hub Node 01</div>
         </div>
-
-        <div>
-          <div class="field-group">
-            <div class="field-label">Examination Title</div>
-            <div class="field-value" id="sc-exam">SSE CBT PLATFORM — NATIONAL ASSESSMENT EXAMINATION</div>
-          </div>
-          <div class="field-group">
-            <div class="field-label">Test Center Node</div>
-            <div class="field-value">SIMATS CBT Lab Node 04</div>
-          </div>
-          <div class="field-group">
-            <div class="field-label">Submission Reference</div>
-            <div class="field-value" id="sc-ref" style="font-family: var(--font-mono); color: #0284c7;">--</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- OVERALL SCORE BANNER -->
-      <div class="overall-score-banner">
-        <div>
-          <div class="field-label">Authoritative Total Score</div>
-          <div class="score-big" id="sc-score">--</div>
-          <div style="font-size: 0.85rem; color: #1e40af; font-weight: 600; margin-top: 0.25rem;">
-            Calculated by Authoritative JEE Scoring Engine (+4.0 / -1.0)
-          </div>
-        </div>
-        <div style="text-align: right;">
-          <div class="field-label" style="margin-bottom: 0.5rem;">NTA Percentile Score</div>
-          <div class="percentile-badge" id="sc-percentile">-- PR</div>
-        </div>
-      </div>
-
-      <!-- SECTION SCORES -->
-      <table class="score-table">
-        <thead>
-          <tr>
-            <th>Subject / Section</th>
-            <th>Total Questions</th>
-            <th>Correct</th>
-            <th>Incorrect</th>
-            <th>Marks Awarded</th>
-            <th>NTA Score (Percentile)</th>
-          </tr>
-        </thead>
-        <tbody id="sc-table-body">
-          <tr>
-            <td><strong>Physics</strong></td>
-            <td>1</td>
-            <td>1</td>
-            <td>0</td>
-            <td>+4.0</td>
-            <td>97.85</td>
-          </tr>
-          <tr>
-            <td><strong>Chemistry</strong></td>
-            <td>1</td>
-            <td>1</td>
-            <td>0</td>
-            <td>+4.0</td>
-            <td>96.50</td>
-          </tr>
-          <tr>
-            <td><strong>Mathematics</strong></td>
-            <td>1</td>
-            <td>1</td>
-            <td>0</td>
-            <td>+4.0</td>
-            <td>98.12</td>
-          </tr>
-          <tr>
-            <td><strong>Computer Science</strong></td>
-            <td>2</td>
-            <td>1</td>
-            <td>0</td>
-            <td>+4.0</td>
-            <td>95.40</td>
-          </tr>
-          <tr style="background: #f8fafc; font-weight: 700;">
-            <td>Total Aggregate</td>
-            <td id="sc-tot-q">5</td>
-            <td id="sc-tot-cor">4</td>
-            <td id="sc-tot-inc">0</td>
-            <td id="sc-tot-marks" style="color: #1e3a8a;">+16.0</td>
-            <td id="sc-tot-pr" style="color: #16a34a;">96.50 PR</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- ACTIONS -->
-      <div class="doc-actions">
-        <a href="javascript:void(0)" onclick="const role = localStorage.getItem('user_role'); window.location.href = (role === 'super_admin' ? '/admin.html' : '/candidate_dashboard.html');" class="btn btn-primary">&larr; Return to Dashboard</a>
-        <div style="display: flex; gap: 0.75rem;">
-          <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear();" class="btn btn-outline">Sign Out</a>
-          <button class="btn btn-outline" onclick="window.print()">🖨️ Print Score Card</button>
+        <div class="field-group">
+          <div class="field-label">Submission Reference</div>
+          <div class="field-value" id="sc-ref" style="font-family: var(--font-mono); color: #0284c7;">--</div>
         </div>
       </div>
     </div>
 
-    
-  </body>
+    <!-- OVERALL SCORE BANNER -->
+    <div class="overall-score-banner">
+      <div>
+        <div class="field-label">Authoritative Total Score</div>
+        <div class="score-big" id="sc-score">--</div>
+        <div style="font-size: 0.85rem; color: #1e40af; font-weight: 600; margin-top: 0.25rem;">
+          Calculated by SSE Scoring Engine (+4.0 / -1.0)
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <div class="field-label" style="margin-bottom: 0.5rem;">Percentile Score</div>
+        <div class="percentile-badge" id="sc-percentile">-- PR</div>
+      </div>
+    </div>
+
+    <!-- SECTION SCORES -->
+    <table class="score-table">
+      <thead>
+        <tr>
+          <th>Subject / Section</th>
+          <th>Total Questions</th>
+          <th>Correct</th>
+          <th>Incorrect</th>
+          <th>Marks Awarded</th>
+          <th>Score (Percentile Rank)</th>
+        </tr>
+      </thead>
+      <tbody id="sc-table-body">
+        <tr>
+          <td><strong>Physics</strong></td>
+          <td>1</td>
+          <td>1</td>
+          <td>0</td>
+          <td>+4.0</td>
+          <td>97.85</td>
+        </tr>
+        <tr>
+          <td><strong>Chemistry</strong></td>
+          <td>1</td>
+          <td>1</td>
+          <td>0</td>
+          <td>+4.0</td>
+          <td>96.50</td>
+        </tr>
+        <tr>
+          <td><strong>Mathematics</strong></td>
+          <td>1</td>
+          <td>1</td>
+          <td>0</td>
+          <td>+4.0</td>
+          <td>98.12</td>
+        </tr>
+        <tr>
+          <td><strong>Computer Science</strong></td>
+          <td>2</td>
+          <td>1</td>
+          <td>0</td>
+          <td>+4.0</td>
+          <td>95.40</td>
+        </tr>
+        <tr style="background: #f8fafc; font-weight: 700;">
+          <td>Total Aggregate</td>
+          <td id="sc-tot-q">5</td>
+          <td id="sc-tot-cor">4</td>
+          <td id="sc-tot-inc">0</td>
+          <td id="sc-tot-marks" style="color: #1e3a8a;">+16.0</td>
+          <td id="sc-tot-pr" style="color: #16a34a;">96.50 PR</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- CONTROLLER OF EXAMINATIONS SIGNATURE SECTION -->
+    <div style="padding: 1.5rem 2.5rem; display: flex; justify-content: flex-end; align-items: flex-end; border-top: 1px solid var(--border-color); background: white;">
+      <div style="text-align: center;">
+        <div style="font-family: 'Brush Script MT', cursive; font-size: 1.35rem; color: #1e3a8a; font-weight: 700;" id="sc-controller-name">
+          Prof. Dr. M. Shanmugam
+        </div>
+        <div style="font-size: 0.75rem; color: #0f172a; font-weight: 800; border-top: 1px solid #64748b; padding-top: 4px;" id="sc-controller-desig">
+          Controller of Examinations
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="doc-actions">
+      <a href="javascript:void(0)"
+        onclick="const role = localStorage.getItem('user_role'); window.location.href = (role === 'super_admin' ? '/admin.html' : '/candidate_dashboard.html');"
+        class="btn btn-primary">&larr; Return to Dashboard</a>
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear();" class="btn btn-outline">Sign
+          Out</a>
+        <button class="btn btn-outline" onclick="window.print()">Print Score Card</button>
+      </div>
+    </div>
+
+    <!-- OFFICIAL INSTITUTIONAL FOOTER -->
+    <footer
+      style="margin-top: 3rem; padding: 1.5rem 0; border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #64748b; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        &copy; 2026 Saveetha School of Engineering &bull; CBT Examination Directorate. All rights reserved.
+      </div>
+      <div style="display: flex; gap: 1.5rem;">
+        <a href="/privacy.html" style="color: #64748b; text-decoration: none;">Privacy Policy</a>
+        <a href="/terms.html" style="color: #64748b; text-decoration: none;">Terms &amp; Regulations</a>
+        <a href="/login.html" style="color: #64748b; text-decoration: none;">Candidate Login</a>
+      </div>
+    </footer>
+  </div>
+
+  
+</body>
+
 </html>

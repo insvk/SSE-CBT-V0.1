@@ -10,7 +10,8 @@
     (function () {
       const token = localStorage.getItem('access_token');
       if (!token) {
-        window.location.replace('/login.html');
+        const fullTarget = window.location.pathname + window.location.search;
+        window.location.replace('/login.html?redirect=' + encodeURIComponent(fullTarget));
       }
     })();
   </script>
@@ -19,15 +20,15 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
-  <script type="module" crossorigin src="/assets/exam-45c9a582.js"></script>
+  <script type="module" crossorigin src="/assets/exam-b77ac035.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
-  <link rel="stylesheet" href="/assets/style-5f067ebd.css">
+  <link rel="stylesheet" href="/assets/style-6365eba7.css">
 </head>
 
 <body>
   <div class="exam-layout">
 
-    <!-- 1. TOP HEADER (EXACT REPLICA OF SCREENSHOT + TCS iON EXTENSIONS) -->
+    <!-- 1. TOP HEADER (EXACT REPLICA OF SCREENSHOT) -->
     <header class="exam-header">
       <div class="exam-title-text" id="exam-header-title">
         SSE CBT PLATFORM V0.1 -- ASSESSMENT EXAMINATION
@@ -49,9 +50,9 @@
             title="Increase Font">A+</button>
         </div>
 
-        <!-- TCS iON Virtual Calculator Button -->
+        <!-- Virtual Calculator Button -->
         <button type="button" class="header-action-item" id="btn-open-calc" title="Open Virtual Scientific Calculator">
-          <span style="font-size: 0.95rem;">🧮</span>
+          
           <span>Calculator</span>
         </button>
 
@@ -101,10 +102,10 @@
           <span>Question Paper</span>
         </button>
 
-        <!-- TCS iON Candidate Rough Sheet / Scribble Pad -->
+        <!-- Candidate Rough Sheet / Scribble Pad -->
         <button type="button" class="header-action-item" id="btn-open-scratchpad"
           title="Open Digital Rough Sheet / Scratchpad">
-          <span style="font-size: 0.95rem;">📝</span>
+          
           <span>Rough Sheet</span>
         </button>
 
@@ -112,7 +113,7 @@
         <div class="header-action-item" id="exam-master-clock-chip"
           style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.35); color: #047857; font-weight: 700;"
           title="Authoritative Master Exam Clock synchronized with Google NTP (time.google.com) in Indian Standard Time (IST)">
-          <span style="font-size: 0.95rem;">🇮🇳</span>
+          
           <span id="exam-ist-clock" style="font-family: var(--font-mono); font-size: 0.82rem;">--:--:-- IST</span>
         </div>
 
@@ -132,7 +133,7 @@
         <div class="header-action-item" id="terminal-badge"
           style="background: rgba(30, 58, 138, 0.06); border-color: rgba(37, 99, 235, 0.3); font-family: var(--font-mono); font-weight: 700; color: #1e40af;"
           title="Physical CBT Terminal Node">
-          <span style="font-size: 0.85rem;">💺</span>
+          Node:
           <span id="term-display-id">C-042</span>
         </div>
 
@@ -204,11 +205,11 @@
             <!-- Authoritative Controller Controls -->
             <button type="button" class="btn btn-sm btn-outline" id="btn-god-edit-q"
               style="display: none; font-size: 0.75rem; border-color: #2563eb; color: #1d4ed8; padding: 2px 8px; align-items: center; gap: 4px;">
-              ✏️ Live Item Editor
+              Live Item Editor
             </button>
             <button type="button" class="btn btn-sm btn-outline" id="btn-god-tools"
               style="display: none; font-size: 0.75rem; border-color: #475569; color: #1e293b; padding: 2px 8px;">
-              ⚙️ Controller Diagnostics
+              Controller Diagnostics
             </button>
           </div>
 
@@ -220,9 +221,7 @@
 
         <!-- Question Content / Mathematical Statement -->
         <div class="question-statement-text" id="question-text">
-          A particle is moving up with balloon with constant acceleration ( g/8 ) which starts from rest from ground and
-          at a height H , a particle is dropped from balloon, After this event, find time for which the particle will be
-          in air (acceleration due to gravity = gm/s² )
+          Loading examination questions from Cloud Database...
         </div>
 
         <!-- Options List (Cards with Radio Ring) -->
@@ -240,22 +239,22 @@
 
       <div class="status-counter-grid">
         <div class="status-badge-item">
-          <span class="status-box-count not-visited" id="count-not-visited">16</span>
+          <span class="status-box-count not-visited" id="count-not-visited">0</span>
           <span class="status-badge-text">Not Visited</span>
         </div>
 
         <div class="status-badge-item">
-          <span class="status-box-count not-answered" id="count-not-answered">2</span>
+          <span class="status-box-count not-answered" id="count-not-answered">0</span>
           <span class="status-badge-text">Not Answered</span>
         </div>
 
         <div class="status-badge-item">
-          <span class="status-box-count answered" id="count-answered">1</span>
+          <span class="status-box-count answered" id="count-answered">0</span>
           <span class="status-badge-text">Answered</span>
         </div>
 
         <div class="status-badge-item">
-          <span class="status-box-count review" id="count-review">1</span>
+          <span class="status-box-count review" id="count-review">0</span>
           <span class="status-badge-text">Marked for Review</span>
         </div>
       </div>
@@ -322,7 +321,7 @@
   <div class="modal-overlay" id="modal-edit-question">
     <div class="modal-content" style="max-width: 680px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-        <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">✏️ Master Question Bank Live Item Editor</h3>
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">Master Question Bank Live Item Editor</h3>
         <button type="button" id="btn-close-edit-q"
           style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #94a3b8;">&times;</button>
       </div>
@@ -398,7 +397,7 @@
   <!-- CONTROLLER DIAGNOSTICS & OVERRIDES MODAL -->
   <div class="modal-overlay" id="modal-god-tools">
     <div class="modal-content" style="max-width: 500px;">
-      <h3 style="margin-bottom: 0.5rem; font-weight: 800; color: #1e3a8a;">⚙️ Controller Diagnostics &amp; Overrides
+      <h3 style="margin-bottom: 0.5rem; font-weight: 800; color: #1e3a8a;">Controller Diagnostics &amp; Overrides
       </h3>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Authoritative controller
         diagnostics and QA assessment verification tools.</p>
@@ -406,20 +405,20 @@
       <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
         <button type="button" class="btn btn-outline" id="btn-auto-solve"
           style="justify-content: flex-start; text-align: left; padding: 0.75rem 1rem;">
-          🎯 <strong>Standard Key Verification (QA Fill)</strong> — Populates authoritative answer keys for benchmark
+          [QA Fill] <strong>Standard Key Verification (QA Fill)</strong> - Populates authoritative answer keys for benchmark
           validation
         </button>
         <button type="button" class="btn btn-outline" id="btn-reveal-key"
           style="justify-content: flex-start; text-align: left; padding: 0.75rem 1rem;">
-          👁️ <strong>Inspect Active Answer Keys</strong> — Highlights official key badges in live review
+          [Inspect Keys] <strong>Inspect Active Answer Keys</strong> - Highlights official key badges in live review
         </button>
         <button type="button" class="btn btn-outline" id="btn-skip-timer"
           style="justify-content: flex-start; text-align: left; padding: 0.75rem 1rem;">
-          ⏱️ <strong>Accelerate Test Timer to 10s</strong> — Validates automated time-up submission pipeline
+          [Speed Up] <strong>Accelerate Test Timer to 10s</strong> - Validates automated time-up submission pipeline
         </button>
         <button type="button" class="btn btn-outline" id="btn-reset-attempt-self"
           style="justify-content: flex-start; text-align: left; padding: 0.75rem 1rem; color: #b91c1c; border-color: #fca5a5;">
-          🔄 <strong>Reset Current Session Attempt</strong> — Clears candidate responses for fresh verification
+          [Reset Attempt] <strong>Reset Current Session Attempt</strong> - Clears candidate responses for fresh verification
         </button>
       </div>
 
@@ -453,10 +452,10 @@
         <div>
           <h3
             style="font-weight: 800; font-size: 1.15rem; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-            <span>📝 Digital Rough Sheet / Scratchpad</span>
+            <span>Digital Rough Sheet / Scratchpad</span>
             <span
-              style="font-size: 0.7rem; background: #eff6ff; color: #1d4ed8; padding: 2px 6px; border-radius: 4px; font-weight: 700;">NTA
-              COMPLIANT</span>
+              style="font-size: 0.7rem; background: #eff6ff; color: #1d4ed8; padding: 2px 6px; border-radius: 4px; font-weight: 700;">OFFICIAL
+              CBT</span>
           </h3>
           <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Candidate working space for formulas
             and calculation scratchwork.</p>
@@ -467,9 +466,8 @@
 
       <!-- Scratchpad Toolbar -->
       <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap;">
-        <button type="button" class="btn btn-outline btn-sm" id="sp-pen" style="background: #1e3a8a; color: white;">✏️
-          Pen</button>
-        <button type="button" class="btn btn-outline btn-sm" id="sp-eraser">🧹 Eraser</button>
+        <button type="button" class="btn btn-outline btn-sm" id="sp-pen" style="background: #1e3a8a; color: white;">Pen</button>
+        <button type="button" class="btn btn-outline btn-sm" id="sp-eraser">Eraser</button>
         <div style="display: flex; gap: 6px; align-items: center; margin-left: 0.5rem;">
           <button type="button" class="sp-color-btn" data-color="#0f172a"
             style="width: 22px; height: 22px; border-radius: 50%; background: #0f172a; border: 2px solid #2563eb; cursor: pointer;"
@@ -483,7 +481,7 @@
         </div>
         <div style="margin-left: auto; display: flex; gap: 0.5rem;">
           <button type="button" class="btn btn-outline btn-sm" id="sp-clear"
-            style="color: #ef4444; border-color: #fca5a5;">🗑️ Clear</button>
+            style="color: #ef4444; border-color: #fca5a5;">Clear</button>
           <button type="button" class="btn btn-primary btn-sm" id="sp-done">Done</button>
         </div>
       </div>
@@ -567,7 +565,7 @@
       <div
         style="background: #fef2f2; border: 1.5px solid #fecaca; padding: 0.85rem; border-radius: var(--radius); margin-bottom: 1.25rem;">
         <p style="font-size: 0.825rem; color: #b91c1c; font-weight: 700;">
-          ⚠️ Are you sure you want to finish? Responses cannot be edited after final submission.
+          Are you sure you want to finish? Responses cannot be edited after final submission.
         </p>
       </div>
 
@@ -620,12 +618,12 @@
     </div>
   </div>
 
-  <!-- TCS iON VIRTUAL SCIENTIFIC CALCULATOR -->
+  <!-- VIRTUAL SCIENTIFIC CALCULATOR -->
   <div class="calc-window" id="calc-window">
     <div class="calc-titlebar" id="calc-drag-handle">
       <span style="display:flex; align-items:center; gap:6px;">
-        <span>🧮</span>
-        <span>TCS iON Scientific Calculator</span>
+        
+        <span>Scientific Calculator</span>
       </span>
       <button type="button" id="btn-close-calc"
         style="background:none; border:none; color:white; font-size:1.15rem; cursor:pointer; font-weight:700; line-height:1;">&times;</button>
@@ -699,7 +697,7 @@
       <button type="button" class="calc-btn equals" id="calc-eq" style="grid-column: span 2;">=</button>
       <button type="button" class="calc-btn action" id="calc-copy-result"
         style="font-size: 0.72rem; padding: 4px 6px; background: #1e3a8a; color: white;"
-        title="Copy result to clipboard">📋 Copy</button>
+        title="Copy result to clipboard">Copy</button>
     </div>
   </div>
 
@@ -708,18 +706,18 @@
     <div
       style="background: white; color: #0f172a; padding: 2.25rem; border-radius: 16px; max-width: 540px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center;">
       <div
-        style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; margin: 0 auto 1.25rem;">
-        ⚠️</div>
+        style="width: 56px; height: 56px; border-radius: 4px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 800; margin: 0 auto 1.25rem;">
+        [!]</div>
       <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem;">Kiosk Fullscreen Required
       </h2>
       <p style="font-size: 0.9rem; color: #475569; margin-bottom: 1.25rem; line-height: 1.5;">
-        TCS iON Examination Engine requires strict full screen mode. You have exited full screen.
+        The Examination Engine requires strict full screen mode. You have exited full screen.
         Please resume full screen within <strong id="fs-countdown-sec"
           style="color: #dc2626; font-size: 1.1rem;">15</strong> seconds to avoid exam disqualification.
       </p>
       <button type="button" class="btn btn-primary" id="btn-resume-fullscreen"
         style="width: 100%; padding: 0.85rem; font-size: 1rem; font-weight: 700; background: #dc2626;">
-        🖥️ Resume Full Screen Mode
+        Resume Full Screen Mode
       </button>
     </div>
   </div>
@@ -728,13 +726,13 @@
   <div class="modal-overlay" id="modal-violation-alert">
     <div class="modal-content" style="max-width: 500px; border-top: 5px solid #dc2626;">
       <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;">
-        <span style="font-size: 1.5rem;">🚨</span>
+        <span style="font-size: 1rem; font-weight: 800; color: #ef4444;">[WARNING]</span>
         <h3 style="font-size: 1.2rem; font-weight: 800; color: #dc2626;">Security Incident Detected</h3>
       </div>
       <div
         style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem;">
         <div style="font-weight: 800; color: #991b1b; font-size: 0.9rem;" id="viol-badge-text">
-          ⚠️ Strike 1 of 3: Window / Tab Switch Detected
+          Strike 1 of 3: Window / Tab Switch Detected
         </div>
         <p style="font-size: 0.825rem; color: #7f1d1d; margin-top: 0.35rem; line-height: 1.4;" id="viol-desc-text">
           Your browser window lost active focus or a disallowed action was attempted. This event has been stamped and
@@ -742,7 +740,7 @@
         </p>
       </div>
       <p style="font-size: 0.825rem; color: #64748b; margin-bottom: 1.25rem;">
-        <strong>TCS iON 3-Strike Rule:</strong> On the 3rd security strike, your exam will be terminated immediately and
+        <strong>Examination Security 3-Strike Rule:</strong> On the 3rd security strike, your exam will be terminated immediately and
         locked permanently.
       </p>
       <div style="display: flex; justify-content: flex-end;">
@@ -756,7 +754,7 @@
   <div class="modal-overlay" id="modal-invigilator-msg">
     <div class="modal-content" style="max-width: 500px; border-top: 5px solid #0284c7;">
       <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;">
-        <span style="font-size: 1.5rem;" id="invig-icon">📢</span>
+        <span style="font-size: 0.9rem; font-weight: 800; color: #1e3a8a;" id="invig-icon">[ALERT]</span>
         <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;" id="invig-title">Central Invigilator
           Announcement</h3>
       </div>
@@ -779,8 +777,8 @@
     <div
       style="background: white; color: #0f172a; padding: 2.5rem; border-radius: 16px; max-width: 560px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; border-top: 6px solid #b91c1c;">
       <div
-        style="width: 64px; height: 64px; border-radius: 50%; background: #fee2e2; color: #b91c1c; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 1.25rem;">
-        🔒</div>
+        style="width: 64px; height: 64px; border-radius: 4px; background: #fee2e2; color: #b91c1c; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; margin: 0 auto 1.25rem;">
+        LOCKED</div>
       <h2 style="font-size: 1.5rem; font-weight: 800; color: #b91c1c; margin-bottom: 0.5rem;">TERMINAL LOCKED</h2>
       <p style="font-size: 0.95rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem;" id="lock-reason-text">
         Security policy violation threshold exceeded or invigilator manual freeze.
@@ -817,7 +815,7 @@
         database. The test will automatically resume once the proctor releases the hold.
       </p>
       <div
-        style="display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.8rem; background: #fffbeb; padding: 0.5rem 1rem; border-radius: 9999px; border: 1px solid #fde68a; color: #b45309;">
+        style="display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.8rem; background: #fffbeb; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #fde68a; color: #b45309;">
         <span
           style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#d97706; animation: pulse 1.5s infinite;"></span>
         Awaiting Proctor Release Signal...

@@ -43,11 +43,11 @@ def test_full_candidate_examination_lifecycle():
     }
 
     # Step 1: Create Candidate
-    cand_payload = {"full_name": "Rohan Sharma", "email": "rohan@jee.in", "batch": "A"}
+    cand_payload = {"full_name": "Rohan Sharma", "email": "rohan@ssecbt.in", "batch": "A"}
     cand_res = client.post("/api/v1/candidates/", json=cand_payload, headers=headers)
     assert cand_res.status_code == 200
     candidate = cand_res.json()
-    assert "SSEC-A-CBT-" in candidate["registration_number"]
+    assert "SSE-A-CBT-" in candidate["registration_number"]
 
     # Step 2: Get Available Exams
     exams_res = client.get("/api/v1/exams/")

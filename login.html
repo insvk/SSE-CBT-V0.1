@@ -218,10 +218,10 @@
         font-weight: 700;
         font-family: inherit;
         border: none;
-        border-radius: 7px;
+        border-radius: 4px;
         cursor: pointer;
-        box-shadow: 0 4px 14px rgba(0, 102, 255, 0.25);
-        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+        transition: background 0.15s ease;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -230,8 +230,6 @@
 
       .btn-login:hover {
         background: var(--primary-blue-hover);
-        transform: translateY(-1px);
-        box-shadow: 0 6px 18px rgba(0, 102, 255, 0.35);
       }
 
       .btn-login:active {
@@ -575,8 +573,15 @@
 
             <!-- Register Footer -->
             <div class="register-footer">
-              <span>Don't have an account ?</span>
-              <a href="#" class="register-link" id="link-register-account">Register here</a>
+              <span>Don't have an exam account ?</span>
+              <a href="/register.html" class="register-link" id="link-register-account">Register here &rarr;</a>
+            </div>
+
+            <!-- Institutional Legal Links -->
+            <div style="margin-top: 1.5rem; text-align: center; font-size: 0.75rem; color: #64748b; display: flex; justify-content: center; gap: 1.25rem;">
+              <a href="/privacy.html" style="color: #64748b; text-decoration: none;">Privacy Policy</a>
+              <span>&bull;</span>
+              <a href="/terms.html" style="color: #64748b; text-decoration: none;">Terms &amp; Regulations</a>
             </div>
 
           </form>
@@ -740,7 +745,10 @@
 
         linkForgot.addEventListener('click', (e) => { e.preventDefault(); openModal(modalForgot); });
         btnGoogle.addEventListener('click', () => { openModal(modalGoogle); });
-        linkRegister.addEventListener('click', (e) => { e.preventDefault(); openModal(modalRegister); });
+        linkRegister.addEventListener('click', (e) => { 
+          e.preventDefault(); 
+          window.location.href = '/register.html' + window.location.search; 
+        });
 
         document.querySelectorAll('[data-close]').forEach(btn => {
           btn.addEventListener('click', () => {
@@ -863,20 +871,23 @@
               localStorage.setItem('tenant_id', '00000000-0000-0000-0000-000000000001');
 
               const user = data.user || {};
+              const urlParams = new URLSearchParams(window.location.search);
+              const redirectUrl = urlParams.get('redirect');
+
               if (user.role === 'super_admin' || user.god_mode) {
                 localStorage.setItem('user_role', 'super_admin');
                 localStorage.setItem('god_mode', 'true');
                 localStorage.setItem('candidate_name', 'System Administrator');
-                showAlert('Authorization verified. Redirecting to Command Centre...', false);
-                setTimeout(() => { window.location.href = '/admin.html'; }, 400);
+                showAlert('Authorization verified. Redirecting...', false);
+                setTimeout(() => { window.location.href = redirectUrl || '/admin.html'; }, 400);
               } else {
                 localStorage.setItem('user_role', 'candidate');
                 localStorage.setItem('god_mode', 'false');
                 localStorage.setItem('candidate_id', user.id || 'cand_' + Date.now());
                 localStorage.setItem('reg_no', user.registration_number || ident);
                 localStorage.setItem('candidate_name', user.full_name || 'Candidate');
-                showAlert('Session verified. Redirecting to Candidate Dashboard...', false);
-                setTimeout(() => { window.location.href = '/candidate_dashboard.html'; }, 400);
+                showAlert('Session verified. Redirecting to Examination Portal...', false);
+                setTimeout(() => { window.location.href = redirectUrl || '/candidate_dashboard.html'; }, 400);
               }
               return;
             } else {

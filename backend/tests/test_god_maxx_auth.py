@@ -85,7 +85,7 @@ def test_god_maxx_create_and_authenticate_candidate_account():
     assert cand_info["full_name"] == candidate_name
     assert cand_info["password"] == custom_pin
     reg_number = cand_info["registration_number"]
-    assert reg_number.startswith("SSEC-B-CBT-")
+    assert reg_number.startswith("SSE-B-CBT-")
 
     # 3. Candidate logs in using issued Registration Number and PIN
     cand_login = client.post(

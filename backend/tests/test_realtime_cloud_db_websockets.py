@@ -14,8 +14,52 @@ from app.core.db import get_db
 client = TestClient(app)
 
 
+def _get_active_question_id():
+    db = get_db()
+    res = db.table("question_bank").select("id").limit(1).execute()
+    if res.data:
+        return str(res.data[0]["id"])
+    c = db.table("question_bank").insert({
+        "tenant_id": "00000000-0000-0000-0000-000000000001",
+        "type": "mcq_single",
+        "content": {"statement": "Sample question for real-time websocket sync"},
+        "options": ["A", "B", "C", "D"],
+        "correct_answer": "A",
+        "difficulty": "Easy",
+        "subject": "Physics",
+        "status": "approved",
+    }).execute()
+    return str(c.data[0]["id"])
+
+
+@pytest.fixture(autouse=True)
+def setup_test_candidate():
+    db = get_db()
+    try:
+        db.table("candidates").upsert({
+            "id": "018d1a55-2959-48c4-b2a4-8a72894512b9",
+            "tenant_id": "00000000-0000-0000-0000-000000000001",
+            "full_name": "NARESH S",
+            "registration_number": "5254740(V4.3.7)",
+            "metadata": {
+                "batch": "A",
+                "status": "active",
+                "exam_status": "in_progress",
+                "password": "password123",
+                "assigned_terminal": "Terminal C-049",
+                "roll_number": "SSE-A-CBT-0001",
+                "biometric_status": "verified",
+                "biometric_score": 98.6,
+            }
+        }).execute()
+    except Exception as e:
+        pass
+
+
 def test_realtime_websocket_exam_connection_and_response_sync():
     """Validates candidate WebSocket connection and live Cloud DB response synchronization."""
+    target_qid = _get_active_question_id()
+
     with client.websocket_connect("/ws/exam/EX-1001") as ws:
         init_msg = ws.receive_json()
         assert init_msg["type"] == "CONNECTED"
@@ -29,7 +73,7 @@ def test_realtime_websocket_exam_connection_and_response_sync():
         # Send live candidate response
         ws.send_json({
             "type": "RESPONSE_UPDATE",
-            "question_id": "00000000-0000-0000-0000-000000000013",
+            "question_id": target_qid,
             "answer": 1,
             "state": 1,
             "idempotency_key": f"test_ws_sync_{int(time.time()*1000)}",
@@ -39,7 +83,7 @@ def test_realtime_websocket_exam_connection_and_response_sync():
 
         ack = ws.receive_json()
         assert ack["type"] == "ACK"
-        assert ack["question_id"] == "00000000-0000-0000-0000-000000000013"
+        assert ack["question_id"] == target_qid
         assert ack["cloud_synced"] is True
 
 
@@ -60,9 +104,10 @@ def test_cloud_db_rest_save_response_realtime():
     """Validates HTTP response endpoint writes to Supabase responses table."""
     # Ensure fresh active session
     client.post("/api/v1/exams/EX-1001/reset")
+    target_qid = _get_active_question_id()
 
     payload = {
-        "question_id": "00000000-0000-0000-0000-000000000013",
+        "question_id": target_qid,
         "answer": 1,
         "state": 1,
         "idempotency_key": f"test_rest_sync_{int(time.time()*1000)}",
@@ -173,9 +218,27 @@ def test_question_adjudication_and_bonus():
     assert login_res.status_code == 200
     token = login_res.json()["access_token"]
 
-    # 2. Adjudicate Question 3 as Dropped / Bonus
+    # 2. Get or create question dynamically from Cloud DB
+    q_res = client.get(
+        "/api/v1/questions/",
+        headers={"x-tenant-id": "00000000-0000-0000-0000-000000000001", "Authorization": f"Bearer {token}"}
+    )
+    if q_res.status_code == 200 and len(q_res.json()) > 0:
+        target_qid = q_res.json()[0]["id"]
+    else:
+        new_q = client.post(
+            "/api/v1/questions/",
+            json={
+                "statement": "Test question for adjudication",
+                "opt_a": "Opt A", "opt_b": "Opt B", "opt_c": "Opt C", "opt_d": "Opt D",
+                "correct_answer": "A", "subject": "Physics", "marks": 4.0
+            },
+            headers={"x-tenant-id": "00000000-0000-0000-0000-000000000001", "Authorization": f"Bearer {token}"}
+        )
+        target_qid = new_q.json()["id"]
+
     res = client.post(
-        "/api/v1/questions/00000000-0000-0000-0000-000000000013/adjudicate",
+        f"/api/v1/questions/{target_qid}/adjudicate",
         json={"action": "drop_bonus", "reason": "Ambiguous option wording"},
         headers={"x-tenant-id": "00000000-0000-0000-0000-000000000001", "Authorization": f"Bearer {token}"}
     )

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terms and Conditions | SSE CBT Examination Platform</title>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #f8fafc;
+        color: #0f172a;
+        line-height: 1.6;
+        padding: 0;
+        margin: 0;
+      }
+      .site-header {
+        background: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1rem 2rem;
+      }
+      .header-inner {
+        max-width: 1000px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .brand-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e3a8a;
+        letter-spacing: -0.01em;
+      }
+      .brand-sub {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .nav-link {
+        color: #1e3a8a;
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 0.4rem 0.8rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        background: #ffffff;
+      }
+      .nav-link:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+      }
+      .container {
+        max-width: 1000px;
+        margin: 2rem auto;
+        padding: 0 1.5rem 3rem 1.5rem;
+      }
+      .policy-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 2.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+      h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 0.5rem;
+      }
+      .meta-line {
+        font-size: 0.825rem;
+        color: #64748b;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      h2 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #1e3a8a;
+        margin-top: 2rem;
+        margin-bottom: 0.75rem;
+      }
+      p {
+        font-size: 0.925rem;
+        color: #334155;
+        margin-bottom: 1rem;
+      }
+      ul {
+        margin-left: 1.5rem;
+        margin-bottom: 1.25rem;
+        color: #334155;
+        font-size: 0.925rem;
+      }
+      li {
+        margin-bottom: 0.5rem;
+      }
+      .site-footer {
+        background: #ffffff;
+        border-top: 1px solid #e2e8f0;
+        padding: 1.5rem 2rem;
+        text-align: center;
+        font-size: 0.8rem;
+        color: #64748b;
+      }
+      .site-footer a {
+        color: #1e3a8a;
+        text-decoration: none;
+        margin: 0 0.5rem;
+        font-weight: 600;
+      }
+      .site-footer a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <div>
+          <div class="brand-title">Saveetha School of Engineering</div>
+          <div class="brand-sub">Computer Based Test Examination Directorate</div>
+        </div>
+        <a href="/login.html" class="nav-link">&larr; Return to Sign In</a>
+      </div>
+    </header>
+
+    <div class="container">
+      <article class="policy-card">
+        <h1>Examination Terms and Regulations</h1>
+        <div class="meta-line">
+          Official Bylaws | Version: 2.4 | Applicable to: All Candidates appearing for SSE CBT Assessments
+        </div>
+
+        <h2>1. Candidate Verification and Undertaking</h2>
+        <p>
+          By logging into this platform, every candidate declares that all submitted credentials (including Registration Number, Hall Ticket, and Password) correspond exclusively to their personal identity. Impersonation, shared account access, or falsification of records constitutes a punishable offense under institutional bylaws and statutory regulations.
+        </p>
+
+        <h2>2. Terminal Lockdown and Kiosk Environment</h2>
+        <p>
+          Examinations must be undertaken exclusively on designated terminal workstations. Candidates must adhere strictly to the following technical rules:
+        </p>
+        <ul>
+          <li>Browser tab switching, dual-monitor configurations, virtual machines, or developer inspection consoles are strictly prohibited.</li>
+          <li>The platform actively monitors multi-window instances via BroadcastChannel telemetry. Opening concurrent examination sessions will result in automatic termination of the duplicate window.</li>
+          <li>Right-click context menus, keyboard shortcuts (such as Alt+Tab, Ctrl+C, Ctrl+V, F12), and unauthorized clipboard operations are automatically blocked.</li>
+        </ul>
+
+        <h2>3. Server-Authoritative Timer and Auto-Submission</h2>
+        <p>
+          All examination countdown clocks are synchronized directly with the central examination server cluster. Candidates must note:
+        </p>
+        <ul>
+          <li>The remaining time displayed on the terminal screen reflects the authoritative server clock. Client workstation clock tampering has no effect on duration calculations.</li>
+          <li>Upon expiry of the designated examination duration, the system automatically commits all recorded answers and concludes the test session immediately.</li>
+          <li>No manual time extensions are permitted unless formally authorized and broadcast by the Chief Invigilator through the live command centre.</li>
+        </ul>
+
+        <h2>4. Evaluation and Scoring Scheme</h2>
+        <p>
+          Examinations follow the standard objective scoring rules approved by the Examination Board:
+        </p>
+        <ul>
+          <li>Correct Answer: +4 marks.</li>
+          <li>Incorrect Answer: -1 mark (where negative marking is enabled in examination configuration).</li>
+          <li>Unanswered / Marked for Review without response: 0 marks.</li>
+          <li>Answered and Marked for Review: Evaluated as a submitted response in accordance with standard Computer Based Test (CBT) examination guidelines.</li>
+        </ul>
+
+        <h2>5. Unfair Means (UFM) Regulations</h2>
+        <p>
+          Any candidate found engaging in unauthorized communication, accessing prohibited electronic devices, or disregarding invigilator directives will be subject to immediate terminal locking and disciplinary proceedings by the Examination Malpractice Committee.
+        </p>
+
+        <h2>6. Finality of Evaluation</h2>
+        <p>
+          Evaluations are computed automatically using authoritative answer keys verified by subject matter experts. Official merit ranks and scorecards published by the Controller of Examinations are final following the conclusion of any scheduled challenge window.
+        </p>
+      </article>
+    </div>
+
+    <footer class="site-footer">
+      <div>
+        &copy; 2026 Saveetha School of Engineering. Computer Based Testing Directorate. All rights reserved.
+      </div>
+      <div style="margin-top: 0.5rem;">
+        <a href="/terms.html">Terms and Conditions</a> |
+        <a href="/privacy.html">Privacy Policy</a> |
+        <a href="/login.html">Candidate Sign In</a>
+      </div>
+    </footer>
+  </body>
+</html>

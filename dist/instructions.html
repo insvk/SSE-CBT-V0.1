@@ -9,7 +9,8 @@
     (function () {
       const token = localStorage.getItem('access_token');
       if (!token) {
-        window.location.replace('/login.html');
+        const fullTarget = window.location.pathname + window.location.search;
+        window.location.replace('/login.html?redirect=' + encodeURIComponent(fullTarget));
       }
     })();
   </script>
@@ -94,7 +95,7 @@
       margin: 2rem 0;
     }
   </style>
-  <link rel="stylesheet" href="/assets/style-5f067ebd.css">
+  <link rel="stylesheet" href="/assets/style-6365eba7.css">
 </head>
 
 <body>
@@ -121,7 +122,7 @@
 
     <div class="inst-header">
       <h1>NATIONAL TESTING AGENCY</h1>
-      <p>Joint Entrance Examination (Main) — Computer Based Test Guidelines</p>
+      <p>Joint Entrance Examination (Main) : Computer Based Test Guidelines</p>
     </div>
 
     <div class="instructions-body">
@@ -186,10 +187,25 @@
           I am Ready to Begin &rarr;
         </button>
       </div>
+
+      <!-- OFFICIAL INSTITUTIONAL FOOTER -->
+      <footer style="margin-top: 3rem; padding: 1.5rem 0; border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #64748b; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          &copy; 2026 Saveetha School of Engineering &bull; CBT Examination Directorate. All rights reserved.
+        </div>
+        <div style="display: flex; gap: 1.5rem;">
+          <a href="/privacy.html" style="color: #64748b; text-decoration: none;">Privacy Policy</a>
+          <a href="/terms.html" style="color: #64748b; text-decoration: none;">Terms &amp; Regulations</a>
+          <a href="/login.html" style="color: #64748b; text-decoration: none;">Candidate Login</a>
+        </div>
+      </footer>
     </div>
   </div>
 
   <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const examId = urlParams.get('exam_id') || urlParams.get('id') || 'EX-1001';
+
     const check = document.getElementById('declaration-check');
     const btn = document.getElementById('btn-proceed');
 
@@ -200,17 +216,29 @@
       if (storedName) candNameSpan.textContent = storedName + (storedReg ? ` (${storedReg})` : '');
     }
 
+    // Fetch and display active exam title
+    fetch(`/api/v1/exams/${examId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.title) {
+          const h1 = document.querySelector('.inst-header h1');
+          if (h1) h1.textContent = data.title;
+        }
+      })
+      .catch(() => {});
+
     check.addEventListener('change', (e) => {
       btn.disabled = !e.target.checked;
     });
 
     btn.addEventListener('click', () => {
+      const targetUrl = `/exam.html?exam_id=${encodeURIComponent(examId)}`;
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().finally(() => {
-          window.location.href = '/exam.html';
+          window.location.href = targetUrl;
         });
       } else {
-        window.location.href = '/exam.html';
+        window.location.href = targetUrl;
       }
     });
   </script>

@@ -12,7 +12,7 @@ def generate_seed_data():
             {"id": "user-1", "email": "admin@simats.edu", "role": "admin"}
         ],
         "exams": [
-            {"id": "exam-1", "title": "JEE Main Mock A", "duration_minutes": 180, "state": "scheduled"}
+            {"id": "exam-1", "title": "SSE CBT Mock Assessment A", "duration_minutes": 180, "state": "scheduled"}
         ]
     }
     

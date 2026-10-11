@@ -32,6 +32,9 @@ export default defineConfig({
         instructions:        resolve(__dirname, 'instructions.html'),
         scorecard:           resolve(__dirname, 'scorecard.html'),
         question_bank:       resolve(__dirname, 'question_bank.html'),
+        register:            resolve(__dirname, 'register.html'),
+        terms:               resolve(__dirname, 'terms.html'),
+        privacy:             resolve(__dirname, 'privacy.html'),
       }
     }
   }

@@ -1,7 +1,8 @@
 export {};
 
 const API_BASE = '/api/v1/exams';
-const EXAM_ID = 'EX-1001';
+const urlParams = new URLSearchParams(window.location.search);
+const EXAM_ID = urlParams.get('exam_id') || urlParams.get('id') || 'EX-1001';
 
 interface ExamQuestion {
     id: string;
@@ -417,7 +418,7 @@ function handleExamSocketMessage(msg: any): void {
         if (msg.reg_no === myReg) {
             const termEl = document.getElementById('term-display-id');
             if (termEl) termEl.textContent = msg.new_terminal || 'C-043';
-            showLiveToast(`💺 Terminal migrated to ${msg.new_terminal}. Answers preserved!`);
+            showLiveToast(`Terminal migrated to ${msg.new_terminal}. Answers preserved!`);
         }
     } else if (msg.type === 'TERMINAL_UNLOCKED') {
         const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
@@ -425,12 +426,12 @@ function handleExamSocketMessage(msg: any): void {
             const lockOverlay = document.getElementById('modal-terminal-locked');
             if (lockOverlay) lockOverlay.classList.remove('active');
             startTimer();
-            showLiveToast('🔓 Terminal unlocked by Proctor.');
+            showLiveToast('Terminal unlocked by Proctor.');
         }
     } else if (msg.type === 'PROCTOR_DIRECTIVE' || msg.type === 'PROCTOR_WARNING') {
         const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
         if (!msg.reg_no || msg.reg_no === myReg) {
-            showInvigilatorMessage("⚠️", "Mandatory Proctor Directive", msg.message || "Please return your full attention to the exam terminal screen.", true);
+            showInvigilatorMessage("[NOTICE]", "Mandatory Proctor Directive", msg.message || "Please return your full attention to the exam terminal screen.", true);
         }
     } else if (msg.type === 'QUESTION_UPDATED') {
         // Examination Controller Live Question Edit applied to all consoles
@@ -442,18 +443,18 @@ function handleExamSocketMessage(msg: any): void {
             if (currentQuestionIndex === qIdx) {
                 loadQuestion(currentQuestionIndex);
             }
-            showLiveToast(`✏️ Live Board Correction: Question ${qIdx + 1} updated!`);
+            showLiveToast(`Live Board Correction: Question ${qIdx + 1} updated!`);
         }
     } else if (msg.type === 'QUESTION_ADJUDICATED') {
-        showLiveToast(`⚖️ Board Adjudication: ${msg.message}`);
+        showLiveToast(`Board Adjudication: ${msg.message}`);
     } else if (msg.type === 'EXAM_RESET') {
         questionState = new Array(20).fill(0);
         responses = new Array(20).fill(null);
         currentRemainingSeconds = 179 * 60 + 41;
         loadQuestion(0);
-        showLiveToast(`⚠️ Examination session reset by Proctor.`);
+        showLiveToast(`Examination session reset by Proctor.`);
     } else if (msg.type === 'BROADCAST_ANNOUNCEMENT') {
-        showInvigilatorMessage("📢", "Central Invigilator Announcement", msg.message || "Attention all candidates: Please maintain exam focus.");
+        showInvigilatorMessage("[ALERT]", "Central Invigilator Announcement", msg.message || "Attention all candidates: Please maintain exam focus.");
     } else if (msg.type === 'FORCE_LOCK_TERMINAL' || msg.type === 'LOCK_TERMINAL' || msg.type === 'CANDIDATE_DISQUALIFIED') {
         const myReg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
         const myId = localStorage.getItem('candidate_id') || '';
@@ -461,7 +462,7 @@ function handleExamSocketMessage(msg: any): void {
             triggerTerminalForceLock(msg.reason || "Terminal locked: Candidate disqualified under examination regulations.");
         }
     } else if (msg.type === 'PAPER_DECRYPTED') {
-        showLiveToast('🔓 256-Bit Question Paper Decrypted & Unlocked by Examination Controller!');
+        showLiveToast('256-Bit Question Paper Decrypted & Unlocked by Examination Controller!');
         fetchRemoteQuestions();
     } else if (msg.type === 'DISASTER_HOLD') {
         isExamPaused = true;
@@ -471,9 +472,9 @@ function handleExamSocketMessage(msg: any): void {
             if (pauseReason) pauseReason.textContent = msg.reason || 'EMERGENCY OPERATIONAL HOLD. Remain at your terminal.';
             pauseModal.classList.add('active');
         }
-        showLiveToast(`🚨 EMERGENCY HOLD: ${msg.reason || 'Timers frozen by Proctor.'}`, true);
+        showLiveToast(`EMERGENCY HOLD: ${msg.reason || 'Timers frozen by Proctor.'}`, true);
     } else if (msg.type === 'EXAM_PHASE_CHANGED') {
-        showLiveToast(`🏛️ Examination Phase: ${(msg.new_phase || '').toUpperCase().replace(/_/g, ' ')}`);
+        showLiveToast(`Examination Phase: ${(msg.new_phase || '').toUpperCase().replace(/_/g, ' ')}`);
     } else if (msg.type === 'ACK') {
         updateSyncTime();
     }
@@ -917,31 +918,62 @@ if (ui.btnManualSync) {
 // Fetch Authoritative Questions strictly from Supabase Cloud DB (Zero mock questions)
 async function fetchRemoteQuestions(): Promise<void> {
     try {
+        // 1. Fetch Exam Metadata & Title
+        try {
+            const exInfoRes = await fetch(`${API_BASE}/${EXAM_ID}`, { headers: getAuthHeaders() });
+            if (exInfoRes.ok) {
+                const exInfo = await exInfoRes.json();
+                const titleEl = document.getElementById('exam-header-title');
+                if (titleEl && exInfo.title) {
+                    titleEl.textContent = `${exInfo.title.toUpperCase()} (CBT)`;
+                }
+            }
+        } catch (_) {}
+
+        // 2. Check Authoritative Scheduled Time Lock & Session
+        try {
+            const sessionRes = await fetch(`${API_BASE}/${EXAM_ID}/session`, { headers: getAuthHeaders() });
+            if (sessionRes.ok) {
+                const sessionData = await sessionRes.json();
+
+                // If examination is scheduled for future time, enforce live countdown lock
+                if (sessionData.is_scheduled_pending) {
+                    renderScheduledGateOverlay(sessionData);
+                    return;
+                }
+
+                // If examination is already concluded
+                if (sessionData.status === 'concluded') {
+                    renderConcludedOverlay(sessionData);
+                    return;
+                }
+
+                // Sync timer with server authoritative countdown
+                if (sessionData.time_remaining_seconds !== undefined && sessionData.time_remaining_seconds > 0) {
+                    currentRemainingSeconds = sessionData.time_remaining_seconds;
+                    const mins = Math.floor(currentRemainingSeconds / 60);
+                    const secs = currentRemainingSeconds % 60;
+                    if (ui.timerDisplay) {
+                        ui.timerDisplay.textContent = `${mins} : ${secs.toString().padStart(2, '0')}`;
+                    }
+                }
+            }
+        } catch (_) {}
+
+        // 3. Fetch Questions from Cloud DB
         const res = await fetch(`${API_BASE}/${EXAM_ID}/questions`, { headers: getAuthHeaders() });
         if (res.ok) {
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
-                // Ensure balloon question is at index 2 if present
-                const balloonQ = data.find(q => (q.text || '').includes('balloon with constant acceleration'));
-                if (balloonQ) {
-                    const others = data.filter(q => q.id !== balloonQ.id);
-                    allQuestions = [others[0] || data[0], others[1] || data[1], balloonQ, ...others.slice(2)];
-                } else {
-                    allQuestions = data;
-                }
+                allQuestions = data;
                 responses = new Array(allQuestions.length).fill(null);
                 questionState = new Array(allQuestions.length).fill(0);
 
-                if (questionState.length >= 4) {
-                    questionState[0] = 4; // Not Answered
-                    questionState[1] = 1; // Answered
-                    responses[1] = 0;
-                    questionState[2] = 2; // Marked for Review
-                    questionState[3] = 4; // Not Answered
-                }
-
                 renderPalette();
-                loadQuestion(allQuestions.length > 2 ? 2 : 0);
+                loadQuestion(0);
+                return;
+            } else {
+                if (ui.qText) ui.qText.textContent = "No questions have been configured for this examination in Cloud DB. Please configure questions in Question Bank.";
                 return;
             }
         }
@@ -949,8 +981,131 @@ async function fetchRemoteQuestions(): Promise<void> {
     if (ui.qText) ui.qText.textContent = "Awaiting Question Paper release from Examination Controller...";
 }
 
+// Scheduled Pre-Flight Gatekeeper Overlay
+function renderScheduledGateOverlay(sessionData: any): void {
+    if (timerInterval) clearInterval(timerInterval);
+
+    let overlay = document.getElementById('scheduled-gate-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'scheduled-gate-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.inset = '0';
+        overlay.style.background = '#0f172a';
+        overlay.style.zIndex = '99999';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.color = '#ffffff';
+        overlay.style.fontFamily = 'var(--font-sans)';
+        overlay.style.padding = '2rem';
+        overlay.style.textAlign = 'center';
+        document.body.appendChild(overlay);
+    }
+
+    let remainingWaitSecs = sessionData.seconds_until_start || 60;
+    const startIst = sessionData.scheduled_start_ist || 'Scheduled Time';
+
+    const updateWaitDisplay = () => {
+        if (remainingWaitSecs <= 0) {
+            clearInterval(waitInterval);
+            overlay!.innerHTML = `
+                <div style="font-size: 1.25rem; font-weight: 800; color: #1e3a8a; margin-bottom: 1rem;">[SESSION COMMENCED]</div>
+                <h2 style="font-size: 1.75rem; font-weight: 800; color: #10b981;">EXAMINATION TIME REACHED</h2>
+                <p style="color: #94a3b8; margin: 0.5rem 0 1.5rem;">Unlocking examination consoles and question paper...</p>
+            `;
+            setTimeout(() => {
+                overlay!.remove();
+                fetchRemoteQuestions();
+                startTimer();
+            }, 1500);
+            return;
+        }
+
+        const hrs = Math.floor(remainingWaitSecs / 3600);
+        const mins = Math.floor((remainingWaitSecs % 3600) / 60);
+        const secs = remainingWaitSecs % 60;
+        const timeDisplay = `${hrs > 0 ? `${hrs}h ` : ''}${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
+
+        overlay!.innerHTML = `
+            <div style="max-width: 580px; width: 100%; background: rgba(30, 41, 59, 0.95); border: 2px solid #3b82f6; border-radius: 6px; padding: 2.5rem; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+                <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(59, 130, 246, 0.15); border: 1px solid #3b82f6; border-radius: 4px; padding: 0.35rem 1rem; font-size: 0.75rem; font-weight: 700; color: #60a5fa; margin-bottom: 1.5rem;">
+                    <span>AUTHORITATIVE NTP SCHEDULE LOCK</span>
+                </div>
+                <h2 style="font-size: 1.65rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -0.02em;">EXAMINATION SCHEDULED</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 2rem;">
+                    Terminal console will automatically unlock and release question paper at:
+                    <br/><strong style="color: #60a5fa; font-size: 1.05rem;">${startIst}</strong>
+                </p>
+
+                <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">Countdown to Test Start</div>
+                    <div style="font-family: var(--font-mono); font-size: 2.75rem; font-weight: 800; color: #38bdf8; letter-spacing: 2px;">
+                        ${timeDisplay}
+                    </div>
+                </div>
+
+                <div style="font-size: 0.78rem; color: #64748b; line-height: 1.5; margin-bottom: 1.5rem;">
+                    Keep this window open. Do not refresh or exit. Your console is connected to the Central Invigilator Master Clock.
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 1rem;">
+                    <a href="/candidate_dashboard.html" style="display: inline-flex; align-items: center; gap: 6px; padding: 0.6rem 1.25rem; border-radius: 8px; background: #334155; color: white; text-decoration: none; font-weight: 600; font-size: 0.85rem;">
+                        &larr; Return to Dashboard
+                    </a>
+                </div>
+            </div>
+        `;
+        remainingWaitSecs--;
+    };
+
+    updateWaitDisplay();
+    const waitInterval = setInterval(updateWaitDisplay, 1000);
+}
+
+// Concluded Overlay
+function renderConcludedOverlay(sessionData: any): void {
+    let overlay = document.getElementById('concluded-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'concluded-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.inset = '0';
+        overlay.style.background = '#0f172a';
+        overlay.style.zIndex = '99999';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.color = '#ffffff';
+        overlay.style.padding = '2rem';
+        overlay.style.textAlign = 'center';
+        document.body.appendChild(overlay);
+    }
+
+    overlay.innerHTML = `
+        <div style="max-width: 520px; width: 100%; background: #1e293b; border: 2px solid #ef4444; border-radius: 16px; padding: 2.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+            <div style="font-size: 1.25rem; font-weight: 800; color: #059669; margin-bottom: 1rem;">[ASSESSMENT CONCLUDED]</div>
+            <h2 style="font-size: 1.65rem; font-weight: 800; color: #f87171; margin-bottom: 0.5rem;">EXAMINATION CONCLUDED</h2>
+            <p style="color: #cbd5e1; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                The scheduled examination period has officially ended.
+                ${sessionData.scheduled_end_ist ? `<br/>Ended at: <strong>${sessionData.scheduled_end_ist}</strong>` : ''}
+            </p>
+            <div style="display: flex; justify-content: center; gap: 1rem;">
+                <a href="/scorecard.html" style="padding: 0.75rem 1.5rem; background: #2563eb; color: white; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.9rem;">
+                    View Scorecard &rarr;
+                </a>
+                <a href="/candidate_dashboard.html" style="padding: 0.75rem 1.5rem; background: #334155; color: white; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.9rem;">
+                    Student Dashboard
+                </a>
+            </div>
+        </div>
+    `;
+}
+
 // ============================================================
-// TCS iON SECURITY, KIOSK ANTI-CHEAT & PROCTOR TELEMETRY SUITE
+// EXAMINATION SECURITY, KIOSK ANTI-CHEAT & PROCTOR TELEMETRY SUITE
 // ============================================================
 
 // 1. Role & Auth Verification
@@ -1134,7 +1289,7 @@ function reportSecurityViolation(reason: string): void {
         const violModal = document.getElementById('modal-violation-alert');
         const badgeText = document.getElementById('viol-badge-text');
         const descText = document.getElementById('viol-desc-text');
-        if (badgeText) badgeText.textContent = `⚠️ Strike ${violationCount} of 3: ${reason}`;
+        if (badgeText) badgeText.textContent = `Strike ${violationCount} of 3: ${reason}`;
         if (descText) descText.textContent = `Active window focus was lost. This malpractice event was transmitted to Central Invigilator telemetry.`;
         if (violModal) violModal.style.display = 'flex';
     }
@@ -1164,7 +1319,7 @@ window.addEventListener('keydown', (e) => {
     if (isDevTools || isCopyPaste || isRefresh) {
         e.preventDefault();
         e.stopPropagation();
-        showLiveToast("⚠️ Security Notice: Shortcuts and inspection tools are blocked in Kiosk Mode.", true);
+        showLiveToast("Security Notice: Shortcuts and inspection tools are blocked in Kiosk Mode.", true);
         reportSecurityViolation(`Blocked Shortcut: ${e.key}`);
         return false;
     }
@@ -1172,7 +1327,7 @@ window.addEventListener('keydown', (e) => {
 
 window.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    showLiveToast("⚠️ Right-click context menu is disabled in Kiosk Mode.");
+    showLiveToast("Right-click context menu is disabled in Kiosk Mode.");
     return false;
 });
 
@@ -1257,13 +1412,13 @@ if (btnAckInvig) {
                 reg_no: myReg,
                 candidate_name: myName,
             }));
-            showLiveToast('✅ Directive compliance acknowledged to Proctor.');
+            showLiveToast('Directive compliance acknowledged to Proctor.');
             lastDirectiveRequiresAck = false;
         }
     };
 }
 
-// 7. TCS iON Virtual Scientific Calculator Engine
+// 7. Virtual Scientific Calculator Engine
 let calcCurrent = '0';
 let calcExpression = '';
 let calcMemory = 0;
@@ -1477,7 +1632,7 @@ if (btnCalcCopy) {
     btnCalcCopy.onclick = () => {
         const textToCopy = calcCurrent !== 'Error' ? calcCurrent : '0';
         navigator.clipboard?.writeText(textToCopy).catch(() => {});
-        showLiveToast(`📋 Calculator result (${textToCopy}) copied!`);
+        showLiveToast(`Calculator result (${textToCopy}) copied!`);
     };
 }
 
@@ -1507,7 +1662,7 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// --- TCS iON CANDIDATE DIGITAL SCRATCHPAD (ROUGH SHEET) ---
+// --- CANDIDATE DIGITAL SCRATCHPAD (ROUGH SHEET) ---
 const btnOpenScratchpad = document.getElementById('btn-open-scratchpad');
 const modalScratchpad = document.getElementById('modal-scratchpad');
 const btnCloseScratchpad = document.getElementById('btn-close-scratchpad');

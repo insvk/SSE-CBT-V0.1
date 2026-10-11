@@ -122,17 +122,17 @@
       }
 
       .brand-badge {
-        background: linear-gradient(135deg, #321fdb, #6366f1);
+        background: #1e3a8a;
         color: white;
         font-weight: 800;
         font-size: 0.95rem;
         padding: 0.4rem 0.65rem;
-        border-radius: 6px;
+        border-radius: 4px;
         letter-spacing: -0.02em;
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        box-shadow: 0 2px 8px rgba(50, 31, 219, 0.35);
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
       }
 
       .brand-title-wrap {
@@ -263,7 +263,7 @@
         font-size: 0.65rem;
         font-weight: 800;
         padding: 0.15rem 0.45rem;
-        border-radius: 9999px;
+        border-radius: 4px;
       }
 
       .badge-live {
@@ -373,7 +373,7 @@
         align-items: center;
         gap: 0.65rem;
         padding: 0.35rem 0.65rem;
-        border-radius: 9999px;
+        border-radius: 4px;
         background: var(--bg-body);
         border: 1px solid var(--border-color);
         cursor: pointer;
@@ -388,8 +388,8 @@
       .user-avatar {
         width: 100%;
         height: 100%;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #10b981, #059669);
+        border-radius: 4px;
+        background: #059669;
         color: white;
         display: flex;
         align-items: center;
@@ -644,11 +644,11 @@
       }
 
       .purple-card {
-        background: linear-gradient(135deg, #4f46e5, #3730a3);
+        background: #1e3a8a;
       }
 
       .yellow-card {
-        background: linear-gradient(135deg, #f59e0b, #d97706);
+        background: #b45309;
       }
 
       .solid-card-val {
@@ -668,7 +668,7 @@
         align-items: center;
         gap: 4px;
         padding: 0.2rem 0.55rem;
-        border-radius: 9999px;
+        border-radius: 4px;
         font-size: 0.72rem;
         font-weight: 700;
         text-transform: uppercase;
@@ -715,7 +715,7 @@
       <!-- CANDIDATE SIDEBAR -->
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-          <div class="brand-badge" style="background: linear-gradient(135deg, #059669, #10b981);">CBT</div>
+          <div class="brand-badge" style="background: #1e3a8a;">CBT</div>
           <div class="brand-title-wrap">
             <span class="brand-title">SSE CBT PLATFORM</span>
             <span class="brand-subtitle" style="color: #10b981;">STUDENT PORTAL V0.1</span>
@@ -723,7 +723,7 @@
         </div>
 
         <div class="cand-chip">
-          <span style="font-size: 1.25rem;">🎓</span>
+          <span style="font-weight: 800; color: #1e3a8a; font-size: 0.85rem;">[CBT]</span>
           <div class="cand-chip-text">
             <span class="cand-chip-title">CANDIDATE SESSION</span>
             <span class="cand-chip-sub" id="sidebar-cand-regno">Loading...</span>
@@ -733,7 +733,6 @@
         <ul class="sidebar-nav">
           <li class="nav-item">
             <a href="/candidate_dashboard.html" class="nav-link active">
-              <span class="nav-icon">📊</span>
               <span class="nav-text">Student Dashboard</span>
             </a>
           </li>
@@ -741,20 +740,17 @@
           <li class="nav-group-title">Examination</li>
           <li class="nav-item">
             <a href="/instructions.html" class="nav-link">
-              <span class="nav-icon">💻</span>
               <span class="nav-text">Candidate Exam View</span>
               <span class="badge-pill badge-live">LIVE</span>
             </a>
           </li>
           <li class="nav-item">
             <a href="/question_bank.html" class="nav-link">
-              <span class="nav-icon">📚</span>
               <span class="nav-text">Question Bank Preview</span>
             </a>
           </li>
           <li class="nav-item">
             <a href="/scorecard.html" class="nav-link">
-              <span class="nav-icon">🏆</span>
               <span class="nav-text">Official Scorecard</span>
             </a>
           </li>
@@ -762,7 +758,6 @@
           <li class="nav-group-title">Preferences</li>
           <li class="nav-item">
             <a href="javascript:void(0)" id="sidebar-theme-toggle" class="nav-link">
-              <span class="nav-icon">🌓</span>
               <span class="nav-text">Toggle Theme (Light/Dark)</span>
             </a>
           </li>
@@ -774,7 +769,7 @@
             <span>Cloud Sync: Active</span>
           </div>
           <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear(); window.location.href='/login.html'; return false;" style="color: #ef4444; font-size: 0.8rem; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-            <span>🚪 Sign Out</span>
+            <span>Sign Out</span>
           </a>
         </div>
       </aside>
@@ -786,23 +781,22 @@
         <header class="top-header">
           <div class="header-left">
             <button class="icon-btn" id="sidebar-toggle-btn" title="Toggle Sidebar">
-              <span>◀</span>
+              <span>&lt;</span>
             </button>
             <div class="header-search">
-              <span class="search-icon">🔍</span>
               <input type="text" placeholder="Search exams, subjects, syllabus..." />
             </div>
           </div>
 
           <div class="header-right">
-            <button class="icon-btn" title="Notifications">
-              <span>🔔</span>
+            <button class="icon-btn" title="Notifications" style="font-size: 0.75rem; font-weight: 700;">
+              <span>Alerts</span>
             </button>
-            <button class="icon-btn" title="Checklist">
-              <span>📋</span>
+            <button class="icon-btn" title="Checklist" style="font-size: 0.75rem; font-weight: 700;">
+              <span>Checklist</span>
             </button>
-            <button class="icon-btn" id="theme-toggle-btn" title="Toggle Theme">
-              <span id="theme-icon">🌓</span>
+            <button class="icon-btn" id="theme-toggle-btn" title="Toggle Theme" style="font-size: 0.75rem; font-weight: 700;">
+              <span id="theme-icon">Theme</span>
             </button>
 
             <!-- Candidate Profile Pill -->
@@ -830,8 +824,8 @@
             </div>
 
             <div style="display: flex; gap: 0.75rem;">
-              <a href="/instructions.html" class="btn btn-primary" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-size: 0.9rem; padding: 0.65rem 1.25rem;">
-                🚀 Launch Exam Console &rarr;
+              <a href="/instructions.html" class="btn btn-primary" style="background: #1e3a8a; font-size: 0.9rem; padding: 0.65rem 1.25rem;">
+                Launch Exam Console &rarr;
               </a>
             </div>
           </div>
@@ -851,7 +845,7 @@
 
               <div style="margin: 1.25rem 0;">
                 <div style="font-size: 1.5rem; font-weight: 800; color: var(--brand-blue); margin-bottom: 0.25rem;">
-                  SSE CBT PLATFORM — NATIONAL ASSESSMENT EXAMINATION
+                  SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION
                 </div>
                 <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
                   Sections: Physics, Chemistry &amp; Mathematics &bull; 180 Minutes (3 Hours) &bull; +4 Correct / -1 Incorrect
@@ -860,13 +854,13 @@
 
               <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 1.5rem; flex-wrap: wrap;">
                 <a href="/instructions.html" class="btn btn-primary" style="font-size: 0.875rem;">
-                  🚀 Launch Examination Session
+                  Launch Examination Session
                 </a>
                 <button type="button" class="btn btn-outline" id="btn-view-admit-card" style="font-size: 0.875rem;">
-                  🎫 View Official Admit Card
+                  View Official Admit Card
                 </button>
                 <a href="/question_bank.html" class="btn btn-outline" style="font-size: 0.875rem;">
-                  📖 View Syllabus &amp; Blueprint
+                  View Syllabus &amp; Blueprint
                 </a>
               </div>
             </div>
@@ -883,15 +877,15 @@
 
               <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
-                  <span>📷 Webcam &amp; Facial Proctoring</span>
+                  <span>Webcam &amp; Facial Proctoring</span>
                   <span style="color: #10b981; font-weight: 700;">VERIFIED</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
-                  <span>🖥️ Fullscreen Lockdown Protocol</span>
+                  <span>Fullscreen Lockdown Protocol</span>
                   <span style="color: #10b981; font-weight: 700;">SUPPORTED</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
-                  <span>⚡ Cloud DB Sync &amp; Low Latency</span>
+                  <span>Cloud DB Sync &amp; Low Latency</span>
                   <span style="color: #10b981; font-weight: 700;">LIVE FEED ACTIVE</span>
                 </div>
               </div>
@@ -908,7 +902,7 @@
                 <div style="font-size: 0.75rem; color: #10b981; font-weight: 700;">Physics, Chemistry &amp; Mathematics</div>
               </div>
               <div class="stat-icon-wrap">
-                <span>📚</span>
+                <span style="font-weight: 700; font-size: 0.8rem; color: #1e3a8a;">QNS</span>
               </div>
             </div>
 
@@ -919,7 +913,7 @@
                 <div style="font-size: 0.75rem; color: #10b981; font-weight: 700;">Authenticated via Supabase</div>
               </div>
               <div class="stat-icon-wrap" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">
-                <span>✅</span>
+                <span style="font-weight: 700; font-size: 0.8rem;">SYNC</span>
               </div>
             </div>
           </div>
@@ -970,7 +964,7 @@
               <div class="solid-card purple-card">
                 <div>
                   <div class="solid-card-val">Scorecard</div>
-                  <div class="solid-card-sub">NTA Official Results &amp; Percentile</div>
+                  <div class="solid-card-sub">Official Results &amp; Percentile</div>
                 </div>
                 <div style="margin-top: 1rem;">
                   <a href="/scorecard.html" class="btn" style="background: white; color: #4f46e5; font-weight: 700; width: 100%; justify-content: center;">
@@ -996,6 +990,18 @@
 
           </div>
 
+          <!-- OFFICIAL INSTITUTIONAL FOOTER -->
+          <footer style="margin-top: 3rem; padding: 1.5rem 0; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap; gap: 1rem;">
+            <div>
+              &copy; 2026 Saveetha School of Engineering &bull; CBT Examination Directorate. All rights reserved.
+            </div>
+            <div style="display: flex; gap: 1.5rem;">
+              <a href="/privacy.html" style="color: var(--text-muted); text-decoration: none;">Privacy Policy</a>
+              <a href="/terms.html" style="color: var(--text-muted); text-decoration: none;">Terms &amp; Regulations</a>
+              <a href="/login.html" style="color: var(--text-muted); text-decoration: none;">Candidate Login</a>
+            </div>
+          </footer>
+
         </main>
       </div>
 
@@ -1006,9 +1012,9 @@
       <div class="modal-box" style="background: var(--bg-card); border-radius: var(--radius-lg); max-width: 650px; width: 100%; padding: 2rem; box-shadow: var(--shadow-lg); border: 2px solid #2563eb; color: var(--text-heading);">
         <div style="border-bottom: 2px solid #2563eb; padding-bottom: 1rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start;">
           <div>
-            <div style="font-size: 0.75rem; font-weight: 800; color: #1e40af; letter-spacing: 0.08em; text-transform: uppercase;">GOVERNMENT OF INDIA &bull; NATIONAL ASSESSMENT AGENCY</div>
-            <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-heading); margin-top: 0.25rem;">OFFICIAL EXAMINATION ADMIT CARD / HALL TICKET</h2>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">SSE COMPUTER BASED TEST (CBT) PLATFORM V0.1</div>
+            <div id="admit-cand-agency" style="font-size: 0.75rem; font-weight: 800; color: #1e40af; letter-spacing: 0.08em; text-transform: uppercase;">SSE CBT PLATFORM</div>
+            <h2 id="admit-cand-exam" style="font-size: 1.15rem; font-weight: 800; color: var(--text-heading); margin-top: 0.25rem;">MCQ ASSESSMENT [ SSE CBT 2026 ]</h2>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">PROVISIONAL ADMIT CARD / HALL TICKET &bull; COMPUTER BASED TEST</div>
           </div>
           <button type="button" id="btn-close-admit" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
         </div>
@@ -1025,15 +1031,30 @@
             </div>
             <div>
               <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Reporting Time:</span>
-              <strong>08:30 AM IST (Gate Closes: 08:45 AM)</strong>
+              <strong id="admit-reporting">07:30 AM IST (Gate Closes: 08:15 AM)</strong>
             </div>
             <div>
-              <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Examination Slot:</span>
-              <strong>Slot A (Morning Session)</strong>
+              <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Examination Shift:</span>
+              <strong id="admit-slot">Slot A (08:30 - 11:30 IST)</strong>
             </div>
             <div style="grid-column: 1 / -1;">
               <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Allocated Testing Centre:</span>
-              <strong>SSE National Digital Testing Centre, Block-C, Terminal Suite 042</strong>
+              <strong id="admit-cand-venue">SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105</strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Center Code &amp; Lab:</span>
+              <strong id="admit-cand-center-lab">Center: SSEC-TN-042 | Room: LAB-01</strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Assigned Terminal:</span>
+              <strong id="admit-cand-terminal" style="font-family: var(--font-mono); color: #2563eb;">T-A-0004</strong>
+            </div>
+            <div style="grid-column: 1 / -1; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="color: var(--text-muted); font-size: 0.72rem;">Controller of Examinations:</span>
+                <div id="admit-cand-controller" style="font-weight: 800; color: #1e3a8a;">Prof. Dr. M. Shanmugam</div>
+              </div>
+              <div style="font-size: 0.75rem; font-weight: 700; color: #10b981;">BIOMETRIC REGISTERED</div>
             </div>
           </div>
 
@@ -1044,11 +1065,11 @@
         </div>
 
         <div style="background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.75rem; color: #1e40af; margin-bottom: 1.5rem;">
-          <strong>⚠️ Candidate Instructions:</strong> Government photo ID card mandatory. Electronic devices and smartwatches strictly prohibited. Continuous webcam biometric tracking active during assessment.
+          <strong>Candidate Instructions:</strong> Government photo ID card mandatory. Electronic devices and smartwatches strictly prohibited. Continuous webcam biometric tracking active during assessment.
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-          <button type="button" class="btn btn-outline" onclick="window.print()">🖨️ Print Admit Card</button>
+          <button type="button" class="btn btn-outline" onclick="window.print()">Print Admit Card</button>
           <a href="/instructions.html" class="btn btn-primary" id="btn-admit-proceed">Proceed to Exam &rarr;</a>
         </div>
       </div>

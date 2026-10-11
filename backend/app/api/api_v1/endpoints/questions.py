@@ -3,9 +3,12 @@ import uuid
 import csv
 import json
 import io
+import re
 import logging
 from typing import List, Optional, Dict, Any
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, status
+from fastapi.responses import Response, StreamingResponse
 from app.core.security import get_tenant_user, require_admin_user
 from app.core.db import get_db
 from app.core.tenant import ensure_tenant_exists
@@ -17,6 +20,17 @@ router = APIRouter()
 
 # Staged import jobs for dry-run validation before committing
 STAGED_IMPORTS: Dict[str, Dict[str, Any]] = {}
+
+
+class PasteImportRequest(BaseModel):
+    text: str
+    default_subject: Optional[str] = "General"
+    default_difficulty: Optional[str] = "Medium"
+    dry_run: Optional[bool] = False
+
+
+class BulkImportRequest(BaseModel):
+    questions: List[Dict[str, Any]]
 
 
 def validate_question_row(row: dict, index: int) -> tuple[bool, str]:
@@ -76,13 +90,111 @@ def _format_question_response(q: dict) -> dict:
     }
 
 
+def parse_raw_question_text(
+    raw_text: str,
+    default_subject: str = "General",
+    default_difficulty: str = "Medium"
+) -> tuple[List[dict], List[dict]]:
+    """
+    Intelligent NLP / Regex parser for questions pasted from Word, ChatGPT, Gemini, or paper copies.
+    Handles multiple numbering styles (1., Q1., Question 1), option notations (A), (A), A.),
+    and answers (Answer: A, Ans: B, Key: C).
+    """
+    if not raw_text or not raw_text.strip():
+        return [], []
+
+    text = raw_text.strip()
+    split_pattern = r'(?:^|\r?\n)\s*(?:Q(?:uestion)?\s*[\#\.]?\s*\d+[\.\:\)]?|\b\d+[\.\)\]]|\#\s*\d+[\.\:]?)\s*'
+    chunks = [c.strip() for c in re.split(split_pattern, text) if c.strip()]
+
+    # If splitting by numbered questions yielded nothing or only 1 big block without numbering
+    if not chunks:
+        chunks = [text]
+
+    parsed_questions: List[dict] = []
+    errors: List[dict] = []
+
+    for idx, chunk in enumerate(chunks, 1):
+        try:
+            # 1. Look for options pattern: A) ... B) ... C) ... D)
+            opt_pat = r'(?:^|\r?\n)\s*[\(\[]?([A-Da-d])[\)\]\.\:]\s*(.*?)(?=(?:\r?\n\s*[\(\[]?[A-Da-d][\)\]\.\:]|\r?\n\s*(?:Ans(?:wer)?|Correct(?:\s*Answer)?|Key)|$))'
+            opt_matches = re.findall(opt_pat, chunk, re.DOTALL)
+
+            # 2. Extract statement: everything before option A
+            stmt_parts = re.split(r'(?:^|\r?\n)\s*[\(\[]?[A-Da-d][\)\]\.\:]', chunk)
+            stmt = stmt_parts[0].strip() if stmt_parts else ""
+
+            # 3. Extract answer
+            ans_m = re.search(r'(?:Ans(?:wer)?|Correct(?:\s*Answer)?|Key)\s*[\:\-]?\s*[\(\[]?([A-Da-d1-4])[\)\]]?', chunk, re.IGNORECASE)
+            ans = ""
+            if ans_m:
+                raw_ans = ans_m.group(1).upper()
+                if raw_ans in ("1", "2", "3", "4"):
+                    ans = chr(ord('A') + int(raw_ans) - 1)
+                else:
+                    ans = raw_ans
+
+            # 4. Extract subject
+            subj_m = re.search(r'Subject\s*[\:\-]\s*([^\r\n]+)', chunk, re.IGNORECASE)
+            subj = subj_m.group(1).strip() if subj_m else default_subject
+
+            # 5. Extract difficulty
+            diff_m = re.search(r'Difficulty\s*[\:\-]\s*([^\r\n]+)', chunk, re.IGNORECASE)
+            diff = diff_m.group(1).strip() if diff_m else default_difficulty
+
+            # 6. Extract marks
+            marks_m = re.search(r'Marks\s*[\:\-]\s*([0-9\.]+)', chunk, re.IGNORECASE)
+            marks = float(marks_m.group(1)) if marks_m else 4.0
+
+            # Clean options into a map
+            opts_map = {}
+            for label, val in opt_matches:
+                clean_label = label.upper()
+                # Clean any trailing Answer line from the last option
+                clean_val = re.split(r'(?:^|\r?\n)\s*(?:Ans(?:wer)?|Correct(?:\s*Answer)?|Key|Subject|Difficulty|Marks)', val, flags=re.IGNORECASE)[0].strip()
+                opts_map[clean_label] = clean_val
+
+            opt_a = opts_map.get("A", "")
+            opt_b = opts_map.get("B", "")
+            opt_c = opts_map.get("C", "")
+            opt_d = opts_map.get("D", "")
+
+            # Validation
+            if not stmt:
+                errors.append({"item": idx, "message": "Could not identify question statement"})
+                continue
+            if not opt_a or not opt_b:
+                errors.append({"item": idx, "message": "At least Option A and Option B are required"})
+                continue
+            if not ans or ans not in ["A", "B", "C", "D"]:
+                # Default to A if not specified to prevent loss of parsed questions
+                ans = "A"
+
+            parsed_questions.append({
+                "statement": stmt,
+                "opt_a": opt_a,
+                "opt_b": opt_b,
+                "opt_c": opt_c or "None of the above",
+                "opt_d": opt_d or "All of the above",
+                "correct_answer": ans,
+                "subject": subj or "General",
+                "difficulty": diff or "Medium",
+                "marks": marks,
+                "question_type": "mcq_single",
+            })
+        except Exception as e:
+            errors.append({"item": idx, "message": f"Parsing exception: {str(e)}"})
+
+    return parsed_questions, errors
+
+
 @router.get("/")
 def get_question_bank(
     subject: Optional[str] = Query(None),
     status_filter: Optional[str] = Query(None, alias="status"),
     user_context: dict = Depends(get_tenant_user),
 ):
-    """Fetch questions from the real database with optional subject and status filters."""
+    """Fetch user-uploaded / inputted questions from Supabase Cloud DB with optional subject/status filters."""
     tid = user_context["tenant_id"]
     db = get_db()
     ensure_tenant_exists(db, tid)
@@ -103,7 +215,7 @@ def get_question_bank(
 
 @router.post("/", status_code=201)
 def create_question(question: QuestionCreate, user_context: dict = Depends(require_admin_user)):
-    """Creates a single question and persists it to the question bank (Admin Only)."""
+    """Creates a single user-inputted question and persists it to Cloud DB (Admin Only)."""
     tid = user_context["tenant_id"]
     db = get_db()
     ensure_tenant_exists(db, tid)
@@ -112,10 +224,15 @@ def create_question(question: QuestionCreate, user_context: dict = Depends(requi
         "tenant_id": tid,
         "type": question.question_type or "mcq_single",
         "content": {"statement": question.statement.strip()},
-        "options": [question.opt_a or "", question.opt_b or "", question.opt_c or "", question.opt_d or ""],
+        "options": [
+            question.opt_a.strip() if question.opt_a else "",
+            question.opt_b.strip() if question.opt_b else "",
+            question.opt_c.strip() if question.opt_c else "",
+            question.opt_d.strip() if question.opt_d else "",
+        ],
         "correct_answer": question.correct_answer.strip().upper(),
-        "difficulty": question.difficulty,
-        "subject": question.subject,
+        "difficulty": question.difficulty or "Medium",
+        "subject": question.subject or "General",
         "status": "approved",
     }
 
@@ -129,6 +246,119 @@ def create_question(question: QuestionCreate, user_context: dict = Depends(requi
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
+@router.post("/import/paste-text")
+def import_pasted_text(
+    payload: PasteImportRequest,
+    user_context: dict = Depends(require_admin_user)
+):
+    """
+    IMPORT OPTION: AI / Plain Text / Word Bulk Paste.
+    Parses unstructured text into CBT questions.
+    Returns preview if dry_run=True, or saves directly to Cloud DB if dry_run=False.
+    """
+    tid = user_context["tenant_id"]
+    db = get_db()
+    ensure_tenant_exists(db, tid)
+
+    parsed_questions, parse_errors = parse_raw_question_text(
+        payload.text,
+        default_subject=payload.default_subject or "General",
+        default_difficulty=payload.default_difficulty or "Medium",
+    )
+
+    if not parsed_questions and parse_errors:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Could not parse any valid questions. Please verify format. ({parse_errors[0]['message']})"
+        )
+
+    if payload.dry_run:
+        return {
+            "status": "preview",
+            "total_detected": len(parsed_questions) + len(parse_errors),
+            "valid_count": len(parsed_questions),
+            "invalid_count": len(parse_errors),
+            "errors": parse_errors,
+            "questions": parsed_questions,
+        }
+
+    # Direct Cloud DB commit
+    db_payloads = [_row_to_db_payload(q, tid) for q in parsed_questions]
+    try:
+        res = db.table("question_bank").insert(db_payloads).execute()
+        inserted_count = len(res.data) if res.data else len(db_payloads)
+        return {
+            "status": "success",
+            "message": f"Successfully imported {inserted_count} questions into Cloud DB",
+            "count": inserted_count,
+            "errors": parse_errors,
+            "questions": [_format_question_response(r) for r in (res.data or [])],
+        }
+    except Exception as e:
+        logger.error("Failed to commit pasted questions: %s", e)
+        raise HTTPException(status_code=500, detail=f"Database commit error: {str(e)}")
+
+
+@router.post("/import/bulk")
+def import_bulk_json(
+    payload: BulkImportRequest,
+    user_context: dict = Depends(require_admin_user)
+):
+    """
+    IMPORT OPTION: Direct JSON Array Bulk Insert.
+    Takes a list of question objects and inserts them directly into Cloud DB.
+    """
+    tid = user_context["tenant_id"]
+    db = get_db()
+    ensure_tenant_exists(db, tid)
+
+    if not payload.questions:
+        raise HTTPException(status_code=400, detail="Empty questions list")
+
+    db_payloads = []
+    errors = []
+    for i, q in enumerate(payload.questions, 1):
+        # Support both flat format and nested content/options format
+        if "content" in q and isinstance(q["content"], dict):
+            stmt = q["content"].get("statement", "")
+            opts = q.get("options") or []
+            flat_row = {
+                "statement": stmt,
+                "opt_a": opts[0] if len(opts) > 0 else "",
+                "opt_b": opts[1] if len(opts) > 1 else "",
+                "opt_c": opts[2] if len(opts) > 2 else "",
+                "opt_d": opts[3] if len(opts) > 3 else "",
+                "correct_answer": q.get("correct_answer", "A"),
+                "subject": q.get("subject", "General"),
+                "difficulty": q.get("difficulty", "Medium"),
+                "marks": q.get("marks", 4.0),
+            }
+        else:
+            flat_row = q
+
+        is_valid, err_msg = validate_question_row(flat_row, i)
+        if is_valid:
+            db_payloads.append(_row_to_db_payload(flat_row, tid))
+        else:
+            errors.append({"row": i, "message": err_msg})
+
+    if not db_payloads:
+        raise HTTPException(status_code=400, detail=f"No valid questions found: {errors}")
+
+    try:
+        res = db.table("question_bank").insert(db_payloads).execute()
+        count = len(res.data) if res.data else len(db_payloads)
+        return {
+            "status": "success",
+            "message": f"Imported {count} questions directly into Cloud DB",
+            "count": count,
+            "errors": errors,
+        }
+    except Exception as e:
+        logger.error("Failed to bulk insert questions: %s", e)
+        raise HTTPException(status_code=500, detail=f"Database commit error: {str(e)}")
+
+
 @router.post("/import/dry-run")
 async def dry_run_import(
     file: UploadFile = File(...),
@@ -136,8 +366,8 @@ async def dry_run_import(
     user_context: dict = Depends(require_admin_user),
 ):
     """
-    UNIVERSAL BULK QUESTION IMPORT - DRY RUN
-    Validates CSV or JSON files strictly without committing them to the live bank.
+    IMPORT OPTION: CSV / JSON File Dry Run.
+    Validates uploaded files and generates a staged preview before committing.
     """
     tid = user_context["tenant_id"]
     contents = await file.read()
@@ -156,9 +386,25 @@ async def dry_run_import(
 
     elif format.lower() == "json":
         try:
-            parsed_rows = json.loads(contents.decode("utf-8"))
-            if not isinstance(parsed_rows, list):
+            data = json.loads(contents.decode("utf-8"))
+            if not isinstance(data, list):
                 raise HTTPException(status_code=400, detail="JSON must be an array of question objects")
+            for item in data:
+                if "content" in item and isinstance(item["content"], dict):
+                    opts = item.get("options") or []
+                    parsed_rows.append({
+                        "statement": item["content"].get("statement", ""),
+                        "opt_a": opts[0] if len(opts) > 0 else "",
+                        "opt_b": opts[1] if len(opts) > 1 else "",
+                        "opt_c": opts[2] if len(opts) > 2 else "",
+                        "opt_d": opts[3] if len(opts) > 3 else "",
+                        "correct_answer": item.get("correct_answer", "A"),
+                        "subject": item.get("subject", "General"),
+                        "difficulty": item.get("difficulty", "Medium"),
+                        "marks": item.get("marks", 4.0),
+                    })
+                else:
+                    parsed_rows.append(item)
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"JSON Parsing Error: {str(e)}")
     else:
@@ -195,7 +441,7 @@ async def dry_run_import(
 
 @router.post("/import/commit/{job_id}")
 def commit_import(job_id: str, user_context: dict = Depends(require_admin_user)):
-    """Commits a validated dry-run job into the live database question bank (Admin Only)."""
+    """Commits a validated dry-run job into Supabase Cloud DB (Admin Only)."""
     tid = user_context["tenant_id"]
     db = get_db()
     ensure_tenant_exists(db, tid)
@@ -214,15 +460,238 @@ def commit_import(job_id: str, user_context: dict = Depends(require_admin_user))
     try:
         res = db.table("question_bank").insert(payloads).execute()
         inserted_count = len(res.data) if res.data else len(payloads)
-        del STAGED_IMPORTS[job_id]  # Cleanup
+        del STAGED_IMPORTS[job_id]
         return {
             "status": "success",
-            "message": f"Successfully imported {inserted_count} questions into the database",
+            "message": f"Successfully imported {inserted_count} questions into Cloud DB",
             "count": inserted_count,
         }
     except Exception as e:
         logger.error("Failed to commit imported questions: %s", e)
         raise HTTPException(status_code=500, detail=f"Database commit error: {str(e)}")
+
+
+@router.get("/template/csv")
+def download_csv_template():
+    """Generates and streams a downloadable sample CSV template with pre-filled question examples."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["statement", "opt_a", "opt_b", "opt_c", "opt_d", "correct_answer", "subject", "difficulty", "marks"])
+    writer.writerow([
+        "What is the SI unit of electric charge?",
+        "Coulomb",
+        "Ampere",
+        "Volt",
+        "Ohm",
+        "A",
+        "Physics",
+        "Easy",
+        "4.0"
+    ])
+    writer.writerow([
+        "Which of the following is an inert noble gas?",
+        "Oxygen",
+        "Helium",
+        "Nitrogen",
+        "Hydrogen",
+        "B",
+        "Chemistry",
+        "Easy",
+        "4.0"
+    ])
+    writer.writerow([
+        "What is the derivative of sin(x) with respect to x?",
+        "cos(x)",
+        "-cos(x)",
+        "tan(x)",
+        "-sin(x)",
+        "A",
+        "Mathematics",
+        "Medium",
+        "4.0"
+    ])
+    writer.writerow([
+        "In Python, which keyword is used to define an asynchronous coroutine?",
+        "async def",
+        "def async",
+        "coroutine",
+        "thread",
+        "A",
+        "Computer Science",
+        "Medium",
+        "4.0"
+    ])
+
+    csv_data = output.getvalue()
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="question_bank_template.csv"'
+        }
+    )
+
+
+@router.get("/template/json")
+def download_json_template():
+    """Generates and streams a downloadable sample JSON template."""
+    samples = [
+        {
+            "statement": "What is the SI unit of electric charge?",
+            "opt_a": "Coulomb",
+            "opt_b": "Ampere",
+            "opt_c": "Volt",
+            "opt_d": "Ohm",
+            "correct_answer": "A",
+            "subject": "Physics",
+            "difficulty": "Easy",
+            "marks": 4.0
+        },
+        {
+            "statement": "Which of the following is an inert noble gas?",
+            "opt_a": "Oxygen",
+            "opt_b": "Helium",
+            "opt_c": "Nitrogen",
+            "opt_d": "Hydrogen",
+            "correct_answer": "B",
+            "subject": "Chemistry",
+            "difficulty": "Easy",
+            "marks": 4.0
+        },
+        {
+            "statement": "What is the derivative of sin(x) with respect to x?",
+            "opt_a": "cos(x)",
+            "opt_b": "-cos(x)",
+            "opt_c": "tan(x)",
+            "opt_d": "-sin(x)",
+            "correct_answer": "A",
+            "subject": "Mathematics",
+            "difficulty": "Medium",
+            "marks": 4.0
+        }
+    ]
+    json_data = json.dumps(samples, indent=2)
+    return Response(
+        content=json_data,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": 'attachment; filename="question_bank_template.json"'
+        }
+    )
+
+
+@router.get("/export/csv")
+def export_question_bank_csv(user_context: dict = Depends(require_admin_user)):
+    """Exports all questions from Cloud DB into a downloadable CSV spreadsheet."""
+    tid = user_context["tenant_id"]
+    db = get_db()
+    ensure_tenant_exists(db, tid)
+
+    res = db.table("question_bank").select("*").eq("tenant_id", tid).order("created_at", desc=True).execute()
+    rows = res.data or []
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["id", "statement", "opt_a", "opt_b", "opt_c", "opt_d", "correct_answer", "subject", "difficulty", "type", "status", "created_at"])
+
+    for r in rows:
+        content = r.get("content") or {}
+        stmt = content.get("statement", "") if isinstance(content, dict) else str(content)
+        opts = r.get("options") or []
+        writer.writerow([
+            str(r.get("id", "")),
+            stmt,
+            opts[0] if len(opts) > 0 else "",
+            opts[1] if len(opts) > 1 else "",
+            opts[2] if len(opts) > 2 else "",
+            opts[3] if len(opts) > 3 else "",
+            r.get("correct_answer", ""),
+            r.get("subject", "General"),
+            r.get("difficulty", "Medium"),
+            r.get("type", "mcq_single"),
+            r.get("status", "approved"),
+            r.get("created_at", ""),
+        ])
+
+    csv_data = output.getvalue()
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="cloud_question_bank_export.csv"'
+        }
+    )
+
+
+@router.delete("/purge/seeds")
+def purge_seed_questions(user_context: dict = Depends(require_admin_user)):
+    """
+    PURGE CONTROL: Deletes all hardcoded / seeded mock questions from Cloud DB
+    (e.g., IDs starting with '00000000-0000-0000-0000-0000000000' or balloon question).
+    """
+    db = get_db()
+    try:
+        # Fetch all questions
+        res = db.table("question_bank").select("id, content").execute()
+        all_q = res.data or []
+
+        deleted_ids = []
+        for q in all_q:
+            qid = str(q.get("id", ""))
+            content_str = str(q.get("content", ""))
+            if qid.startswith("00000000-0000-0000-0000-0000000000") or "balloon with constant acceleration" in content_str:
+                db.table("question_bank").delete().eq("id", qid).execute()
+                deleted_ids.append(qid)
+
+        return {
+            "status": "success",
+            "message": f"Successfully purged {len(deleted_ids)} hardcoded seed questions from Cloud DB.",
+            "purged_count": len(deleted_ids),
+            "purged_ids": deleted_ids,
+        }
+    except Exception as e:
+        logger.error("Failed to purge seed questions: %s", e)
+        raise HTTPException(status_code=500, detail=f"Database purge error: {str(e)}")
+
+
+@router.delete("/purge/all")
+def purge_all_questions(user_context: dict = Depends(require_admin_user)):
+    """
+    PURGE CONTROL: Wipes all questions for this tenant from Cloud DB so the admin can start 100% fresh.
+    """
+    tid = user_context["tenant_id"]
+    db = get_db()
+    ensure_tenant_exists(db, tid)
+
+    try:
+        res = db.table("question_bank").delete().eq("tenant_id", tid).execute()
+        count = len(res.data) if res.data else 0
+        return {
+            "status": "success",
+            "message": f"Question bank completely purged for tenant {tid}.",
+            "purged_count": count,
+        }
+    except Exception as e:
+        logger.error("Failed to purge all questions: %s", e)
+        raise HTTPException(status_code=500, detail=f"Database purge error: {str(e)}")
+
+
+@router.delete("/{question_id}")
+def delete_question(question_id: str, user_context: dict = Depends(require_admin_user)):
+    """Deletes an individual question from Supabase Cloud DB (Admin Only)."""
+    tid = user_context["tenant_id"]
+    db = get_db()
+    ensure_tenant_exists(db, tid)
+
+    try:
+        res = db.table("question_bank").delete().eq("id", question_id).execute()
+        return {
+            "status": "success",
+            "message": f"Question {question_id} deleted successfully from Cloud DB.",
+        }
+    except Exception as e:
+        logger.error("Failed to delete question %s: %s", question_id, e)
+        raise HTTPException(status_code=500, detail=f"Database delete error: {str(e)}")
 
 
 @router.put("/{question_id}")
@@ -245,6 +714,8 @@ async def update_question(
         update_data["correct_answer"] = payload["correct_answer"].strip().upper()
     if "subject" in payload:
         update_data["subject"] = payload["subject"]
+    if "difficulty" in payload:
+        update_data["difficulty"] = payload["difficulty"]
 
     try:
         db.table("question_bank").update(update_data).eq("id", question_id).execute()
@@ -258,7 +729,7 @@ async def update_question(
             "correct_answer": payload.get("correct_answer"),
             "subject": payload.get("subject"),
             "timestamp": time.time(),
-            "message": f"Question updated by Administrator."
+            "message": "Question updated by Administrator."
         })
 
         return {"status": "success", "message": "Question updated successfully and pushed live via WebSockets."}
@@ -274,7 +745,7 @@ async def adjudicate_question(
     user_context: dict = Depends(require_admin_user),
 ):
     """
-    Chief Examination Controller Post-Exam Adjudication Tool (NTA / Pearson standard):
+    Chief Examination Controller Post-Exam Adjudication Tool (Authoritative CBT Standard):
     - action='drop_bonus': Flags question as dropped due to ambiguity/error and awards +4 bonus marks to all test-takers.
     - action='correct_key': Overrides authoritative answer key across all candidate evaluations.
     Broadcasts live to all connected consoles and updates database.
@@ -319,4 +790,3 @@ async def adjudicate_question(
     except Exception as e:
         logger.error("Failed to adjudicate question: %s", e)
         raise HTTPException(status_code=500, detail=f"Database update failed: {str(e)}")
-

@@ -65,7 +65,7 @@ Once deployed, click **"Continue to Dashboard"** and then **"Visit"** to open yo
 - [ ] Navigate to `/admin.html` and verify the CSS styling is intact.
 
 ### Verify Backend Serverless Functions
-- [ ] Navigate to `/api/v1/health` in your browser. You should see `{"status": "ok", "message": "SIMATS CBT Backend is running."}`.
+- [ ] Navigate to `/api/v1/health` in your browser. You should see `{"status": "ok", "message": "SSE CBT Platform Backend is running."}`.
 - [ ] Try creating a Candidate via the Admin UI. If it succeeds, the Python serverless function successfully communicated with your Supabase PostgreSQL database.
 
 ---

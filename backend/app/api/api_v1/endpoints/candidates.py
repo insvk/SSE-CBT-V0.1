@@ -11,6 +11,7 @@ from app.core.security import get_tenant_user, require_admin_user
 from app.core.db import get_db
 from app.core.tenant import ensure_tenant_exists
 from app.core.ws_manager import ws_manager
+from app.api.api_v1.endpoints.exams import CURRENT_EXAM_SETTINGS
 from app.core.master_clock import (
     format_ist_now,
     format_timestamp_to_ist,
@@ -71,10 +72,12 @@ def _format_candidate_response(row: dict) -> CandidateResponse:
     cand_id_str = str(row["id"])
     id_short = cand_id_str[-4:].upper() if len(cand_id_str) >= 4 else "0001"
 
-    # Standardized Roll Number: 2601 + SLOT + SEQ
-    roll_no = metadata.get("roll_number") or reg_no.replace("SSEC-", "2601").replace("-CBT-", "")
+    # Standardized Roll Number / Registration Number format: SSE-{SLOT}-CBT-{SEQ:04d}
+    roll_no = metadata.get("roll_number") or reg_no
+    if roll_no and roll_no.startswith("SSEC-"):
+        roll_no = "SSE-" + roll_no[5:]
     if not roll_no:
-        roll_no = f"2601{batch}{id_short}"
+        roll_no = f"SSE-{batch}-CBT-{id_short}"
 
     assigned_terminal = metadata.get("assigned_terminal") or f"T-{batch}-{id_short}"
 
@@ -125,26 +128,27 @@ def _format_candidate_response(row: dict) -> CandidateResponse:
 
 
 def _generate_reg_number(db, tenant_id: str, slot: str) -> str:
-    """Generates next available registration number: SSEC-{SLOT}-CBT-{SEQ:04d}"""
+    """Generates next available registration number: SSE-{SLOT}-CBT-{SEQ:04d}"""
     slot_clean = slot.strip().upper() or "A"
     try:
         res = db.table("candidates").select("registration_number").eq("tenant_id", tenant_id).execute()
         existing = res.data or []
-        slot_prefix = f"SSEC-{slot_clean}-CBT-"
+        slot_prefix = f"SSE-{slot_clean}-CBT-"
         matching_seqs = []
         for c in existing:
             reg = c.get("registration_number", "")
-            if reg.startswith(slot_prefix):
-                try:
-                    seq_num = int(reg.replace(slot_prefix, ""))
-                    matching_seqs.append(seq_num)
-                except ValueError:
-                    pass
+            for pfx in (slot_prefix, f"SSEC-{slot_clean}-CBT-"):
+                if reg.startswith(pfx):
+                    try:
+                        seq_num = int(reg[len(pfx):])
+                        matching_seqs.append(seq_num)
+                    except ValueError:
+                        pass
         next_seq = max(matching_seqs, default=0) + 1
         return f"{slot_prefix}{next_seq:04d}"
     except Exception as e:
         logger.error("Error generating registration number: %s", e)
-        return f"SSEC-{slot_clean}-CBT-{uuid.uuid4().hex[:4].upper()}"
+        return f"SSE-{slot_clean}-CBT-{uuid.uuid4().hex[:4].upper()}"
 
 
 @router.get("/dashboard-summary")
@@ -289,6 +293,7 @@ async def create_candidate(cand: CandidateCreate, user_context: dict = Depends(r
             "status": "active",
             "email": email,
             "password": pwd,
+            "roll_number": cand.roll_number or reg_number,
             "category": cand.category or "General",
             "gender": cand.gender or "Male",
             "is_pwd": bool(cand.is_pwd),
@@ -463,7 +468,7 @@ async def regenerate_candidate_credentials(
 
         # Compute roll number
         batch = meta.get("batch", "A")
-        roll_no = meta.get("roll_number") or reg_no.replace("SSEC-", "2601").replace("-CBT-", "")
+        roll_no = meta.get("roll_number") or reg_no
 
         # WebSocket broadcast
         await ws_manager.broadcast("admin_feed", {
@@ -550,7 +555,7 @@ async def debar_candidate(
 @router.get("/{candidate_id}/admit-card", response_model=AdmitCardResponse)
 def get_candidate_admit_card(
     candidate_id: str,
-    user_context: dict = Depends(require_admin_user),
+    user_context: dict = Depends(get_tenant_user),
 ):
     """
     Candidate Management Suite: Generates national standard CBT Admit Card / Hall Ticket data.
@@ -566,6 +571,17 @@ def get_candidate_admit_card(
         cand = _format_candidate_response(res.data[0])
         slot_info = SLOT_SCHEDULE.get(cand.batch, SLOT_SCHEDULE["A"])
 
+        settings = CURRENT_EXAM_SETTINGS
+        center_name = settings.get("test_venue_name") or "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105"
+        center_code = settings.get("test_center_code") or "SSEC-TN-042"
+        lab_num = settings.get("default_lab_room") or slot_info["lab"]
+        term_pref = settings.get("terminal_prefix") or f"T-{cand.batch}-"
+        assigned_terminal = cand.assigned_terminal or f"{term_pref}{cand.id[-4:].upper()}"
+        ctrl_name = settings.get("controller_name") or "Prof. Dr. M. Shanmugam"
+        ctrl_desig = settings.get("controller_designation") or "Controller of Examinations"
+        inst_name = settings.get("institution_name") or "SSE CBT PLATFORM"
+        exam_title = settings.get("examination_title") or "MCQ ASSESSMENT [ SSE CBT 2026 ]"
+
         return AdmitCardResponse(
             status="success",
             admit_card_number=f"AC-2026-{cand.batch}-{cand.id[-4:].upper()}",
@@ -579,16 +595,20 @@ def get_candidate_admit_card(
             slot_timing_ist=slot_info["timing"],
             reporting_time_ist=slot_info["reporting"],
             gate_closure_ist=slot_info["gate_closure"],
-            test_center_name="SIMATS Center of Digital Examinations, Campus Block-A, Chennai - 602105",
-            test_center_code="SSEC-TN-042",
-            lab_number=slot_info["lab"],
-            assigned_terminal=cand.assigned_terminal or f"T-{cand.batch}-01",
+            test_center_name=center_name,
+            test_center_code=center_code,
+            lab_number=lab_num,
+            assigned_terminal=assigned_terminal,
             is_pwd=cand.is_pwd or False,
             has_scribe=cand.has_scribe or False,
             compensatory_minutes=cand.compensatory_minutes or 0,
-            authorized_signature_title="Controller of Examinations, National CBT Board",
+            authorized_signature_title=f"{ctrl_desig}, {inst_name}",
+            controller_name=ctrl_name,
+            controller_designation=ctrl_desig,
+            institution_name=inst_name,
+            examination_title=exam_title,
             generated_at_ist=format_ist_now(),
-            barcode_data=f"SSEC*2026*{cand.roll_number}*{cand.registration_number}",
+            barcode_data=f"SSE*2026*{cand.roll_number}*{cand.registration_number}",
         )
     except HTTPException:
         raise

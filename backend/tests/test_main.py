@@ -39,7 +39,7 @@ def test_health_check():
     """Verify backend health check returns status ok."""
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "message": "SIMATS CBT Backend is running."}
+    assert response.json() == {"status": "ok", "message": "SSE CBT Platform Backend is running."}
 
 
 def test_get_exams():
@@ -162,7 +162,7 @@ def test_candidate_endpoints_persistence():
     created = res_create.json()
     assert created["full_name"] == "Test Candidate Alpha"
     assert created["batch"] == "C"
-    assert "SSEC-C-CBT-" in created["registration_number"]
+    assert "SSE-C-CBT-" in created["registration_number"]
 
     # Teardown: Clean up test candidate to ensure zero persistent dummy records in Cloud DB
     client.delete(f"/api/v1/candidates/{created['id']}", headers=headers)

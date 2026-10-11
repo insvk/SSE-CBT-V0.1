@@ -30,7 +30,7 @@ app.add_middleware(
 @app.get("/")
 @app.get(f"{settings.API_V1_STR}/health")
 def health_check():
-    return {"status": "ok", "message": "SIMATS CBT Backend is running."}
+    return {"status": "ok", "message": "SSE CBT Platform Backend is running."}
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(ws_router)

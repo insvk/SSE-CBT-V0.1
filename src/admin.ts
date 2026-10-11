@@ -67,7 +67,7 @@ function applyTheme(theme: string): void {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('cbt_theme', theme);
     if (ui.themeIcon) {
-        ui.themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        ui.themeIcon.textContent = theme === 'dark' ? 'Light' : 'Dark';
     }
 }
 
@@ -339,7 +339,7 @@ function renderCandidateTable(): void {
         const isActive = status === 'active';
         const isDisqualified = status === 'disqualified';
         const slot = (c.batch || 'A').toUpperCase();
-        const rollNo = c.roll_number || c.registration_number || `2601${slot}0001`;
+        const rollNo = c.roll_number || c.registration_number || `SSE-${slot}-CBT-0001`;
         const category = c.category || 'General';
         const terminal = c.assigned_terminal || `T-${slot}-01`;
         const slotTiming = c.slot_timing_ist || '08:30 - 11:30 IST';
@@ -390,7 +390,7 @@ function renderCandidateTable(): void {
             <td>
                 <div style="display: flex; flex-direction: column;">
                     <span style="font-family: var(--font-mono); font-weight: 800; font-size: 0.82rem; color: var(--text-heading);">
-                        💺 ${escapeHtml(terminal)}
+                        Node: ${escapeHtml(terminal)}
                     </span>
                     <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">IP: ${escapeHtml(c.ip_address || '10.0.4.12')}</span>
                 </div>
@@ -398,9 +398,9 @@ function renderCandidateTable(): void {
             <td>
                 <div style="display: flex; flex-direction: column; gap: 2px;">
                     <span style="font-size: 0.72rem; font-weight: 700; color: #059669;">
-                        ✅ ${escapeHtml(c.biometric_status || 'verified')} (${c.biometric_score || 98.4}%)
+                        ${escapeHtml(c.biometric_status || 'verified')} (${c.biometric_score || 98.4}%)
                     </span>
-                    ${isPwd ? `<span style="font-size: 0.68rem; font-weight: 700; color: #b45309; background: #fef3c7; padding: 1px 5px; border-radius: 4px; display: inline-block;">♿ PwD (+${extraMins}m)</span>` : '<span style="font-size: 0.7rem; color: var(--text-muted);">Standard</span>'}
+                    ${isPwd ? `<span style="font-size: 0.68rem; font-weight: 700; color: #b45309; background: #fef3c7; padding: 1px 5px; border-radius: 4px; display: inline-block;">PwD (+${extraMins}m)</span>` : '<span style="font-size: 0.7rem; color: var(--text-muted);">Standard</span>'}
                 </div>
             </td>
             <td>
@@ -412,25 +412,25 @@ function renderCandidateTable(): void {
             <td style="text-align: right; white-space: nowrap;">
                 <div class="action-btn-group">
                     <button class="btn-action-icon" title="View Full Candidate Dossier" onclick="openCandidateDossier('${escapeHtml(c.id)}')">
-                        🪪 Dossier
+                        Dossier
                     </button>
                     <button class="btn-action-icon" title="View & Print Official Admit Card / Hall Ticket" onclick="openAdmitCard('${escapeHtml(c.id)}')">
-                        🎫 Admit Card
+                        Admit Card
                     </button>
                     <button class="btn-action-icon" title="Migrate Candidate Shift / Slot" onclick="openShiftReallocation('${escapeHtml(c.id)}')">
-                        🔄 Shift
+                        Shift
                     </button>
                     <button class="btn-action-icon" title="Manage PwD & Scribe Accommodations" onclick="openAccommodationsManager('${escapeHtml(c.id)}')">
-                        ♿ PwD
+                        PwD
                     </button>
                     <button class="btn-action-icon" title="Generate Emergency Access PIN" onclick="regenerateEmergencyPin('${escapeHtml(c.id)}')">
-                        🔑 PIN
+                        PIN
                     </button>
                     <button class="btn-action-icon" style="color: #ef4444;" title="Debar Candidate for Infraction" onclick="openDebarModal('${escapeHtml(c.id)}')">
-                        ⛔ Debar
+                        Debar
                     </button>
                     <button class="btn-action-icon" style="color: #dc2626;" title="Permanently Deregister / Delete Candidate from Cloud DB" onclick="deleteCandidateRecord('${escapeHtml(c.id)}', '${escapeHtml(c.full_name)}')">
-                        🗑️ Expel
+                        Expel
                     </button>
                 </div>
             </td>
@@ -643,7 +643,7 @@ if (ui.btnUnlockSessions) {
 
 if (ui.btnEmergencyReset) {
     ui.btnEmergencyReset.onclick = async () => {
-        if (!confirm("⚠️ WARNING: This will reset all active exam responses and timer countdowns. Proceed with Global Exam Session Reset?")) {
+        if (!confirm("WARNING: This will reset all active exam responses and timer countdowns. Proceed with Global Exam Session Reset?")) {
             return;
         }
         try {
@@ -767,7 +767,7 @@ function openCandidateDossier(id: string): void {
     (document.getElementById('dos-scribe') as HTMLElement).textContent = c.has_scribe ? 'Permitted / Assigned' : 'Not Required';
     (document.getElementById('dos-extra-time') as HTMLElement).textContent = `${c.compensatory_minutes || 0} Minutes`;
     (document.getElementById('dos-created-at') as HTMLElement).textContent = c.created_at_ist || 'Authoritative Record';
-    (document.getElementById('dos-bio-score') as HTMLElement).textContent = `✅ Match ${c.biometric_score || 98.4}%`;
+    (document.getElementById('dos-bio-score') as HTMLElement).textContent = `Match ${c.biometric_score || 98.4}%`;
 
     const statusPill = document.getElementById('dos-status-pill');
     if (statusPill) {
@@ -818,6 +818,20 @@ async function openAdmitCard(id: string): Promise<void> {
         (document.getElementById('admit-venue-name') as HTMLElement).textContent = data.test_center_name;
         (document.getElementById('admit-lab') as HTMLElement).textContent = data.lab_number;
         (document.getElementById('admit-terminal') as HTMLElement).textContent = data.assigned_terminal;
+
+        const elInst = document.getElementById('admit-inst-name');
+        const elExamTitle = document.getElementById('admit-exam-title');
+        const elCenterCode = document.getElementById('admit-center-code');
+        const elCtrlName = document.getElementById('admit-controller-name');
+        const elCtrlDesig = document.getElementById('admit-controller-desig');
+        const elCtrlInst = document.getElementById('admit-controller-inst');
+
+        if (elInst && (data as any).institution_name) elInst.textContent = (data as any).institution_name;
+        if (elExamTitle && (data as any).examination_title) elExamTitle.textContent = (data as any).examination_title;
+        if (elCenterCode && data.test_center_code) elCenterCode.textContent = data.test_center_code;
+        if (elCtrlName && (data as any).controller_name) elCtrlName.textContent = (data as any).controller_name;
+        if (elCtrlDesig && (data as any).controller_designation) elCtrlDesig.textContent = (data as any).controller_designation;
+        if (elCtrlInst && (data as any).institution_name) elCtrlInst.textContent = (data as any).institution_name;
 
         const btnPrint = document.getElementById('btn-print-admit');
         if (btnPrint) {
@@ -892,7 +906,7 @@ async function regenerateEmergencyPin(id: string): Promise<void> {
         }
 
         modal.style.display = 'flex';
-        showToast(`🔑 Temporary PIN ${data.temporary_pin} generated!`);
+        showToast(`Temporary PIN ${data.temporary_pin} generated!`);
         loadCandidates();
     } catch (_) {
         showToast("Error generating emergency credentials", true);
@@ -1157,7 +1171,7 @@ if (formBulkRealloc) {
     });
 }
 
-// --- TCS iON PROCTORING LAB & TERMINALS GRID ---
+// --- PROCTORING LAB & TERMINALS GRID ---
 const terminalViolations: Record<string, number> = {};
 
 interface IncidentAuditRecord {
@@ -1228,7 +1242,7 @@ function renderProctorTerminals(): void {
 
     cachedCandidates.forEach((c: any, idx: number) => {
         const fallbackTerm = `Terminal C-04${idx + 1}`;
-        const regNo = c.registration_number || `SSEC-${c.batch || 'A'}-000${idx + 1}`;
+        const regNo = c.registration_number || `SSE-${c.batch || 'A'}-CBT-000${idx + 1}`;
         const terminalId = candidateAssignedTerminals[regNo] || c.metadata?.assigned_terminal || fallbackTerm;
         const violations = terminalViolations[regNo] || 0;
         const isPaused = candidatePausedStates[regNo] || false;
@@ -1247,13 +1261,13 @@ function renderProctorTerminals(): void {
         card.style.gap = '0.65rem';
         card.style.transition = 'all 0.2s';
 
-        let statusBadgeHtml = '<span class="status-pill status-active">🟢 Active in Exam</span>';
+        let statusBadgeHtml = '<span class="status-pill status-active">[Active] in Exam</span>';
         if (isLocked) {
-            statusBadgeHtml = '<span class="status-pill status-suspended" style="background:#fee2e2; color:#b91c1c;">🔒 Locked</span>';
+            statusBadgeHtml = '<span class="status-pill status-suspended" style="background:#fee2e2; color:#b91c1c;">Locked</span>';
         } else if (isPaused) {
             statusBadgeHtml = '<span class="status-pill" style="background:#fef3c7; color:#b45309;">⏸️ On Hold</span>';
         } else if (violations > 0) {
-            statusBadgeHtml = `<span class="status-pill status-suspended">⚠️ Strike #${violations}</span>`;
+            statusBadgeHtml = `<span class="status-pill status-suspended">Strike #${violations}</span>`;
         }
 
         const accommodationBadge = extraMins > 0
@@ -1270,7 +1284,7 @@ function renderProctorTerminals(): void {
             </div>
 
             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #321fdb, #818cf8); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: #1e3a8a; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem;">
                     ${initials}
                 </div>
                 <div style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
@@ -1297,16 +1311,16 @@ function renderProctorTerminals(): void {
                     ${isPaused ? '▶️ Resume' : '⏸️ Hold'}
                 </button>
                 <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem;" onclick="openReseatModal('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}', '${escapeHtml(terminalId)}')">
-                    💺 Re-seat
+                    Re-seat
                 </button>
                 <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem; color: #d97706; border-color: #fde68a;" onclick="sendCandidateDirective('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}')">
-                    ⚠️ Directive
+                    Directive
                 </button>
                 <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem; color: #ef4444; border-color: #fca5a5;" onclick="toggleLockTerminal('${escapeHtml(regNo)}', '${escapeHtml(c.full_name)}')">
-                    ${isLocked ? '🔓 Unlock' : '🔒 Lock'}
+                    ${isLocked ? 'Unlock' : 'Lock'}
                 </button>
                 <button class="btn btn-outline btn-sm" style="padding: 0.3rem 0.2rem; font-size: 0.7rem;" onclick="resetAttempt('${escapeHtml(c.id)}')">
-                    🔄 Reset
+                    Reset
                 </button>
             </div>
         `;
@@ -1416,7 +1430,7 @@ if (formReseatCandidate) {
 
             if (res.ok) {
                 candidateAssignedTerminals[regNo] = targetNode;
-                showToast(`💺 Terminal re-seated to ${targetNode} for ${regNo}`);
+                showToast(`Terminal re-seated to ${targetNode} for ${regNo}`);
                 appendIncidentLog(`Migrated session for ${regNo} to ${targetNode} (${reason})`);
                 document.getElementById('modal-reseat-candidate')!.style.display = 'none';
                 renderProctorTerminals();
@@ -1512,7 +1526,7 @@ const btnExportAttendance = document.getElementById('btn-export-attendance');
 if (btnExportAttendance) {
     btnExportAttendance.addEventListener('click', () => {
         window.location.href = '/api/v1/exams/EX-1001/attendance-roster?format=csv';
-        showToast("📋 Official Attendance Roster CSV downloaded!");
+        showToast("Official Attendance Roster CSV downloaded!");
     });
 }
 
@@ -1528,7 +1542,7 @@ if (btnExportAttendance) {
             reg_no: regNo,
             message: customMsg
         }));
-        showToast(`⚠️ Priority Directive dispatched to ${name} (${regNo})`);
+        showToast(`Priority Directive dispatched to ${name} (${regNo})`);
         appendIncidentLog(`Dispatched Invigilator Directive to ${name} (${regNo}): "${customMsg}"`);
     } else {
         showToast("WebSocket disconnected, unable to send directive", true);
@@ -1555,7 +1569,7 @@ if (btnExportAttendance) {
 
         if (res.ok) {
             candidateLockedStates[regNo] = !isLocked;
-            showToast(`${isLocked ? '🔓 Terminal unlocked' : '🔒 Terminal locked'} for ${name}`);
+            showToast(`${isLocked ? 'Terminal unlocked' : 'Terminal locked'} for ${name}`);
             appendIncidentLog(`${isLocked ? 'Unlocked' : 'Forcibly LOCKED'} terminal for ${name} (${regNo})`, !isLocked);
             renderProctorTerminals();
         } else {
@@ -1584,7 +1598,7 @@ if (btnBroadcast && inputBroadcast) {
                 type: "BROADCAST_ANNOUNCEMENT",
                 message: msg
             }));
-            showToast("📢 Broadcast alert dispatched to all active candidate screens!");
+            showToast("Broadcast alert dispatched to all active candidate screens!");
             appendIncidentLog(`Global Broadcast Dispatched: "${msg}"`);
             inputBroadcast.value = '';
         } else {
@@ -1631,9 +1645,9 @@ function initAdminWebSocket(): void {
                 const msg = JSON.parse(event.data);
 
                 if (msg.type === 'CANDIDATE_VIOLATION') {
-                    const reg = msg.reg_no || 'SSEC';
+                    const reg = msg.reg_no || 'SSE';
                     terminalViolations[reg] = (terminalViolations[reg] || 0) + 1;
-                    showToast(`⚠️ TCS iON Violation: Candidate ${msg.candidate_name || reg} - ${msg.violation_type}`, true);
+                    showToast(`Violation Notice: Candidate ${msg.candidate_name || reg} - ${msg.violation_type}`, true);
                     appendIncidentLog(`SECURITY VIOLATION: Candidate ${msg.candidate_name || reg} (${reg}) on ${msg.terminal || 'Terminal'} - ${msg.violation_type} (Strike #${msg.count || terminalViolations[reg]})`, true);
                     
                     const termCard = document.getElementById(`terminal-card-${reg}`);
@@ -1644,12 +1658,12 @@ function initAdminWebSocket(): void {
                     const termStatus = document.getElementById(`term-status-${reg}`);
                     if (termStatus) {
                         termStatus.className = 'status-pill status-suspended';
-                        termStatus.textContent = `⚠️ Strike #${terminalViolations[reg]}`;
+                        termStatus.textContent = `Strike #${terminalViolations[reg]}`;
                     }
 
                 } else if (msg.type === 'DIRECTIVE_ACKNOWLEDGED') {
-                    showToast(`✅ Compliance Confirmed: Candidate ${msg.candidate_name || msg.reg_no} acknowledged directive!`);
-                    appendIncidentLog(`✅ Candidate ${msg.candidate_name || msg.reg_no} confirmed compliance with Proctor directive.`);
+                    showToast(`Compliance Confirmed: Candidate ${msg.candidate_name || msg.reg_no} acknowledged directive!`);
+                    appendIncidentLog(`Candidate ${msg.candidate_name || msg.reg_no} confirmed compliance with Proctor directive.`);
                     const termCard = document.getElementById(`terminal-card-${msg.reg_no}`);
                     if (termCard) {
                         termCard.style.border = '1px solid #10b981';
@@ -1664,7 +1678,7 @@ function initAdminWebSocket(): void {
 
                 } else if (msg.type === 'TERMINAL_RESEATED') {
                     candidateAssignedTerminals[msg.reg_no] = msg.new_terminal;
-                    showToast(`💺 Terminal Re-seated: ${msg.reg_no} migrated to ${msg.new_terminal}`);
+                    showToast(`Terminal Re-seated: ${msg.reg_no} migrated to ${msg.new_terminal}`);
                     appendIncidentLog(`Migrated candidate ${msg.reg_no} to node ${msg.new_terminal} (${msg.reason || 'Hardware switch'})`);
                     renderProctorTerminals();
 
@@ -1699,74 +1713,74 @@ function initAdminWebSocket(): void {
                     renderProctorTerminals();
 
                 } else if (msg.type === 'CANDIDATE_RESPONSE') {
-                    showToast(`🟢 Live Response: Candidate ${msg.candidate_name || 'Candidate'} - Q${msg.question_id || '1'}`);
+                    showToast(`Live Response: Candidate ${msg.candidate_name || 'Candidate'} - Q${msg.question_id || '1'}`);
                     const termProgress = document.getElementById(`term-progress-${msg.reg_no}`);
                     if (termProgress) {
                         termProgress.textContent = `Q${msg.question_id} Answered`;
                     }
 
                 } else if (msg.type === 'CANDIDATE_SUBMITTED') {
-                    showToast(`🏆 Candidate submitted: Score ${msg.score}/${msg.max_possible}`);
+                    showToast(`Candidate submitted: Score ${msg.score}/${msg.max_possible}`);
                     appendIncidentLog(`Candidate ${msg.candidate_name || msg.reg_no} completed and submitted examination.`);
                     loadCandidates();
                     loadDashboardSummary();
 
                 } else if (msg.type === 'CANDIDATE_CREATED') {
-                    showToast(`👤 Candidate created: ${msg.candidate?.full_name || ''}`);
+                    showToast(`Candidate created: ${msg.candidate?.full_name || ''}`);
                     loadCandidates();
                     loadDashboardSummary();
 
                 } else if (msg.type === 'CANDIDATE_STATUS_CHANGED') {
-                    showToast(`🔄 Candidate status updated: ${msg.status}`);
+                    showToast(`Candidate status updated: ${msg.status}`);
                     loadCandidates();
                     loadDashboardSummary();
 
                 } else if (msg.type === 'CANDIDATE_SLOT_REALLOCATED') {
-                    showToast(`🔄 Shift Reallocated: ${msg.candidate_name || 'Candidate'} migrated to Slot ${msg.new_slot}`);
+                    showToast(`Shift Reallocated: ${msg.candidate_name || 'Candidate'} migrated to Slot ${msg.new_slot}`);
                     appendIncidentLog(`Shift Reallocated: ${msg.candidate_name || 'Candidate'} reallocated to Slot ${msg.new_slot} (${msg.reason || 'Admin'})`);
                     loadCandidates();
                     loadDashboardSummary();
 
                 } else if (msg.type === 'CANDIDATE_ACCOMMODATIONS_UPDATED') {
-                    showToast(`♿ Accommodations Updated: ${msg.candidate_name || 'Candidate'}`);
+                    showToast(`Accommodations Updated: ${msg.candidate_name || 'Candidate'}`);
                     appendIncidentLog(`Accommodations updated for ${msg.candidate_name || 'Candidate'}: Extra time ${msg.compensatory_minutes}m, Scribe=${msg.has_scribe}`);
                     loadCandidates();
 
                 } else if (msg.type === 'CANDIDATE_CREDENTIALS_REGENERATED') {
-                    showToast(`🔑 Emergency PIN generated for ${msg.candidate_name || 'Candidate'}`);
+                    showToast(`Emergency PIN generated for ${msg.candidate_name || 'Candidate'}`);
                     loadCandidates();
 
                 } else if (msg.type === 'CANDIDATE_DISQUALIFIED') {
-                    showToast(`⛔ MALPRACTICE DEBARMENT: ${msg.candidate_name || 'Candidate'} officially debarred!`, true);
+                    showToast(`MALPRACTICE DEBARMENT: ${msg.candidate_name || 'Candidate'} officially debarred!`, true);
                     appendIncidentLog(`MALPRACTICE DEBARMENT: Candidate ${msg.candidate_name || 'Candidate'} debarred under ${msg.reason}`, true);
                     loadCandidates();
                     loadDashboardSummary();
 
                 } else if (msg.type === 'BULK_CANDIDATES_REALLOCATED') {
-                    showToast(`🔄 Bulk Migration: ${msg.count} candidates reallocated to Slot ${msg.target_slot}`);
+                    showToast(`Bulk Migration: ${msg.count} candidates reallocated to Slot ${msg.target_slot}`);
                     appendIncidentLog(`Bulk Migration: ${msg.count} candidates moved to Slot ${msg.target_slot}`);
                     loadCandidates();
                     loadDashboardSummary();
 
                 } else if (msg.type === 'EXAM_PHASE_CHANGED') {
-                    showToast(`🏛️ Phase Advanced: ${(msg.new_phase || '').toUpperCase().replace(/_/g, ' ')}`);
+                    showToast(`Phase Advanced: ${(msg.new_phase || '').toUpperCase().replace(/_/g, ' ')}`);
                     appendIncidentLog(`EXAM LIFECYCLE: Advanced to ${msg.new_phase} by ${msg.authorizing_controller || 'Controller'}`);
                     loadExamPhase();
 
                 } else if (msg.type === 'PAPER_DECRYPTED') {
-                    showToast('🔓 256-Bit Question Paper Decrypted & Released!');
+                    showToast('256-Bit Question Paper Decrypted & Released!');
                     appendIncidentLog(`CUSTODY RELEASE: Question Paper Decrypted by ${msg.decrypted_by || 'Controller'}`);
                     loadExamPhase();
 
                 } else if (msg.type === 'CANDIDATE_CHECKED_IN') {
-                    showToast(`🎫 Candidate Admitted: ${msg.candidate_name || ''} issued Terminal ${msg.assigned_terminal || ''}`);
+                    showToast(`Candidate Admitted: ${msg.candidate_name || ''} issued Terminal ${msg.assigned_terminal || ''}`);
                     appendIncidentLog(`ADMISSIONS CHECK-IN: ${msg.candidate_name} (${msg.registration_number}) seated at ${msg.assigned_terminal} (Bio: ${msg.biometric_score}%)`);
                     loadCandidates();
                     loadDashboardSummary();
 
                 } else if (msg.type === 'DISASTER_HOLD') {
-                    showToast(`🚨 HALL-WIDE EMERGENCY HOLD: ${msg.reason || 'Evacuation Drill'}`, true);
-                    appendIncidentLog(`🚨 DISASTER EVACUATION HOLD ACTIVATED: ${msg.reason}. Timers frozen.`, true);
+                    showToast(`HALL-WIDE EMERGENCY HOLD: ${msg.reason || 'Evacuation Drill'}`, true);
+                    appendIncidentLog(`DISASTER EVACUATION HOLD ACTIVATED: ${msg.reason}. Timers frozen.`, true);
                     loadExamPhase();
                 }
             } catch (_) {}
@@ -1786,7 +1800,7 @@ function initAdminWebSocket(): void {
 }
 
 // =========================================================================
-// ENTERPRISE EXAMINATION CONTROLLER COMMAND SUITE (NTA / TCS iON / PEARSON)
+// ENTERPRISE EXAMINATION CONTROLLER COMMAND SUITE
 // =========================================================================
 
 // 1. Exam Lifecycle Phase Orchestrator
@@ -1843,7 +1857,7 @@ async function loadExamPhase(): Promise<void> {
                 custodyPill.style.borderColor = 'rgba(16, 185, 129, 0.3)';
                 custodyPill.style.color = '#047857';
             }
-            if (custodyIcon) custodyIcon.textContent = '🔓';
+            if (custodyIcon) custodyIcon.textContent = '[Decrypted]';
             if (custodyText) custodyText.textContent = '256-Bit Paper: Decrypted & Live';
         } else {
             if (custodyPill) {
@@ -1851,7 +1865,7 @@ async function loadExamPhase(): Promise<void> {
                 custodyPill.style.borderColor = 'rgba(239, 68, 68, 0.3)';
                 custodyPill.style.color = '#b91c1c';
             }
-            if (custodyIcon) custodyIcon.textContent = '🔒';
+            if (custodyIcon) custodyIcon.textContent = '[Locked]';
             if (custodyText) custodyText.textContent = '256-Bit Paper: Custody Locked';
         }
     } catch (_) {}
@@ -1887,7 +1901,7 @@ async function loadInfrastructureAudit(): Promise<void> {
         if (hashEl) hashEl.textContent = `SHA256: ${data.audit_certificate_sha256}`;
         const modal = document.getElementById('modal-infra-audit');
         if (modal) modal.style.display = 'flex';
-        showToast('🩺 Pre-Flight Readiness Audit: All systems 100% compliant!');
+        showToast('Pre-Flight Readiness Audit: All systems 100% compliant!');
     } catch (err: any) {
         showToast('Audit evaluation error', true);
     }
@@ -1948,7 +1962,7 @@ if (formPhaseAdvance) {
                 body: JSON.stringify({ target_phase: targetPhase, notes: note })
             });
             if (res.ok) {
-                showToast(`🏛️ Successfully advanced phase to: ${targetPhase.toUpperCase()}`);
+                showToast(`Successfully advanced phase to: ${targetPhase.toUpperCase()}`);
                 document.getElementById('modal-phase-advance')!.style.display = 'none';
                 loadExamPhase();
             } else {
@@ -1983,7 +1997,7 @@ if (formPaperDecrypt) {
                 body: JSON.stringify({ custody_key: keyInput })
             });
             if (res.ok) {
-                showToast('🔓 Question Paper decrypted and released to all consoles!');
+                showToast('Question Paper decrypted and released to all consoles!');
                 document.getElementById('modal-paper-decrypt')!.style.display = 'none';
                 loadExamPhase();
             } else {
@@ -2038,7 +2052,7 @@ if (formAdmissionsCheckin) {
             });
             if (res.ok) {
                 const data = await res.json();
-                showToast(`🎫 ${data.message}`);
+                showToast(data.message);
                 document.getElementById('modal-admissions-checkin')!.style.display = 'none';
                 loadCandidates();
                 loadDashboardSummary();
@@ -2079,7 +2093,7 @@ if (formDisasterHold) {
                 body: JSON.stringify({ reason: reason, freeze_all_timers: true })
             });
             if (res.ok) {
-                showToast('🚨 Hall-wide Emergency Hold Activated. Timers frozen.');
+                showToast('Hall-wide Emergency Hold Activated. Timers frozen.');
                 document.getElementById('modal-disaster-hold')!.style.display = 'none';
                 loadExamPhase();
             } else {
@@ -2096,7 +2110,7 @@ const btnRefreshRadar = document.getElementById('btn-refresh-radar');
 if (btnRefreshRadar) {
     btnRefreshRadar.addEventListener('click', () => {
         loadTelemetryRadar();
-        showToast('🛰️ Anomaly Radar telemetry refreshed.');
+        showToast('Anomaly Radar telemetry refreshed.');
     });
 }
 
@@ -2120,15 +2134,975 @@ if (ui.topSearchInput) {
     });
 }
 
+// ===================================================================
+// PRO MAXX: TESTS & EXAM OPERATIONS MANAGEMENT SUITE (CLOUD DB)
+// ===================================================================
+
+let cachedExams: any[] = [];
+let cachedQuestionBank: any[] = [];
+let selectedQuestionIds: Set<string> = new Set();
+let currentSummaryExamId: string = '';
+
+// Format date helper for IST
+function formatISTDate(isoStr?: string): string {
+    if (!isoStr) return '--';
+    try {
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return isoStr;
+        return d.toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        }) + ' IST';
+    } catch (_) {
+        return isoStr;
+    }
+}
+
+// Convert Date to datetime-local input format (YYYY-MM-DDTHH:mm)
+function toLocalInputString(date: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const y = date.getFullYear();
+    const m = pad(date.getMonth() + 1);
+    const d = pad(date.getDate());
+    const h = pad(date.getHours());
+    const min = pad(date.getMinutes());
+    return `${y}-${m}-${d}T${h}:${min}`;
+}
+
+// 1. Load All Exams from Cloud DB
+async function loadExams(): Promise<void> {
+    try {
+        const res = await fetch('/api/v1/exams/', { headers: getHeaders() });
+        if (res.ok) {
+            cachedExams = await res.json();
+            if (!Array.isArray(cachedExams)) cachedExams = [];
+            updateExamStats();
+            renderExamsTable();
+            populateShareRegExamSelect();
+        } else {
+            console.error('Failed to load exams from Cloud DB');
+        }
+    } catch (err) {
+        console.error('Error fetching exams:', err);
+    }
+}
+
+// Update Top Metric Counters for Exams
+function updateExamStats(): void {
+    let active = 0;
+    let scheduled = 0;
+    let concluded = 0;
+
+    for (const ex of cachedExams) {
+        const st = ex.schedule_status || 'active';
+        if (st === 'active') active++;
+        else if (st === 'scheduled') scheduled++;
+        else if (st === 'concluded') concluded++;
+    }
+
+    const elActive = document.getElementById('stat-active-exams-count');
+    const elSched = document.getElementById('stat-scheduled-exams-count');
+    const elConc = document.getElementById('stat-concluded-exams-count');
+
+    if (elActive) elActive.textContent = String(active);
+    if (elSched) elSched.textContent = String(scheduled);
+    if (elConc) elConc.textContent = String(concluded);
+}
+
+// Populate the Target Exam select in the Registration Share Modal
+function populateShareRegExamSelect(): void {
+    const sel = document.getElementById('share-reg-exam-select') as HTMLSelectElement;
+    if (!sel) return;
+
+    const currentVal = sel.value;
+    sel.innerHTML = '<option value="">-- General Registration (All Exams Accessible) --</option>';
+
+    for (const ex of cachedExams) {
+        const opt = document.createElement('option');
+        opt.value = ex.id;
+        const code = ex.config?.exam_code || ex.code || 'CBT-' + ex.id.slice(0, 6);
+        opt.textContent = `${ex.title} (${code})`;
+        sel.appendChild(opt);
+    }
+
+    if (currentVal) sel.value = currentVal;
+}
+
+// 2. Render Exams Table with Live Actions
+function renderExamsTable(): void {
+    const tbody = document.getElementById('exam-table-body');
+    if (!tbody) return;
+
+    const searchInput = (document.getElementById('search-exams-input') as HTMLInputElement)?.value.trim().toLowerCase() || '';
+    const filterSchedule = (document.getElementById('filter-exam-schedule') as HTMLSelectElement)?.value || 'ALL';
+
+    const filtered = cachedExams.filter(ex => {
+        const title = (ex.title || '').toLowerCase();
+        const code = (ex.config?.exam_code || ex.code || '').toLowerCase();
+        const id = (ex.id || '').toLowerCase();
+        const matchesSearch = !searchInput || title.includes(searchInput) || code.includes(searchInput) || id.includes(searchInput);
+
+        const st = ex.schedule_status || 'active';
+        const matchesStatus = (filterSchedule === 'ALL') || (st === filterSchedule);
+
+        return matchesSearch && matchesStatus;
+    });
+
+    const counter = document.getElementById('exam-filter-counter');
+    if (counter) {
+        counter.textContent = `Showing ${filtered.length} of ${cachedExams.length} tests`;
+    }
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                    No examinations found matching your filter criteria. Click "Create New Test" to schedule one.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = '';
+    for (const ex of filtered) {
+        const examId = ex.id;
+        const title = escapeHtml(ex.title || 'Untitled Assessment');
+        const code = escapeHtml(ex.config?.exam_code || ex.code || 'CBT-' + examId.slice(0, 6).toUpperCase());
+        const duration = ex.duration_minutes || 180;
+        const qCount = ex.question_count || ex.config?.question_ids?.length || 0;
+        const cCount = ex.candidate_count || 0;
+        const correctMarks = ex.config?.correct_marks || 4;
+        const negMarks = ex.config?.negative_marks || 1;
+
+        const startIST = formatISTDate(ex.start_time);
+        const endIST = formatISTDate(ex.end_time);
+
+        // Schedule status pill
+        const schedStatus = ex.schedule_status || 'active';
+        let statusPill = '<span class="schedule-pill schedule-active">[ACTIVE]</span>';
+        if (schedStatus === 'scheduled') {
+            statusPill = `<span class="schedule-pill schedule-pending">[SCHEDULED]</span>`;
+        } else if (schedStatus === 'concluded') {
+            statusPill = '<span class="schedule-pill schedule-concluded">[CONCLUDED]</span>';
+        }
+
+        // Test link requiring candidate credentials
+        const shareTestLink = `${window.location.origin}/instructions.html?exam_id=${encodeURIComponent(examId)}`;
+
+        html += `
+            <tr>
+                <!-- Test Identification & Prominent Near-Name Actions -->
+                <td>
+                    <div class="exam-title-cell">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <strong style="font-size: 0.925rem; color: var(--text-heading);">${title}</strong>
+                            <span class="badge-pill" style="background: rgba(50, 31, 219, 0.1); color: var(--brand-blue); font-weight: 800; font-family: var(--font-mono);">${code}</span>
+                        </div>
+                        
+                        <!-- BUTTONS LOCATED DIRECTLY NEAR THE EXAM NAME -->
+                        <div class="exam-action-btns-near-name">
+                            <button type="button" class="btn btn-success btn-sm btn-export-xls" data-id="${examId}" title="Download complete student-wise performance analysis spreadsheet (.xls)">
+                                Download Marks (XLS)
+                            </button>
+                            <button type="button" class="btn btn-purple btn-sm btn-copy-test-link" data-id="${examId}" data-link="${shareTestLink}" title="Copy candidate examination access link">
+                                Share Test Link
+                            </button>
+                        </div>
+                    </div>
+                </td>
+
+                <!-- Scheduled Window IST -->
+                <td>
+                    <div style="font-size: 0.775rem; line-height: 1.4;">
+                        <div><strong style="color: #047857;">Start:</strong> ${startIST}</div>
+                        <div><strong style="color: #b91c1c;">End:</strong> ${endIST}</div>
+                        <div style="color: var(--text-muted); font-size: 0.72rem; margin-top: 2px;">
+                            ⏱️ Duration: <strong>${duration} Minutes</strong>
+                        </div>
+                    </div>
+                </td>
+
+                <!-- Status & Gatekeeper -->
+                <td>
+                    ${statusPill}
+                </td>
+
+                <!-- Questions & Marking Scheme -->
+                <td>
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--brand-blue);">
+                        ${qCount} Questions
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted);">
+                        Marking: <strong style="color: #047857;">+${correctMarks}</strong> / <strong style="color: #b91c1c;">-${negMarks}</strong>
+                    </div>
+                </td>
+
+                <!-- Enrolled Candidates -->
+                <td>
+                    <div style="font-size: 0.85rem; font-weight: 800; color: var(--text-heading);">
+                        ${cCount} Enrolled
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">
+                        Cloud DB Synced
+                    </div>
+                </td>
+
+                <!-- Administration Operations -->
+                <td style="text-align: right; white-space: nowrap;">
+                    <div style="display: inline-flex; gap: 4px;">
+                        <button type="button" class="btn btn-outline btn-sm btn-open-summary" data-id="${examId}" title="View class performance leaderboard and statistics">
+                            Digest
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm btn-edit-exam" data-id="${examId}" title="Edit schedule and questions">
+                            Settings
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm btn-delete-exam" data-id="${examId}" style="color: #ef4444;" title="Delete examination">
+                            Delete
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    tbody.innerHTML = html;
+
+    // Attach row event listeners
+    tbody.querySelectorAll('.btn-export-xls').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+            if (id) downloadExamXLS(id);
+        });
+    });
+
+    tbody.querySelectorAll('.btn-copy-test-link').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const link = (e.currentTarget as HTMLElement).getAttribute('data-link');
+            if (link) {
+                navigator.clipboard.writeText(link).then(() => {
+                    showToast('Exam link copied to clipboard! (Requires candidate login to enter)');
+                }).catch(() => {
+                    prompt('Exam Access Link (Requires candidate credentials to enter):', link);
+                });
+            }
+        });
+    });
+
+    tbody.querySelectorAll('.btn-open-summary').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+            if (id) openExamSummaryModal(id);
+        });
+    });
+
+    tbody.querySelectorAll('.btn-edit-exam').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+            if (id) openEditExamModal(id);
+        });
+    });
+
+    tbody.querySelectorAll('.btn-delete-exam').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+            if (id) deleteExam(id);
+        });
+    });
+}
+
+// 3. One-Click Marks Spreadsheet Download (XLS)
+function downloadExamXLS(examId: string): void {
+    showToast('Generating student-wise Excel analysis...');
+    const url = `/api/v1/exams/${encodeURIComponent(examId)}/results-export?format=xlsx`;
+    window.open(url, '_blank');
+}
+
+function downloadExamCSV(examId: string): void {
+    showToast('Downloading CSV results roster...');
+    const url = `/api/v1/exams/${encodeURIComponent(examId)}/results-export?format=csv`;
+    window.open(url, '_blank');
+}
+
+// 4. Load Question Bank from Cloud DB for Test Creation
+async function loadQuestionBank(): Promise<void> {
+    try {
+        const res = await fetch('/api/v1/questions/', { headers: getHeaders() });
+        if (res.ok) {
+            cachedQuestionBank = await res.json();
+            if (!Array.isArray(cachedQuestionBank)) cachedQuestionBank = [];
+            
+            const totalQEl = document.getElementById('stat-qb-available-count');
+            if (totalQEl) totalQEl.textContent = `${cachedQuestionBank.length} Qs`;
+
+            const totalQModalEl = document.getElementById('qb-total-count');
+            if (totalQModalEl) totalQModalEl.textContent = String(cachedQuestionBank.length);
+
+            renderQuestionChecklist();
+        }
+    } catch (err) {
+        console.error('Failed to load Question Bank:', err);
+    }
+}
+
+// Render questions in the modal checklist
+function renderQuestionChecklist(): void {
+    const container = document.getElementById('qb-questions-checklist-container');
+    if (!container) return;
+
+    const subFilter = (document.getElementById('qb-filter-subject') as HTMLSelectElement)?.value || 'ALL';
+    const diffFilter = (document.getElementById('qb-filter-difficulty') as HTMLSelectElement)?.value || 'ALL';
+    const searchFilter = (document.getElementById('qb-filter-search') as HTMLInputElement)?.value.trim().toLowerCase() || '';
+
+    const filtered = cachedQuestionBank.filter(q => {
+        const subject = q.subject || '';
+        const diff = q.difficulty || '';
+        const text = (q.question_text || '').toLowerCase();
+
+        const matchesSub = (subFilter === 'ALL') || (subject.toLowerCase() === subFilter.toLowerCase());
+        const matchesDiff = (diffFilter === 'ALL') || (diff.toLowerCase() === diffFilter.toLowerCase());
+        const matchesSearch = !searchFilter || text.includes(searchFilter);
+
+        return matchesSub && matchesDiff && matchesSearch;
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 1rem;">
+                No questions match the current filter criteria.
+            </div>
+        `;
+        updateQuestionSelectionTicker();
+        return;
+    }
+
+    let html = '';
+    for (const q of filtered) {
+        const qId = q.id;
+        const isChecked = selectedQuestionIds.has(qId) ? 'checked' : '';
+        const subject = q.subject || 'General';
+        const diff = q.difficulty || 'Medium';
+        const snippet = escapeHtml(q.question_text ? q.question_text.slice(0, 90) + (q.question_text.length > 90 ? '...' : '') : '');
+
+        let subColor = '#2563eb';
+        if (subject.toLowerCase() === 'chemistry') subColor = '#7c3aed';
+        if (subject.toLowerCase() === 'mathematics') subColor = '#059669';
+
+        let diffColor = '#d97706';
+        if (diff.toLowerCase() === 'easy') diffColor = '#10b981';
+        if (diff.toLowerCase() === 'hard') diffColor = '#ef4444';
+
+        html += `
+            <label style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; background: ${isChecked ? 'rgba(50, 31, 219, 0.05)' : 'transparent'}; cursor: pointer; border-bottom: 1px solid var(--border-color); font-size: 0.78rem;">
+                <input type="checkbox" class="qb-q-checkbox" value="${qId}" ${isChecked} style="accent-color: var(--brand-blue); cursor: pointer;" />
+                <span style="font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--text-muted); min-width: 55px;">#${qId.slice(0, 8)}</span>
+                <span class="badge-pill" style="background: ${subColor}18; color: ${subColor}; font-size: 0.68rem; font-weight: 700;">${subject}</span>
+                <span class="badge-pill" style="background: ${diffColor}18; color: ${diffColor}; font-size: 0.68rem; font-weight: 700;">${diff}</span>
+                <span style="flex: 1; color: var(--text-heading); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${snippet}</span>
+            </label>
+        `;
+    }
+
+    container.innerHTML = html;
+
+    // Attach checkbox toggle events
+    container.querySelectorAll('.qb-q-checkbox').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const target = e.target as HTMLInputElement;
+            const id = target.value;
+            if (target.checked) {
+                selectedQuestionIds.add(id);
+            } else {
+                selectedQuestionIds.delete(id);
+            }
+            updateQuestionSelectionTicker();
+        });
+    });
+
+    updateQuestionSelectionTicker();
+}
+
+// Update live ticker of selected questions and max score
+function updateQuestionSelectionTicker(): void {
+    const selCountEl = document.getElementById('qb-selected-count');
+    const maxScoreEl = document.getElementById('qb-max-score');
+    const count = selectedQuestionIds.size;
+
+    const correctMarksInput = document.getElementById('exam-correct-marks-input') as HTMLInputElement;
+    const correctMarks = parseInt(correctMarksInput?.value || '4', 10) || 4;
+
+    if (selCountEl) selCountEl.textContent = String(count);
+    if (maxScoreEl) maxScoreEl.textContent = String(count * correctMarks);
+}
+
+// Auto-pick balanced questions (10 Physics + 10 Chemistry + 10 Math)
+function autoPickBalancedQuestions(): void {
+    selectedQuestionIds.clear();
+
+    const bySubject: Record<string, any[]> = {
+        physics: [],
+        chemistry: [],
+        mathematics: []
+    };
+
+    for (const q of cachedQuestionBank) {
+        const sub = (q.subject || '').toLowerCase();
+        if (bySubject[sub]) {
+            bySubject[sub].push(q);
+        }
+    }
+
+    // Pick up to 10 from each
+    ['physics', 'chemistry', 'mathematics'].forEach(sub => {
+        const list = bySubject[sub];
+        for (let i = 0; i < Math.min(10, list.length); i++) {
+            selectedQuestionIds.add(list[i].id);
+        }
+    });
+
+    renderQuestionChecklist();
+    showToast(`Auto-selected ${selectedQuestionIds.size} balanced questions across PCM!`);
+}
+
+// Select all available questions
+function selectAllQuestions(): void {
+    for (const q of cachedQuestionBank) {
+        selectedQuestionIds.add(q.id);
+    }
+    renderQuestionChecklist();
+    showToast(`Selected all ${selectedQuestionIds.size} questions from Question Bank!`);
+}
+
+// Clear all selected questions
+function clearAllQuestions(): void {
+    selectedQuestionIds.clear();
+    renderQuestionChecklist();
+    showToast('Cleared question selection.');
+}
+
+// 5. Open Modal for Creating Exam
+function openCreateExamModal(): void {
+    const modal = document.getElementById('modal-exam-create');
+    if (!modal) return;
+
+    (document.getElementById('exam-form-mode') as HTMLInputElement).value = 'create';
+    (document.getElementById('exam-form-id') as HTMLInputElement).value = '';
+    (document.getElementById('exam-title-input') as HTMLInputElement).value = 'ALL INDIA CBT MOCK ASSESSMENT - ADVANCED';
+    (document.getElementById('exam-code-input') as HTMLInputElement).value = `AIMT-${new Date().getFullYear()}-M${cachedExams.length + 1}`;
+    (document.getElementById('exam-duration-input') as HTMLInputElement).value = '180';
+    (document.getElementById('exam-correct-marks-input') as HTMLInputElement).value = '4';
+    (document.getElementById('exam-negative-marks-input') as HTMLInputElement).value = '1';
+
+    // Set default start time (now) and end time (now + 3 hours)
+    const now = new Date();
+    const end = new Date(now.getTime() + 180 * 60 * 1000);
+    (document.getElementById('exam-start-time-input') as HTMLInputElement).value = toLocalInputString(now);
+    (document.getElementById('exam-end-time-input') as HTMLInputElement).value = toLocalInputString(end);
+
+    // If nothing selected yet, auto-pick balanced questions
+    if (selectedQuestionIds.size === 0 && cachedQuestionBank.length > 0) {
+        autoPickBalancedQuestions();
+    } else {
+        renderQuestionChecklist();
+    }
+
+    const btnSubmit = document.getElementById('btn-submit-exam');
+    if (btnSubmit) btnSubmit.textContent = 'Deploy & Schedule Test to Cloud DB →';
+
+    modal.style.display = 'flex';
+}
+
+// Open Modal for Editing / Rescheduling Exam
+function openEditExamModal(examId: string): void {
+    const ex = cachedExams.find(e => e.id === examId);
+    if (!ex) return;
+
+    const modal = document.getElementById('modal-exam-create');
+    if (!modal) return;
+
+    (document.getElementById('exam-form-mode') as HTMLInputElement).value = 'edit';
+    (document.getElementById('exam-form-id') as HTMLInputElement).value = examId;
+    (document.getElementById('exam-title-input') as HTMLInputElement).value = ex.title || '';
+    (document.getElementById('exam-code-input') as HTMLInputElement).value = ex.config?.exam_code || ex.code || '';
+    (document.getElementById('exam-duration-input') as HTMLInputElement).value = String(ex.duration_minutes || 180);
+    (document.getElementById('exam-correct-marks-input') as HTMLInputElement).value = String(ex.config?.correct_marks || 4);
+    (document.getElementById('exam-negative-marks-input') as HTMLInputElement).value = String(ex.config?.negative_marks || 1);
+
+    if (ex.start_time) {
+        const st = new Date(ex.start_time);
+        if (!isNaN(st.getTime())) (document.getElementById('exam-start-time-input') as HTMLInputElement).value = toLocalInputString(st);
+    }
+    if (ex.end_time) {
+        const et = new Date(ex.end_time);
+        if (!isNaN(et.getTime())) (document.getElementById('exam-end-time-input') as HTMLInputElement).value = toLocalInputString(et);
+    }
+
+    // Restore selected questions
+    selectedQuestionIds.clear();
+    const qIds = ex.config?.question_ids;
+    if (Array.isArray(qIds)) {
+        qIds.forEach(qid => selectedQuestionIds.add(qid));
+    }
+    renderQuestionChecklist();
+
+    const btnSubmit = document.getElementById('btn-submit-exam');
+    if (btnSubmit) btnSubmit.textContent = 'Update & Save Schedule →';
+
+    modal.style.display = 'flex';
+}
+
+// Delete Exam
+async function deleteExam(examId: string): Promise<void> {
+    const ex = cachedExams.find(e => e.id === examId);
+    const title = ex ? ex.title : examId;
+    if (!confirm(`Are you sure you want to delete test "${title}" from Cloud DB? This action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+
+        if (res.ok) {
+            showToast('Delete Test deleted from Cloud DB.');
+            await loadExams();
+        } else {
+            showToast('Failed to delete test', true);
+        }
+    } catch (_) {
+        showToast('Network error deleting test', true);
+    }
+}
+
+// 6. Handle Form Submit for Exam Creation / Editing
+const formExamCreate = document.getElementById('form-exam-create') as HTMLFormElement;
+if (formExamCreate) {
+    formExamCreate.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const mode = (document.getElementById('exam-form-mode') as HTMLInputElement).value;
+        const examId = (document.getElementById('exam-form-id') as HTMLInputElement).value;
+        const title = (document.getElementById('exam-title-input') as HTMLInputElement).value.trim();
+        const code = (document.getElementById('exam-code-input') as HTMLInputElement).value.trim();
+        const duration = parseInt((document.getElementById('exam-duration-input') as HTMLInputElement).value, 10) || 180;
+        const startTimeStr = (document.getElementById('exam-start-time-input') as HTMLInputElement).value;
+        const endTimeStr = (document.getElementById('exam-end-time-input') as HTMLInputElement).value;
+        const correctMarks = parseInt((document.getElementById('exam-correct-marks-input') as HTMLInputElement).value, 10) || 4;
+        const negMarks = parseInt((document.getElementById('exam-negative-marks-input') as HTMLInputElement).value, 10) || 1;
+
+        if (!startTimeStr || !endTimeStr) {
+            showToast('Please provide both Start and End scheduled times', true);
+            return;
+        }
+
+        const startISO = new Date(startTimeStr).toISOString();
+        const endISO = new Date(endTimeStr).toISOString();
+
+        if (new Date(startISO) >= new Date(endISO)) {
+            showToast('Scheduled End Time must be later than Start Time', true);
+            return;
+        }
+
+        const qIdArray = Array.from(selectedQuestionIds);
+        if (qIdArray.length === 0) {
+            showToast('Please select at least 1 question from Question Bank for this test', true);
+            return;
+        }
+
+        const btnSubmit = document.getElementById('btn-submit-exam') as HTMLButtonElement;
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'Saving to Supabase Cloud DB...';
+        }
+
+        try {
+            let res: Response;
+            if (mode === 'edit' && examId) {
+                res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}`, {
+                    method: 'PUT',
+                    headers: getHeaders(),
+                    body: JSON.stringify({
+                        title: title,
+                        duration_minutes: duration,
+                        start_time: startISO,
+                        end_time: endISO,
+                        question_ids: qIdArray,
+                        config: {
+                            exam_code: code,
+                            correct_marks: correctMarks,
+                            negative_marks: negMarks,
+                            question_ids: qIdArray
+                        }
+                    })
+                });
+            } else {
+                res = await fetch('/api/v1/exams/', {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({
+                        title: title,
+                        duration_minutes: duration,
+                        start_time: startISO,
+                        end_time: endISO,
+                        question_ids: qIdArray,
+                        config: {
+                            exam_code: code,
+                            correct_marks: correctMarks,
+                            negative_marks: negMarks,
+                            question_ids: qIdArray
+                        }
+                    })
+                });
+            }
+
+            if (res.ok) {
+                showToast(mode === 'edit' ? 'Examination schedule updated in Cloud DB!' : 'New CBT Test deployed and scheduled to Cloud DB!');
+                document.getElementById('modal-exam-create')!.style.display = 'none';
+                await loadExams();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast(err.detail || 'Failed to save examination schedule', true);
+            }
+        } catch (_) {
+            showToast('Network error saving examination schedule', true);
+        } finally {
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'Deploy & Schedule Test to Cloud DB →';
+            }
+        }
+    });
+}
+
+// 7. Exam Results Summary / Leaderboard Modal
+async function openExamSummaryModal(examId: string): Promise<void> {
+    currentSummaryExamId = examId;
+    const modal = document.getElementById('modal-exam-summary');
+    if (!modal) return;
+
+    const ex = cachedExams.find(e => e.id === examId);
+    const titleEl = document.getElementById('sum-exam-title');
+    if (titleEl) titleEl.textContent = ex ? `${ex.title} (${ex.config?.exam_code || ex.code || 'CBT'})` : examId;
+
+    // Reset fields
+    const totalEl = document.getElementById('sum-total-cands');
+    const highEl = document.getElementById('sum-highest-score');
+    const avgEl = document.getElementById('sum-avg-score');
+    const passEl = document.getElementById('sum-pass-rate');
+    const tbody = document.getElementById('sum-leaderboard-body');
+
+    if (totalEl) totalEl.textContent = '...';
+    if (highEl) highEl.textContent = '...';
+    if (avgEl) avgEl.textContent = '...';
+    if (passEl) passEl.textContent = '...';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">Loading live results from Supabase Cloud DB...</td></tr>';
+
+    modal.style.display = 'flex';
+
+    try {
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/results-summary`, { headers: getHeaders() });
+        if (res.ok) {
+            const data = await res.json();
+            if (totalEl) totalEl.textContent = String(data.total_appeared || 0);
+            if (highEl) highEl.textContent = `${data.highest_score || 0} / ${data.max_possible_score || 120}`;
+            if (avgEl) avgEl.textContent = String(data.average_score || 0);
+            if (passEl) passEl.textContent = `${data.pass_rate || 0}%`;
+
+            const leaderboard: any[] = data.leaderboard || [];
+            if (leaderboard.length === 0) {
+                if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">No candidate submissions recorded yet for this examination.</td></tr>';
+            } else {
+                let html = '';
+                leaderboard.forEach((c, idx) => {
+                    const rankMedal = idx === 0 ? 'Rank 1' : idx === 1 ? 'Rank 2' : idx === 2 ? 'Rank 3' : `#${idx + 1}`;
+                    html += `
+                        <tr>
+                            <td style="font-weight: 800; font-size: 0.85rem;">${rankMedal}</td>
+                            <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">${escapeHtml(c.registration_number || c.roll_number || '--')}</td>
+                            <td><strong>${escapeHtml(c.candidate_name || 'Candidate')}</strong></td>
+                            <td style="font-weight: 800; color: #047857;">${c.raw_score} / ${data.max_possible_score}</td>
+                            <td>${c.accuracy}%</td>
+                            <td><span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">${c.percentile} PR</span></td>
+                        </tr>
+                    `;
+                });
+                if (tbody) tbody.innerHTML = html;
+            }
+        }
+    } catch (_) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 1.5rem; color: #ef4444;">Error retrieving results summary.</td></tr>';
+    }
+}
+
+// Summary Modal Download buttons
+const btnDownloadXlsModal = document.getElementById('btn-download-xls-modal');
+if (btnDownloadXlsModal) {
+    btnDownloadXlsModal.addEventListener('click', () => {
+        if (currentSummaryExamId) downloadExamXLS(currentSummaryExamId);
+    });
+}
+
+const btnDownloadCsvModal = document.getElementById('btn-download-csv-modal');
+if (btnDownloadCsvModal) {
+    btnDownloadCsvModal.addEventListener('click', () => {
+        if (currentSummaryExamId) downloadExamCSV(currentSummaryExamId);
+    });
+}
+
+// 8. Candidate Self-Registration Portal Sharing
+function openShareRegistrationModal(targetExamId?: string): void {
+    const modal = document.getElementById('modal-share-reg-link');
+    if (!modal) return;
+
+    const sel = document.getElementById('share-reg-exam-select') as HTMLSelectElement;
+    if (sel && targetExamId) {
+        sel.value = targetExamId;
+    }
+
+    updateShareRegistrationDisplay();
+    modal.style.display = 'flex';
+}
+
+function updateShareRegistrationDisplay(): void {
+    const sel = document.getElementById('share-reg-exam-select') as HTMLSelectElement;
+    const examId = sel ? sel.value : '';
+
+    const baseUrl = `${window.location.origin}/register.html`;
+    const finalUrl = examId ? `${baseUrl}?exam_id=${encodeURIComponent(examId)}` : baseUrl;
+
+    const input = document.getElementById('share-reg-url-input') as HTMLInputElement;
+    if (input) input.value = finalUrl;
+
+    const previewLink = document.getElementById('btn-open-reg-preview') as HTMLAnchorElement;
+    if (previewLink) previewLink.href = finalUrl;
+
+    const selectedExam = cachedExams.find(e => e.id === examId);
+    const examTitle = selectedExam ? selectedExam.title : 'National CBT Examination';
+
+    const msg = `Dear Candidate,
+
+You are invited to register for the official Computer Based Test (CBT): "${examTitle}".
+
+Please register your account and set your password here:
+Portal Link: ${finalUrl}
+
+Upon submission, your Roll Number and login credentials will be generated immediately, and you can take the examination directly from your portal.
+
+Saveetha School of Engineering CBT Assessment Directorate`;
+
+    const textarea = document.getElementById('share-reg-msg-preview') as HTMLTextAreaElement;
+    if (textarea) textarea.value = msg;
+}
+
+const shareRegExamSelect = document.getElementById('share-reg-exam-select');
+if (shareRegExamSelect) {
+    shareRegExamSelect.addEventListener('change', updateShareRegistrationDisplay);
+}
+
+const btnCopyRegUrl = document.getElementById('btn-copy-reg-url');
+if (btnCopyRegUrl) {
+    btnCopyRegUrl.addEventListener('click', () => {
+        const input = document.getElementById('share-reg-url-input') as HTMLInputElement;
+        if (input) {
+            navigator.clipboard.writeText(input.value).then(() => {
+                showToast('Registration URL copied to clipboard!');
+            }).catch(() => {
+                prompt('Copy Registration URL:', input.value);
+            });
+        }
+    });
+}
+
+const btnCopyInviteMsg = document.getElementById('btn-copy-invite-msg');
+if (btnCopyInviteMsg) {
+    btnCopyInviteMsg.addEventListener('click', () => {
+        const textarea = document.getElementById('share-reg-msg-preview') as HTMLTextAreaElement;
+        if (textarea) {
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                showToast('Complete invitation message copied to clipboard!');
+            }).catch(() => {
+                prompt('Copy Invitation Message:', textarea.value);
+            });
+        }
+    });
+}
+
+// Topbar & Section Button Handlers for Creating Exams and Sharing Registration
+const btnCreateExamModal = document.getElementById('btn-create-exam-modal');
+if (btnCreateExamModal) btnCreateExamModal.addEventListener('click', openCreateExamModal);
+
+const btnOpenCreateExamTop = document.getElementById('btn-open-create-exam-top');
+if (btnOpenCreateExamTop) btnOpenCreateExamTop.addEventListener('click', openCreateExamModal);
+
+const btnShareCandReg = document.getElementById('btn-share-cand-reg');
+if (btnShareCandReg) btnShareCandReg.addEventListener('click', () => openShareRegistrationModal());
+
+const btnShareCandRegTop = document.getElementById('btn-share-cand-reg-top');
+if (btnShareCandRegTop) btnShareCandRegTop.addEventListener('click', () => openShareRegistrationModal());
+
+const btnRefreshExams = document.getElementById('btn-refresh-exams');
+if (btnRefreshExams) {
+    btnRefreshExams.addEventListener('click', async () => {
+        await loadExams();
+        showToast('Examination schedules refreshed from Cloud DB.');
+    });
+}
+
+// Question Bank Modal action buttons
+const btnQbAutoPick = document.getElementById('btn-qb-auto-pick');
+if (btnQbAutoPick) btnQbAutoPick.addEventListener('click', autoPickBalancedQuestions);
+
+const btnQbSelectAll = document.getElementById('btn-qb-select-all');
+if (btnQbSelectAll) btnQbSelectAll.addEventListener('click', selectAllQuestions);
+
+const btnQbClearAll = document.getElementById('btn-qb-clear-all');
+if (btnQbClearAll) btnQbClearAll.addEventListener('click', clearAllQuestions);
+
+const qbFilterSubject = document.getElementById('qb-filter-subject');
+if (qbFilterSubject) qbFilterSubject.addEventListener('change', renderQuestionChecklist);
+
+const qbFilterDifficulty = document.getElementById('qb-filter-difficulty');
+if (qbFilterDifficulty) qbFilterDifficulty.addEventListener('change', renderQuestionChecklist);
+
+const qbFilterSearch = document.getElementById('qb-filter-search');
+if (qbFilterSearch) qbFilterSearch.addEventListener('input', renderQuestionChecklist);
+
+const examCorrectMarksInput = document.getElementById('exam-correct-marks-input');
+if (examCorrectMarksInput) examCorrectMarksInput.addEventListener('input', updateQuestionSelectionTicker);
+
+// Table Filter listeners
+const searchExamsInput = document.getElementById('search-exams-input');
+if (searchExamsInput) searchExamsInput.addEventListener('input', renderExamsTable);
+
+const filterExamSchedule = document.getElementById('filter-exam-schedule');
+if (filterExamSchedule) filterExamSchedule.addEventListener('change', renderExamsTable);
+
+// --- EXAMINATION CENTER & CONTROLLER SETTINGS SUITE ---
+const btnOpenSettingsModal = document.getElementById('btn-open-settings-modal');
+const modalExamSettings = document.getElementById('modal-exam-settings');
+const btnCloseSettingsModal = document.getElementById('btn-close-settings-modal');
+const btnCancelSettings = document.getElementById('btn-cancel-settings');
+const formExamSettings = document.getElementById('form-exam-settings') as HTMLFormElement;
+
+const inputSettingInstName = document.getElementById('setting-institution-name') as HTMLInputElement;
+const inputSettingExamTitle = document.getElementById('setting-exam-title') as HTMLInputElement;
+const inputSettingCtrlName = document.getElementById('setting-controller-name') as HTMLInputElement;
+const inputSettingCtrlDesig = document.getElementById('setting-controller-desig') as HTMLInputElement;
+const inputSettingVenueName = document.getElementById('setting-venue-name') as HTMLTextAreaElement;
+const inputSettingCenterCode = document.getElementById('setting-center-code') as HTMLInputElement;
+const inputSettingLabRoom = document.getElementById('setting-lab-room') as HTMLInputElement;
+const inputSettingTermPrefix = document.getElementById('setting-terminal-prefix') as HTMLInputElement;
+
+async function loadExamSettings(): Promise<void> {
+    try {
+        const res = await fetch('/api/v1/exams/settings', { headers: getHeaders() });
+        if (res.ok) {
+            const s = await res.json();
+            if (inputSettingInstName && s.institution_name) inputSettingInstName.value = s.institution_name;
+            if (inputSettingExamTitle && s.examination_title) inputSettingExamTitle.value = s.examination_title;
+            if (inputSettingCtrlName && s.controller_name) inputSettingCtrlName.value = s.controller_name;
+            if (inputSettingCtrlDesig && s.controller_designation) inputSettingCtrlDesig.value = s.controller_designation;
+            if (inputSettingVenueName && s.test_venue_name) inputSettingVenueName.value = s.test_venue_name;
+            if (inputSettingCenterCode && s.test_center_code) inputSettingCenterCode.value = s.test_center_code;
+            if (inputSettingLabRoom && s.default_lab_room) inputSettingLabRoom.value = s.default_lab_room;
+            if (inputSettingTermPrefix && s.terminal_prefix) inputSettingTermPrefix.value = s.terminal_prefix;
+
+            const admitInst = document.getElementById('admit-inst-name');
+            const admitExam = document.getElementById('admit-exam-title');
+            const admitCtrl = document.getElementById('admit-controller-name');
+            const admitDesig = document.getElementById('admit-controller-desig');
+            if (admitInst && s.institution_name) admitInst.textContent = s.institution_name;
+            if (admitExam && s.examination_title) admitExam.textContent = s.examination_title;
+            if (admitCtrl && s.controller_name) admitCtrl.textContent = s.controller_name;
+            if (admitDesig && s.controller_designation) admitDesig.textContent = s.controller_designation;
+        }
+    } catch (_) {}
+}
+
+if (btnOpenSettingsModal && modalExamSettings) {
+    btnOpenSettingsModal.onclick = () => {
+        loadExamSettings();
+        modalExamSettings.style.display = 'flex';
+    };
+}
+
+if (btnCloseSettingsModal && modalExamSettings) {
+    btnCloseSettingsModal.onclick = () => {
+        modalExamSettings.style.display = 'none';
+    };
+}
+
+if (btnCancelSettings && modalExamSettings) {
+    btnCancelSettings.onclick = () => {
+        modalExamSettings.style.display = 'none';
+    };
+}
+
+if (formExamSettings) {
+    formExamSettings.onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = {
+            institution_name: inputSettingInstName?.value.trim() || 'SSE CBT PLATFORM',
+            examination_title: inputSettingExamTitle?.value.trim() || 'MCQ ASSESSMENT [ SSE CBT 2026 ]',
+            controller_name: inputSettingCtrlName?.value.trim() || 'Prof. Dr. M. Shanmugam',
+            controller_designation: inputSettingCtrlDesig?.value.trim() || 'Controller of Examinations',
+            test_venue_name: inputSettingVenueName?.value.trim() || 'SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105',
+            test_center_code: inputSettingCenterCode?.value.trim() || 'SSEC-TN-042',
+            default_lab_room: inputSettingLabRoom?.value.trim() || 'LAB-01 (Block-A)',
+            terminal_prefix: inputSettingTermPrefix?.value.trim() || 'T-A-',
+        };
+
+        const btnSave = document.getElementById('btn-save-settings') as HTMLButtonElement;
+        if (btnSave) {
+            btnSave.disabled = true;
+            btnSave.textContent = 'Saving Settings...';
+        }
+
+        try {
+            const res = await fetch('/api/v1/exams/settings', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(payload),
+            });
+            if (res.ok) {
+                const updated = await res.json();
+                showToast(`Settings saved! Controller of Examinations set to: ${updated.controller_name}`);
+                if (modalExamSettings) modalExamSettings.style.display = 'none';
+                loadExamSettings();
+            } else {
+                showToast("Failed to save exam settings", true);
+            }
+        } catch (_) {
+            showToast("Network error saving settings", true);
+        } finally {
+            if (btnSave) {
+                btnSave.disabled = false;
+                btnSave.textContent = 'Save Examination Settings';
+            }
+        }
+    };
+}
+
 // Initialize on page ready
 initTheme();
 loadDashboardSummary();
 loadCandidates();
+loadExams();
+loadQuestionBank();
 initAdminWebSocket();
 loadExamPhase();
+loadExamSettings();
 loadTelemetryRadar();
 syncMasterClock();
 setInterval(updateMasterClockDisplay, 1000);
 setInterval(syncMasterClock, 60000);
 setInterval(loadTelemetryRadar, 30000);
+setInterval(loadExams, 45000);
 

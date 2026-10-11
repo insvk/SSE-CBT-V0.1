@@ -53,7 +53,7 @@ function applyTheme(theme: string): void {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('cbt_theme', theme);
     if (ui.themeIcon) {
-        ui.themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        ui.themeIcon.textContent = theme === 'dark' ? 'Light' : 'Dark';
     }
 }
 
@@ -74,14 +74,14 @@ if (toggleBtnEl && sidebarEl) {
     toggleBtnEl.addEventListener('click', () => {
         sidebarEl.classList.toggle('collapsed');
         const isCollapsed = sidebarEl.classList.contains('collapsed');
-        toggleBtnEl.innerHTML = isCollapsed ? '<span>▶</span>' : '<span>◀</span>';
+        toggleBtnEl.innerHTML = isCollapsed ? '<span>&gt;</span>' : '<span>&lt;</span>';
     });
 }
 
 // Load candidate profile
 function loadCandidateProfile(): void {
     const name = localStorage.getItem('candidate_name') || 'Candidate';
-    const regNo = localStorage.getItem('reg_no') || 'SSEC-A-0001';
+    const regNo = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
     const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'CD';
 
     if (ui.headerCandName) ui.headerCandName.textContent = name;
@@ -101,7 +101,60 @@ async function loadPortalData(): Promise<void> {
         }
     } catch (_) {}
 
-    // Check for previous or latest completed attempt
+    // Load dynamic exams from Cloud DB
+    try {
+        const examsRes = await fetch('/api/v1/exams/', { headers: getHeaders() });
+        if (examsRes.ok) {
+            const exams = await examsRes.json();
+            if (Array.isArray(exams) && exams.length > 0 && ui.candAttemptsBody) {
+                let html = '';
+                for (const ex of exams) {
+                    const examId = ex.id || 'EX-1001';
+                    const code = ex.config?.exam_code || ex.code || 'CBT-' + examId.substring(0, 6).toUpperCase();
+                    const title = ex.title || 'National Assessment Examination';
+                    const schedStatus = ex.schedule_status || 'active';
+                    const duration = ex.duration_minutes || 180;
+                    const qCount = ex.question_count || ex.config?.question_ids?.length || 30;
+
+                    let statusBadge = '<span class="status-pill status-active">Ready to Launch</span>';
+                    let actionBtn = `<a href="/instructions.html?exam_id=${encodeURIComponent(examId)}" class="btn btn-primary btn-sm">Start Exam &rarr;</a>`;
+
+                    if (schedStatus === 'scheduled') {
+                        const startText = ex.start_time ? new Date(ex.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Scheduled';
+                        statusBadge = `<span class="status-pill" style="background:#fef3c7; color:#92400e;">Starts at ${startText}</span>`;
+                        actionBtn = `<a href="/instructions.html?exam_id=${encodeURIComponent(examId)}" class="btn btn-outline btn-sm" style="color:#d97706; border-color:#fde68a;">Scheduled &rarr;</a>`;
+                    } else if (schedStatus === 'concluded') {
+                        statusBadge = `<span class="status-pill" style="background:#f1f5f9; color:#64748b;">Concluded</span>`;
+                        actionBtn = `<a href="/scorecard.html?exam_id=${encodeURIComponent(examId)}" class="btn btn-outline btn-sm">View Scorecard</a>`;
+                    }
+
+                    html += `
+                        <tr>
+                            <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">${code}</td>
+                            <td>
+                                <strong>${title}</strong>
+                                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                                    Duration: ${duration} Mins &bull; ${qCount} Questions
+                                </div>
+                            </td>
+                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Slot ${localStorage.getItem('batch_slot') || 'A'}</span></td>
+                            <td>${statusBadge}</td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                ${actionBtn}
+                            </td>
+                        </tr>
+                    `;
+                }
+                ui.candAttemptsBody.innerHTML = html;
+                if (ui.candStatStatus) {
+                    ui.candStatStatus.textContent = `${exams.length} Test${exams.length > 1 ? 's' : ''} Enrolled`;
+                }
+                return;
+            }
+        }
+    } catch (_) {}
+
+    // Fallback check for single exam attempt
     try {
         const resRes = await fetch('/api/v1/exams/EX-1001/result', { headers: getHeaders() });
         if (resRes.ok) {
@@ -122,7 +175,7 @@ async function loadPortalData(): Promise<void> {
                             </span>
                         </td>
                         <td style="text-align: right; white-space: nowrap;">
-                            <a href="/scorecard.html" class="btn btn-outline btn-sm" style="margin-right: 0.35rem;">🏆 View Scorecard</a>
+                            <a href="/scorecard.html" class="btn btn-outline btn-sm" style="margin-right: 0.35rem;">View Scorecard</a>
                             <a href="/instructions.html" class="btn btn-primary btn-sm">Retake Exam</a>
                         </td>
                     </tr>
@@ -140,11 +193,35 @@ const admitName = document.getElementById('admit-name');
 const admitReg = document.getElementById('admit-reg');
 
 if (btnViewAdmit && modalAdmit) {
-    btnViewAdmit.addEventListener('click', () => {
+    btnViewAdmit.addEventListener('click', async () => {
         const name = localStorage.getItem('candidate_name') || 'NARESH S';
         const reg = localStorage.getItem('reg_no') || '5254740(V4.3.7)';
         if (admitName) admitName.textContent = name;
         if (admitReg) admitReg.textContent = reg;
+
+        try {
+            const token = localStorage.getItem('access_token') || '';
+            const res = await fetch('/api/v1/exams/settings', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const s = await res.json();
+                const elAgency = document.getElementById('admit-cand-agency');
+                const elExam = document.getElementById('admit-cand-exam');
+                const elVenue = document.getElementById('admit-cand-venue');
+                const elCenterLab = document.getElementById('admit-cand-center-lab');
+                const elController = document.getElementById('admit-cand-controller');
+                const elTerminal = document.getElementById('admit-cand-terminal');
+
+                if (elAgency && s.institution_name) elAgency.textContent = s.institution_name;
+                if (elExam && s.examination_title) elExam.textContent = s.examination_title;
+                if (elVenue && s.test_venue_name) elVenue.textContent = s.test_venue_name;
+                if (elCenterLab) elCenterLab.textContent = `Center: ${s.test_center_code || 'SSEC-TN-042'} | Room: ${s.default_lab_room || 'LAB-01'}`;
+                if (elController && s.controller_name) elController.textContent = s.controller_name;
+                if (elTerminal) elTerminal.textContent = `${s.terminal_prefix || 'T-A-'}0004`;
+            }
+        } catch (_) {}
+
         modalAdmit.style.display = 'flex';
     });
 }

@@ -115,8 +115,23 @@ class AdmitCardResponse(BaseModel):
     has_scribe: bool
     compensatory_minutes: int
     authorized_signature_title: str
+    controller_name: Optional[str] = "Prof. Dr. M. Shanmugam"
+    controller_designation: Optional[str] = "Controller of Examinations"
+    institution_name: Optional[str] = "SSE CBT PLATFORM"
+    examination_title: Optional[str] = "MCQ ASSESSMENT [ SSE CBT 2026 ]"
     generated_at_ist: str
     barcode_data: str
+
+
+class ExamCenterSettings(BaseModel):
+    institution_name: Optional[str] = "SSE CBT PLATFORM"
+    examination_title: Optional[str] = "MCQ ASSESSMENT [ SSE CBT 2026 ]"
+    controller_name: Optional[str] = "Prof. Dr. M. Shanmugam"
+    controller_designation: Optional[str] = "Controller of Examinations"
+    test_venue_name: Optional[str] = "SSE Digital Assessment Hub, Main Academic Block, Chennai - 602105"
+    test_center_code: Optional[str] = "SSEC-CBT-01"
+    default_lab_room: Optional[str] = "LAB-01 (Block-A)"
+    terminal_prefix: Optional[str] = "T-A-"
 
 
 class BulkAssignRequest(BaseModel):
@@ -262,7 +277,7 @@ class InfrastructureAuditResponse(BaseModel):
     ups_battery_charge_pct: float = 98.4
     generator_backup_ready: bool = True
     audit_certificate_sha256: str
-    certified_by: str = "SIMATS CBT Technical Evaluation Directorate"
+    certified_by: str = "SSE CBT Technical Evaluation Directorate"
 
 
 class ClosingReportResponse(BaseModel):
@@ -270,8 +285,8 @@ class ClosingReportResponse(BaseModel):
     report_reference: str
     form_code: str = "FORM 24-B (OFFICIAL EXAMINATION CLOSING DOSSIER)"
     timestamp_ist: str
-    center_code: str = "SIMATS-CBT-01"
-    center_name: str = "SIMATS Digital Assessment Center, Chennai"
+    center_code: str = "SSEC-TN-042"
+    center_name: str = "SSE Digital Assessment Hub, Chennai"
     total_registered: int
     total_appeared: int
     total_absent: int
@@ -281,5 +296,73 @@ class ClosingReportResponse(BaseModel):
     integrity_digest_sha256: str
     sealed_by: str = "Prof. M. Shanmugam"
     designation: str = "Chief Examination Controller"
+
+
+class ExamCreateAdvanced(BaseModel):
+    title: str
+    exam_code: Optional[str] = None
+    description: Optional[str] = None
+    duration_minutes: int = 180
+    state: str = "scheduled"  # scheduled, active, paused, concluded
+    start_time: Optional[str] = None      # ISO string e.g. "2026-10-15T09:00:00Z"
+    end_time: Optional[str] = None        # ISO string e.g. "2026-10-15T12:00:00Z"
+    start_time_ist: Optional[str] = None  # e.g. "11-Oct-2026 16:30:00 IST"
+    end_time_ist: Optional[str] = None    # e.g. "11-Oct-2026 19:30:00 IST"
+    auto_submit_on_expiry: bool = True
+    question_ids: Optional[List[str]] = []
+    correct_marks: float = 4.0
+    negative_marks: float = 1.0
+    sections: Optional[List[str]] = ["Physics", "Chemistry", "Mathematics", "General"]
+    assigned_candidate_ids: Optional[List[str]] = []
+    assigned_batches: Optional[List[str]] = []
+
+
+class ExamUpdateAdvanced(BaseModel):
+    title: Optional[str] = None
+    exam_code: Optional[str] = None
+    description: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    state: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    start_time_ist: Optional[str] = None
+    end_time_ist: Optional[str] = None
+    auto_submit_on_expiry: Optional[bool] = None
+    question_ids: Optional[List[str]] = None
+    correct_marks: Optional[float] = None
+    negative_marks: Optional[float] = None
+    sections: Optional[List[str]] = None
+    assigned_candidate_ids: Optional[List[str]] = None
+    assigned_batches: Optional[List[str]] = None
+
+
+class CandidateSelfRegisterRequest(BaseModel):
+    full_name: str
+    email: str
+    password: str
+    mobile: Optional[str] = None
+    category: Optional[str] = "General"
+    gender: Optional[str] = "Male"
+    is_pwd: Optional[bool] = False
+    has_scribe: Optional[bool] = False
+    disability_type: Optional[str] = None
+    preferred_slot: Optional[str] = "A"
+    exam_id: Optional[str] = None
+
+
+class CandidateSelfRegisterResponse(BaseModel):
+    status: str
+    message: str
+    candidate_id: str
+    full_name: str
+    registration_number: str
+    roll_number: str
+    email: str
+    assigned_exam_id: Optional[str] = None
+    exam_title: Optional[str] = None
+    access_token: str
+    token_type: str = "bearer"
+    redirect_url: str
+
 
 

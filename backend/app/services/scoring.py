@@ -1,11 +1,11 @@
 """
-Authoritative JEE-style scoring engine.
+Authoritative examination scoring engine.
 
 Supports:
 - Single-correct MCQs (with letter or numeric index normalization)
 - Multiple-correct MCQs (with partial marking where configured)
 - Numerical-answer questions (with configurable float tolerance)
-- Configurable positive and negative marking (default +4 / -1 JEE Main pattern)
+- Configurable positive and negative marking (default +4 / -1 pattern)
 - Unanswered questions (0 marks)
 - Section-wise and subject-wise score aggregations
 - Deterministic percentile estimation
@@ -74,7 +74,7 @@ class ScoringEngine:
             # Check if answered
             is_answered = cand_raw is not None and str(cand_raw).strip() != "" and cand_raw != "null"
 
-            # Check for Official Dropped Question / Bonus to All Adjudication (NTA / Pearson standard)
+            # Check for Official Dropped Question / Bonus to All Adjudication
             is_bonus = (
                 str(correct_raw).strip().upper() in ("BONUS", "DROPPED")
                 or q_data.get("is_dropped") is True
@@ -151,8 +151,8 @@ class ScoringEngine:
                 })
 
         percentage = (total_score / max_possible_score * 100.0) if max_possible_score > 0 else 0.0
-        # Estimate JEE percentile via logistic sigmoid benchmark
-        # (normalized based on historical JEE score-to-percentile curves)
+        # Estimate standardized percentile via benchmark
+        # (normalized based on historical assessment score-to-percentile curves)
         raw_ratio = total_score / max_possible_score if max_possible_score > 0 else 0
         estimated_percentile = min(99.99, max(1.0, round((raw_ratio * 90.0) + 9.9, 2)))
 

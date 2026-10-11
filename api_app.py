@@ -1,5 +1,5 @@
 """
-Vercel serverless entrypoint for SIMATS CBT Platform API.
+Vercel serverless entrypoint for SSE CBT Platform API.
 Delegates directly to the authoritative backend application in backend/main.py.
 Eliminates duplicate mock routes (Defect C-06).
 """
