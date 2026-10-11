@@ -1,7 +1,12 @@
 export {};
 
 function getAuthToken(): string {
-    return localStorage.getItem('access_token') || 'dev_test_token_do_not_use_in_prod';
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.replace('/login.html');
+        return '';
+    }
+    return token;
 }
 
 function getTenantId(): string {
@@ -84,8 +89,8 @@ if (toggleBtnEl && sidebarEl) {
 
 // Load candidate profile
 function loadCandidateProfile(): void {
-    const name = localStorage.getItem('candidate_name') || 'Candidate';
-    const regNo = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+    const name = localStorage.getItem('candidate_name') || 'Registered Candidate';
+    const regNo = localStorage.getItem('reg_no') || '';
     const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'CD';
 
     if (ui.headerCandName) ui.headerCandName.textContent = name;
@@ -226,7 +231,7 @@ const admitReg = document.getElementById('admit-reg');
 if (btnViewAdmit && modalAdmit) {
     btnViewAdmit.addEventListener('click', async () => {
         const name = localStorage.getItem('candidate_name') || 'Candidate Name';
-        const reg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+        const reg = localStorage.getItem('reg_no') || '';
         if (admitName) admitName.textContent = name;
         if (admitReg) admitReg.textContent = reg;
 

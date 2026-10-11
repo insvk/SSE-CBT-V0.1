@@ -102,7 +102,7 @@ def test_preflight_infrastructure_audit():
 def test_admissions_biometric_check_in():
     """Test candidate check-in and seat issuance for genuine candidate."""
     checkin_payload = {
-        "registration_number": "SSE-A-CBT-0001",
+        "registration_number": "SSE-A-CBT-0002",
         "biometric_match_score": 98.6,
         "metal_detector_status": "CLEARED",
         "assigned_terminal": "Terminal C-049",

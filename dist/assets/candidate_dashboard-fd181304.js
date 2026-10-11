@@ -1,0 +1,45 @@
+import"./modulepreload-polyfill-3cfb730f.js";function T(){const n=localStorage.getItem("access_token");return n||(window.location.replace("/login.html"),"")}function A(){return localStorage.getItem("tenant_id")||"00000000-0000-0000-0000-000000000001"}function p(){return{"Content-Type":"application/json",Authorization:`Bearer ${T()}`,"x-tenant-id":A()}}const t={themeToggleBtn:document.getElementById("theme-toggle-btn"),sidebarThemeToggle:document.getElementById("sidebar-theme-toggle"),themeIcon:document.getElementById("theme-icon"),sidebar:document.getElementById("sidebar"),sidebarToggleBtn:document.getElementById("sidebar-toggle-btn"),headerCandAvatar:document.getElementById("header-cand-avatar"),headerCandName:document.getElementById("header-cand-name"),headerCandRole:document.getElementById("header-cand-role"),sidebarCandRegno:document.getElementById("sidebar-cand-regno"),candStatQCount:document.getElementById("cand-stat-q-count"),candStatStatus:document.getElementById("cand-stat-status"),candAttemptsBody:document.getElementById("cand-attempts-body"),toast:document.getElementById("toast")};function w(n){const a=t.toast;a&&(a.textContent=n,a.className="show",setTimeout(()=>{a&&(a.className=a.className.replace("show",""))},3e3))}function v(){const n=localStorage.getItem("cbt_theme")||"light";C(n)}function C(n){document.documentElement.setAttribute("data-theme",n),localStorage.setItem("cbt_theme",n),t.themeIcon&&(t.themeIcon.textContent=n==="dark"?"Light":"Dark")}function E(){const a=(document.documentElement.getAttribute("data-theme")||"light")==="dark"?"light":"dark";C(a),w(`Switched to ${a.toUpperCase()} theme`)}t.themeToggleBtn&&t.themeToggleBtn.addEventListener("click",E);t.sidebarThemeToggle&&t.sidebarThemeToggle.addEventListener("click",E);const g=t.sidebar,b=t.sidebarToggleBtn;b&&g&&b.addEventListener("click",()=>{if(window.innerWidth<=768)g.classList.toggle("mobile-open");else{g.classList.toggle("collapsed");const n=g.classList.contains("collapsed");b.innerHTML=n?"<span>&gt;</span>":"<span>&lt;</span>"}});function k(){const n=localStorage.getItem("candidate_name")||"Registered Candidate",a=localStorage.getItem("reg_no")||"",c=n.split(" ").map(o=>o[0]).join("").substring(0,2).toUpperCase()||"CD";t.headerCandName&&(t.headerCandName.textContent=n),t.headerCandAvatar&&(t.headerCandAvatar.textContent=c),t.sidebarCandRegno&&(t.sidebarCandRegno.textContent=a)}async function $(){var n,a,c;try{const o=await fetch("/api/v1/questions/",{headers:p()});if(o.ok){const e=await o.json();Array.isArray(e)&&t.candStatQCount&&(t.candStatQCount.textContent=`${e.length} Questions`)}}catch{}try{const o=await fetch("/api/v1/exams/",{headers:p()});if(o.ok){const e=await o.json();if(Array.isArray(e)&&e.length>0&&t.candAttemptsBody){let i="";for(const s of e){const d=s.id||"EX-1001",l=((n=s.config)==null?void 0:n.exam_code)||s.code||"CBT-"+d.substring(0,6).toUpperCase(),m=s.title||"National Assessment Examination",r=s.schedule_status||"active",_=s.duration_minutes||180,B=s.question_count||((c=(a=s.config)==null?void 0:a.question_ids)==null?void 0:c.length)||30;let h='<span class="status-pill status-active">Ready to Launch</span>',f=`<a href="/instructions.html?exam_id=${encodeURIComponent(d)}" class="btn btn-primary btn-sm">Start Exam &rarr;</a>`;r==="scheduled"?(h=`<span class="status-pill" style="background:#fef3c7; color:#92400e;">Starts at ${s.start_time?new Date(s.start_time).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"Scheduled"}</span>`,f=`<a href="/instructions.html?exam_id=${encodeURIComponent(d)}" class="btn btn-outline btn-sm" style="color:#d97706; border-color:#fde68a;">Scheduled &rarr;</a>`):r==="concluded"&&(h='<span class="status-pill" style="background:#f1f5f9; color:#64748b;">Concluded</span>',f=`<a href="/scorecard.html?exam_id=${encodeURIComponent(d)}" class="btn btn-outline btn-sm">View Scorecard</a>`),i+=`
+                        <tr>
+                            <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">${l}</td>
+                            <td>
+                                <strong>${m}</strong>
+                                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                                    Duration: ${_} Mins &bull; ${B} Questions
+                                </div>
+                            </td>
+                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot ${localStorage.getItem("batch_slot")||"A"}</span></td>
+                            <td>${h}</td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                ${f}
+                            </td>
+                        </tr>
+                    `}t.candAttemptsBody.innerHTML=i,t.candStatStatus&&(t.candStatStatus.textContent=`${e.length} Test${e.length>1?"s":""} Enrolled`);return}}}catch{}try{const o=localStorage.getItem("reg_no")||"",e=localStorage.getItem("candidate_id")||"",i=new URLSearchParams;o&&i.set("reg_no",o),e&&i.set("candidate_id",e);const s=await fetch(`/api/v1/exams/EX-1001/result?${i.toString()}`,{headers:p()});if(s.ok){const d=await s.json();d&&d.score!=="-- / --"&&t.candAttemptsBody&&(d.disqualified===!0||d.status==="disqualified"?(t.candStatStatus&&(t.candStatStatus.textContent="Attempt Invalidated (Disqualified)"),t.candAttemptsBody.innerHTML=`
+                        <tr>
+                            <td style="font-family: var(--font-mono); font-weight: 700; color: #dc2626;">EX-1001</td>
+                            <td><strong>${d.exam_title||"NATIONAL ASSESSMENT EXAMINATION"}</strong></td>
+                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(239, 68, 68, 0.1); color: #dc2626; border-radius: 4px;">Disqualified</span></td>
+                            <td>
+                                <span class="status-pill status-suspended" style="background: #fee2e2; color: #b91c1c; font-weight: 700;">
+                                    Scores Annulled (Security Infraction)
+                                </span>
+                            </td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                <a href="/scorecard.html" class="btn btn-outline btn-sm">View Status</a>
+                            </td>
+                        </tr>
+                    `):(t.candStatStatus&&(t.candStatStatus.textContent="Attempt Completed"),t.candAttemptsBody.innerHTML=`
+                        <tr>
+                            <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">EX-1001</td>
+                            <td><strong>${d.exam_title||"NATIONAL ASSESSMENT EXAMINATION"}</strong></td>
+                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot A</span></td>
+                            <td>
+                                <span class="status-pill status-active" style="background: #ecfdf5; color: #047857;">
+                                    Score: ${d.score} (${d.percentile} PR)
+                                </span>
+                            </td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                <a href="/scorecard.html" class="btn btn-outline btn-sm" style="margin-right: 0.35rem;">View Scorecard</a>
+                                <a href="/instructions.html" class="btn btn-primary btn-sm">Retake Exam</a>
+                            </td>
+                        </tr>
+                    `))}}catch{}}const y=document.getElementById("btn-view-admit-card"),u=document.getElementById("modal-admit-card"),S=document.getElementById("btn-close-admit"),x=document.getElementById("admit-name"),I=document.getElementById("admit-reg");y&&u&&y.addEventListener("click",async()=>{const n=localStorage.getItem("candidate_name")||"Candidate Name",a=localStorage.getItem("reg_no")||"";x&&(x.textContent=n),I&&(I.textContent=a);try{const c=localStorage.getItem("access_token")||"",o=await fetch("/api/v1/exams/settings",{headers:{Authorization:`Bearer ${c}`}});if(o.ok){const e=await o.json(),i=document.getElementById("admit-cand-agency"),s=document.getElementById("admit-cand-exam"),d=document.getElementById("admit-cand-venue"),l=document.getElementById("admit-cand-center-lab"),m=document.getElementById("admit-cand-controller"),r=document.getElementById("admit-cand-terminal");i&&e.institution_name&&(i.textContent=e.institution_name),s&&e.examination_title&&(s.textContent=e.examination_title),d&&e.test_venue_name&&(d.textContent=e.test_venue_name),l&&(l.textContent=`Center: ${e.test_center_code||"SSEC-TN-042"} | Room: ${e.default_lab_room||"LAB-01"}`),m&&e.controller_name&&(m.textContent=e.controller_name),r&&(r.textContent=`${e.terminal_prefix||"T-A-"}0004`)}}catch{}u.style.display="flex"});S&&u&&S.addEventListener("click",()=>{u.style.display="none"});v();k();$();

@@ -9,7 +9,6 @@ from app.core.tenant import DEFAULT_TENANT_ID, ensure_tenant_exists
 logger = logging.getLogger(__name__)
 
 DEFAULT_EXAM_UUID = "00000000-0000-0000-0000-000000000101"
-DEFAULT_CANDIDATE_UUID = "018d1a55-2959-48c4-b2a4-8a72894512b9"
 
 # Mapping from client numeric states to database response_status_enum
 STATE_TO_STATUS = {
@@ -80,7 +79,7 @@ def ensure_candidate_exists(
 ) -> str:
     """Ensures candidate row exists in public.candidates table."""
     ensure_tenant_exists(db, tenant_id)
-    reg = (reg_no or "SSE-A-CBT-0001").strip()
+    reg = (reg_no or f"SSE-A-CBT-{uuid.uuid4().hex[:4].upper()}").strip()
     name = (candidate_name or f"Candidate {reg}").strip()
     try:
         chk = db.table("candidates").select("id").eq("id", candidate_id).limit(1).execute()
@@ -120,8 +119,10 @@ def ensure_candidate_exists(
 
 
 def get_or_create_candidate_id(db, reg_no: Optional[str] = None, candidate_name: Optional[str] = None) -> str:
-    """Finds or ensures candidate exists in database."""
-    reg = (reg_no or "SSE-A-CBT-0001").strip()
+    """Finds or ensures candidate exists in database dynamically."""
+    reg = (reg_no or "").strip()
+    if not reg:
+        reg = f"SSE-A-CBT-{uuid.uuid4().hex[:4].upper()}"
     try:
         res = db.table("candidates").select("id").eq("registration_number", reg).limit(1).execute()
         if res.data:
@@ -129,8 +130,8 @@ def get_or_create_candidate_id(db, reg_no: Optional[str] = None, candidate_name:
     except Exception as e:
         logger.warning(f"Error querying candidate by reg_no {reg}: {e}")
 
-    # Fallback to ensuring DEFAULT_CANDIDATE_UUID in candidates table
-    cand_id = DEFAULT_CANDIDATE_UUID if reg in ("SSE-A-CBT-0001", "5254740(V4.3.7)") else str(uuid.uuid5(uuid.NAMESPACE_DNS, reg))
+    # Generate deterministic candidate UUID from registration number
+    cand_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, reg))
     return ensure_candidate_exists(db, DEFAULT_TENANT_ID, cand_id, reg_no=reg, candidate_name=candidate_name)
 
 

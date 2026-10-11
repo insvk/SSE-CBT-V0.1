@@ -58,7 +58,7 @@ async def exam_websocket_endpoint(websocket: WebSocket, exam_id: str):
                     st = data.get("state", 1)
                     idemp_key = data.get("idempotency_key") or f"ws_{q_id}_{int(time.time()*1000)}"
                     cand_id = data.get("candidate_id")
-                    reg_no = data.get("reg_no") or "SSE-A-CBT-0001"
+                    reg_no = data.get("reg_no") or ""
                     cand_name = data.get("candidate_name") or "Candidate"
 
                     # 1. Direct Cloud DB Persistence
@@ -104,7 +104,7 @@ async def exam_websocket_endpoint(websocket: WebSocket, exam_id: str):
                     v_type = data.get("violation_type", "Tab Switch Detected")
                     v_count = data.get("count", 1)
                     cand_name = data.get("candidate_name", "Registered Candidate")
-                    reg_no = data.get("reg_no", "SSE-A-CBT-0001")
+                    reg_no = data.get("reg_no") or ""
                     terminal = data.get("terminal", "C-042")
 
                     # Live Alert to Admin Command Centre Proctor Feed

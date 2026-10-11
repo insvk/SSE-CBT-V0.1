@@ -35,24 +35,33 @@ def _get_active_question_id():
 @pytest.fixture(autouse=True)
 def setup_test_candidate():
     db = get_db()
+    test_cand_id = "018d1a55-2959-48c4-b2a4-8a72894512b9"
     try:
         db.table("candidates").upsert({
-            "id": "018d1a55-2959-48c4-b2a4-8a72894512b9",
+            "id": test_cand_id,
             "tenant_id": "00000000-0000-0000-0000-000000000001",
-            "full_name": "Rahul Sharma",
-            "registration_number": "SSE-A-CBT-0001",
+            "full_name": "Test Candidate",
+            "registration_number": "SSE-TEST-0001",
             "metadata": {
                 "batch": "A",
                 "status": "active",
                 "exam_status": "in_progress",
                 "password": "password123",
                 "assigned_terminal": "Terminal C-049",
-                "roll_number": "SSE-A-CBT-0001",
+                "roll_number": "SSE-TEST-0001",
                 "biometric_status": "verified",
                 "biometric_score": 98.6,
             }
         }).execute()
     except Exception as e:
+        pass
+
+    yield
+
+    try:
+        db.table("exam_attempts").delete().eq("candidate_id", test_cand_id).execute()
+        db.table("candidates").delete().eq("id", test_cand_id).execute()
+    except Exception:
         pass
 
 
@@ -77,8 +86,8 @@ def test_realtime_websocket_exam_connection_and_response_sync():
             "answer": 1,
             "state": 1,
             "idempotency_key": f"test_ws_sync_{int(time.time()*1000)}",
-            "candidate_name": "Rahul Sharma",
-            "reg_no": "SSE-A-CBT-0001"
+            "candidate_name": "Test Candidate",
+            "reg_no": "SSE-TEST-0001"
         })
 
         ack = ws.receive_json()
@@ -138,7 +147,7 @@ def test_enterprise_candidate_intervention_suite():
     # 1. Compensatory Time Grant (PwD / Glitch Relief)
     res = client.post("/api/v1/exams/EX-1001/candidate-intervention", json={
         "action": "extend_time",
-        "reg_no": "SSE-A-CBT-0001",
+        "reg_no": "SSE-TEST-0001",
         "extra_minutes": 20,
         "reason": "PwD Scribe Mandated Compensatory Time"
     })
@@ -151,7 +160,7 @@ def test_enterprise_candidate_intervention_suite():
     # 2. Remote Session Pause (Hold)
     res_pause = client.post("/api/v1/exams/EX-1001/candidate-intervention", json={
         "action": "pause_session",
-        "reg_no": "SSE-A-CBT-0001",
+        "reg_no": "SSE-TEST-0001",
         "reason": "Biometric verification hold"
     })
     assert res_pause.status_code == 200
@@ -160,7 +169,7 @@ def test_enterprise_candidate_intervention_suite():
     # 3. Remote Session Resume
     res_resume = client.post("/api/v1/exams/EX-1001/candidate-intervention", json={
         "action": "resume_session",
-        "reg_no": "SSE-A-CBT-0001",
+        "reg_no": "SSE-TEST-0001",
         "reason": "Verification cleared"
     })
     assert res_resume.status_code == 200
@@ -169,7 +178,7 @@ def test_enterprise_candidate_intervention_suite():
     # 4. Terminal Re-seating / Migration
     res_reseat = client.post("/api/v1/exams/EX-1001/candidate-intervention", json={
         "action": "reseat_terminal",
-        "reg_no": "SSE-A-CBT-0001",
+        "reg_no": "SSE-TEST-0001",
         "target_terminal": "Terminal C-049",
         "reason": "Keyboard defect"
     })
@@ -179,7 +188,7 @@ def test_enterprise_candidate_intervention_suite():
     # 5. Direct Proctor Warning
     res_warn = client.post("/api/v1/exams/EX-1001/candidate-intervention", json={
         "action": "direct_warning",
-        "reg_no": "SSE-A-CBT-0001",
+        "reg_no": "SSE-TEST-0001",
         "message": "Maintain exam focus on screen."
     })
     assert res_warn.status_code == 200

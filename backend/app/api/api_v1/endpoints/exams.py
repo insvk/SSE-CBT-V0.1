@@ -887,21 +887,15 @@ async def extend_exam_time(exam_id: str, extra_minutes: int = 15):
     now = time.time()
     remaining = max(0, int(session["deadline"] - now))
 
-    # Real-Time WebSocket Push to all connected candidate consoles
-    await ws_manager.broadcast(f"exam_{exam_id}", {
+    # Real-Time WebSocket Push to all connected candidate consoles and admin feed
+    await ws_manager.broadcast_all({
         "type": "TIME_EXTENDED",
         "exam_id": exam_id,
         "extra_minutes": extra_minutes,
         "time_remaining_seconds": remaining,
         "server_time": now,
+        "timestamp": now,
         "message": f"+{extra_minutes} minutes added by Proctor!"
-    })
-    await ws_manager.broadcast("admin_feed", {
-        "type": "TIME_EXTENDED",
-        "exam_id": exam_id,
-        "extra_minutes": extra_minutes,
-        "time_remaining_seconds": remaining,
-        "timestamp": now
     })
 
     return {
@@ -1567,7 +1561,10 @@ def get_attendance_roster(exam_id: str, format: Optional[str] = None):
         extra_mins = session.get("candidate_accommodations", {}).get(reg, 0)
         
         status = "In Progress" if session["status"] == "active" else session["status"].capitalize()
-        answered_count = len(session.get("responses", {})) if reg in ("SSE-A-CBT-0001", "5254740(V4.3.7)") else 0
+        cand_resps = session.get("candidate_responses", {}).get(reg) or session.get("candidate_responses", {}).get(str(c.get("id")))
+        if cand_resps is None and (session.get("reg_no") == reg or session.get("candidate_id") == str(c.get("id"))):
+            cand_resps = session.get("responses", {})
+        answered_count = len(cand_resps) if cand_resps else int(meta.get("correct_count", 0) + meta.get("incorrect_count", 0))
 
         roster.append({
             "s_no": idx,
@@ -1867,7 +1864,20 @@ def get_exam_results_summary(exam_id: str):
             continue
 
         # Calculate score from responses if available
-        resp_list = active_responses if reg in ("5254740(V4.3.7)", "SSE-A-CBT-0001", "SSEC-A-CBT-0001") else []
+        resp_list = []
+        att = attempts_by_cid.get(cid)
+        if att:
+            try:
+                db_res = db.table("responses").select("*").eq("attempt_id", att["id"]).execute()
+                resp_list = [r.get("response_data") if isinstance(r.get("response_data"), dict) else r for r in (db_res.data or [])]
+            except Exception:
+                pass
+        if not resp_list:
+            cand_s = session.get("candidate_responses", {}).get(reg) or session.get("candidate_responses", {}).get(cid)
+            if cand_s:
+                resp_list = list(cand_s.values()) if isinstance(cand_s, dict) else cand_s
+            elif session.get("reg_no") == reg or session.get("candidate_id") == cid or (not session.get("reg_no") and idx == 1):
+                resp_list = active_responses
         sc_res = ScoringEngine.calculate_score(
             responses=resp_list,
             questions_map=questions_map,
@@ -1997,19 +2007,22 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
         terminal = meta.get("assigned_terminal") or session.get("candidate_terminals", {}).get(reg_no) or f"Terminal C-04{idx}"
         bio_status = meta.get("biometric_status", "verified").capitalize()
 
-        # Gather responses: use session responses if matching primary candidate
+        # Gather responses: query DB attempt responses first, then candidate session
         cand_resps = []
-        if reg_no in ("5254740(V4.3.7)", "SSE-A-CBT-0001", "SSEC-A-CBT-0001") or idx == 1:
-            cand_resps = session_responses
-        else:
-            # Query responses table for candidate's attempt
-            att = attempts_by_cand.get(cid)
-            if att:
-                try:
-                    r_res = db.table("responses").select("*").eq("attempt_id", att["id"]).execute()
-                    cand_resps = r_res.data or []
-                except Exception:
-                    pass
+        att = attempts_by_cand.get(cid)
+        if att:
+            try:
+                r_res = db.table("responses").select("*").eq("attempt_id", att["id"]).execute()
+                cand_resps = r_res.data or []
+            except Exception:
+                pass
+
+        if not cand_resps:
+            cand_s = session.get("candidate_responses", {}).get(reg_no) or session.get("candidate_responses", {}).get(cid)
+            if cand_s:
+                cand_resps = list(cand_s.values()) if isinstance(cand_s, dict) else cand_s
+            elif session.get("reg_no") == reg_no or session.get("candidate_id") == cid or (not session.get("reg_no") and idx == 1):
+                cand_resps = session_responses
 
         # Evaluate score
         scoring = ScoringEngine.calculate_score(
@@ -2319,7 +2332,7 @@ async def disqualify_exam_candidate(exam_id: str, payload: Optional[Dict[str, An
     norm_id = _resolve_exam_id(exam_id)
     cand_id = payload.get("candidate_id")
     cand_name = payload.get("candidate_name") or "Candidate"
-    reg_no = payload.get("reg_no") or "SSE-A-CBT-0001"
+    reg_no = payload.get("reg_no") or session.get("reg_no") or f"SSE-A-CBT-{uuid.uuid4().hex[:4].upper()}"
     reason = payload.get("reason") or "4 Security Violations Exceeded"
     v_count = payload.get("violation_count", 4)
     ref = f"DISQ-{uuid.uuid4().hex[:6].upper()}"
@@ -2414,7 +2427,7 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
     session = _get_or_create_session(norm_id)
     cand_id = payload.get("candidate_id")
     cand_name = payload.get("candidate_name") or session.get("candidate_name") or "Candidate"
-    reg_no = payload.get("reg_no") or session.get("reg_no") or "SSE-A-CBT-0001"
+    reg_no = payload.get("reg_no") or session.get("reg_no") or f"SSE-A-CBT-{uuid.uuid4().hex[:4].upper()}"
 
     db = get_db()
     actual_cand_id = cand_id
@@ -2560,7 +2573,7 @@ def get_exam_result(
     if target_cand:
         meta = target_cand.get("metadata") or {}
         cand_name = target_cand.get("full_name") or "Candidate"
-        cand_reg = target_cand.get("registration_number") or "SSE-A-CBT-0001"
+        cand_reg = target_cand.get("registration_number") or ""
 
         # If candidate was disqualified due to violation:
         if (

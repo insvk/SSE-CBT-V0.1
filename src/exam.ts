@@ -391,7 +391,7 @@ async function handleViolationTermination(reason: string): Promise<void> {
 
     const candId = localStorage.getItem('candidate_id') || '';
     const candName = localStorage.getItem('candidate_name') || 'Candidate';
-    const regNo = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+    const regNo = localStorage.getItem('reg_no') || '';
 
     try {
         const res = await fetch(`${API_BASE}/${EXAM_ID}/disqualify`, {
@@ -438,8 +438,8 @@ async function handleViolationTermination(reason: string): Promise<void> {
 
 function handleExamSocketMessage(msg: any): void {
     if (msg.type === 'TIME_EXTENDED' || msg.type === 'INDIVIDUAL_TIME_EXTENDED') {
-        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
-        if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg) {
+        const myReg = localStorage.getItem('reg_no') || '';
+        if (!msg.reg_no || msg.reg_no === 'ALL' || (myReg && msg.reg_no === myReg)) {
             const extraMins = msg.extra_minutes || 15;
             currentRemainingSeconds += extraMins * 60;
             const mins = Math.floor(currentRemainingSeconds / 60);
@@ -450,8 +450,8 @@ function handleExamSocketMessage(msg: any): void {
             showLiveToast(`[ACCOMMODATION] COMPENSATORY TIME: +${extraMins} mins added to your exam! (${msg.reason || 'Accommodations'})`);
         }
     } else if (msg.type === 'EXAM_PAUSED') {
-        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
-        if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg) {
+        const myReg = localStorage.getItem('reg_no') || '';
+        if (!msg.reg_no || msg.reg_no === 'ALL' || (myReg && msg.reg_no === myReg)) {
             isExamPaused = true;
             const pauseModal = document.getElementById('modal-exam-paused');
             const pauseReason = document.getElementById('pause-reason-text');
@@ -462,8 +462,8 @@ function handleExamSocketMessage(msg: any): void {
             showLiveToast('[ON HOLD] EXAMINATION ON HOLD: Timer frozen by Invigilator.', true);
         }
     } else if (msg.type === 'EXAM_RESUMED') {
-        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
-        if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg) {
+        const myReg = localStorage.getItem('reg_no') || '';
+        if (!msg.reg_no || msg.reg_no === 'ALL' || (myReg && msg.reg_no === myReg)) {
             isExamPaused = false;
             const pauseModal = document.getElementById('modal-exam-paused');
             if (pauseModal) pauseModal.classList.remove('active');
@@ -473,23 +473,23 @@ function handleExamSocketMessage(msg: any): void {
             showLiveToast('[RESUMED] EXAMINATION RESUMED: Countdown timer restarted.');
         }
     } else if (msg.type === 'TERMINAL_RESEATED') {
-        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
-        if (msg.reg_no === myReg) {
+        const myReg = localStorage.getItem('reg_no') || '';
+        if (myReg && msg.reg_no === myReg) {
             const termEl = document.getElementById('term-display-id');
             if (termEl) termEl.textContent = msg.new_terminal || 'C-043';
             showLiveToast(`Terminal migrated to ${msg.new_terminal}. Answers preserved!`);
         }
     } else if (msg.type === 'TERMINAL_UNLOCKED') {
-        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
-        if (!msg.reg_no || msg.reg_no === myReg) {
+        const myReg = localStorage.getItem('reg_no') || '';
+        if (!msg.reg_no || (myReg && msg.reg_no === myReg)) {
             const lockOverlay = document.getElementById('modal-terminal-locked');
             if (lockOverlay) lockOverlay.classList.remove('active');
             startTimer();
             showLiveToast('Terminal unlocked by Proctor.');
         }
     } else if (msg.type === 'PROCTOR_DIRECTIVE' || msg.type === 'PROCTOR_WARNING') {
-        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
-        if (!msg.reg_no || msg.reg_no === myReg) {
+        const myReg = localStorage.getItem('reg_no') || '';
+        if (!msg.reg_no || (myReg && msg.reg_no === myReg)) {
             showInvigilatorMessage("[NOTICE]", "Mandatory Proctor Directive", msg.message || "Please return your full attention to the exam terminal screen.", true);
         }
     } else if (msg.type === 'QUESTION_UPDATED') {
@@ -515,9 +515,9 @@ function handleExamSocketMessage(msg: any): void {
     } else if (msg.type === 'BROADCAST_ANNOUNCEMENT') {
         showInvigilatorMessage("[ALERT]", "Central Invigilator Announcement", msg.message || "Attention all candidates: Please maintain exam focus.");
     } else if (msg.type === 'FORCE_LOCK_TERMINAL' || msg.type === 'LOCK_TERMINAL' || msg.type === 'CANDIDATE_DISQUALIFIED') {
-        const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+        const myReg = localStorage.getItem('reg_no') || '';
         const myId = localStorage.getItem('candidate_id') || '';
-        if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg || (msg.candidate_id && msg.candidate_id === myId)) {
+        if (!msg.reg_no || msg.reg_no === 'ALL' || (myReg && msg.reg_no === myReg) || (msg.candidate_id && msg.candidate_id === myId)) {
             triggerTerminalForceLock(msg.reason || "Terminal locked: Candidate disqualified under examination regulations.");
         }
     } else if (msg.type === 'PAPER_DECRYPTED') {
@@ -559,9 +559,9 @@ async function syncResponseToCloud(index: number, state: number): Promise<void> 
     if (!q) return;
 
     const ans = responses[index];
-    const candId = localStorage.getItem('candidate_id') || '018d1a55-2959-48c4-b2a4-8a72894512b9';
+    const candId = localStorage.getItem('candidate_id') || '';
     const candName = localStorage.getItem('candidate_name') || 'Candidate';
-    const regNo = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+    const regNo = localStorage.getItem('reg_no') || '';
     const idempKey = `resp_${q.id}_${Date.now()}`;
 
     // 1. Ultra-fast WebSocket dispatch
@@ -735,7 +735,7 @@ async function performFinalSubmission(): Promise<void> {
     try {
         const candId = localStorage.getItem('candidate_id') || '';
         const candName = localStorage.getItem('candidate_name') || 'Candidate';
-        const regNo = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+        const regNo = localStorage.getItem('reg_no') || '';
 
         const res = await fetch(`${API_BASE}/${EXAM_ID}/submit`, {
             method: 'POST',
@@ -905,7 +905,7 @@ function openQuestionPaper(): void {
 // User Profile Initializer
 function initProfile(): void {
     const name = localStorage.getItem('candidate_name') || 'Candidate';
-    const reg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+    const reg = localStorage.getItem('reg_no') || '';
     if (ui.candDisplayName) ui.candDisplayName.textContent = name;
     if (ui.candDisplayReg) ui.candDisplayReg.textContent = reg;
 }
@@ -934,11 +934,36 @@ if (ui.btnCancelEditQ) ui.btnCancelEditQ.onclick = () => { ui.modalEditQ.style.d
 if (ui.btnGodTools) ui.btnGodTools.onclick = () => { ui.modalGodTools.style.display = 'flex'; };
 if (ui.btnCloseGodTools) ui.btnCloseGodTools.onclick = () => { ui.modalGodTools.style.display = 'none'; };
 
+async function ensureAuthoritativeAnswerKeys(): Promise<void> {
+    const needsKeys = allQuestions.some(q => !q.correct_answer);
+    if (!needsKeys) return;
+    try {
+        const res = await fetch('/api/v1/questions/', { headers: getAuthHeaders() });
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                const keyMap = new Map<string, string>();
+                data.forEach((item: any) => {
+                    if (item.id && item.correct_answer) {
+                        keyMap.set(String(item.id), String(item.correct_answer).toUpperCase());
+                    }
+                });
+                allQuestions.forEach(q => {
+                    if (keyMap.has(String(q.id))) {
+                        q.correct_answer = keyMap.get(String(q.id));
+                    }
+                });
+            }
+        }
+    } catch (_) {}
+}
+
 // Controller Actions
 if (ui.btnAutoSolve) {
-    ui.btnAutoSolve.onclick = () => {
+    ui.btnAutoSolve.onclick = async () => {
+        await ensureAuthoritativeAnswerKeys();
         allQuestions.forEach((q, idx) => {
-            const letter = q.correct_answer || "A";
+            const letter = (q.correct_answer || "A").toUpperCase();
             const optIdx = letter.charCodeAt(0) - 65;
             responses[idx] = optIdx >= 0 && optIdx < 4 ? optIdx : 0;
             questionState[idx] = 1; // Answered
@@ -951,7 +976,8 @@ if (ui.btnAutoSolve) {
 }
 
 if (ui.btnRevealKey) {
-    ui.btnRevealKey.onclick = () => {
+    ui.btnRevealKey.onclick = async () => {
+        await ensureAuthoritativeAnswerKeys();
         revealAnswersMode = !revealAnswersMode;
         ui.modalGodTools.style.display = 'none';
         loadQuestion(currentQuestionIndex);
@@ -970,10 +996,11 @@ if (ui.btnResetAttemptSelf) {
     ui.btnResetAttemptSelf.onclick = async () => {
         try {
             await fetch(`${API_BASE}/${EXAM_ID}/reset`, { method: 'POST', headers: getAuthHeaders() });
-            questionState = new Array(20).fill(0);
-            responses = new Array(20).fill(null);
+            questionState = new Array(allQuestions.length || 20).fill(0);
+            responses = new Array(allQuestions.length || 20).fill(null);
             currentRemainingSeconds = 179 * 60 + 41;
             ui.modalGodTools.style.display = 'none';
+            renderPalette();
             loadQuestion(0);
             showLiveToast("Examination session attempt reset for fresh assessment.");
         } catch (_) {}
@@ -1319,7 +1346,7 @@ if (lockedTermTag) lockedTermTag.textContent = currentTerminalId;
 // 3. Dynamic Moving Watermark
 function initWatermark(): void {
     const name = localStorage.getItem('candidate_name') || 'Candidate';
-    const reg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+    const reg = localStorage.getItem('reg_no') || '';
     const row1 = document.getElementById('wm-row-1');
     const row2 = document.getElementById('wm-row-2');
     const row4 = document.getElementById('wm-row-4');
@@ -1510,7 +1537,7 @@ function reportSecurityViolation(reason: string): void {
     violationCount++;
 
     const candName = localStorage.getItem('candidate_name') || 'Candidate';
-    const regNo = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+    const regNo = localStorage.getItem('reg_no') || '';
 
     // Transmit violation alert directly to Central Invigilator Command Centre
     if (examSocket && examSocket.readyState === WebSocket.OPEN) {
@@ -1647,7 +1674,7 @@ if (btnAckInvig) {
         if (invigModal) invigModal.style.display = 'none';
 
         if (lastDirectiveRequiresAck && examSocket && examSocket.readyState === WebSocket.OPEN) {
-            const myReg = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+            const myReg = localStorage.getItem('reg_no') || '';
             const myName = localStorage.getItem('candidate_name') || 'Candidate';
             examSocket.send(JSON.stringify({
                 type: 'DIRECTIVE_ACKNOWLEDGED',

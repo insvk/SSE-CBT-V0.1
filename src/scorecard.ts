@@ -180,7 +180,7 @@ async function loadAuthoritativeScore(): Promise<void> {
     const scTableBody = document.getElementById('sc-table-body');
 
     const candidateName = localStorage.getItem('candidate_name') || 'Registered Candidate';
-    const regNo = localStorage.getItem('reg_no') || 'SSE-A-CBT-0001';
+    const regNo = localStorage.getItem('reg_no') || new URLSearchParams(window.location.search).get('reg_no') || '';
     const candId = localStorage.getItem('candidate_id') || '';
     const examId = localStorage.getItem('active_exam_id') || 'EX-1001';
 

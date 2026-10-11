@@ -18,7 +18,6 @@ router = APIRouter()
 # Authoritative Examination Controller Credentials (AUTHORITATIVE SYSTEM ACCESS)
 GOD_ADMIN_EMAILS = [
     "admin@sse.cbt.in",
-    "admin@sse,cbt.in",
     "admin@ssecbt.in",
     "admin@cbt.in",
     "admin"
@@ -273,7 +272,7 @@ async def register_candidate(req: CandidateSelfRegisterRequest):
             if (meta.get("email") or "").lower() == email_clean:
                 # Candidate already registered - authenticate and return token
                 cand_id = str(c["id"])
-                reg_num = c.get("registration_number", "SSE-A-CBT-0001")
+                reg_num = c.get("registration_number") or ""
                 roll_num = meta.get("roll_number") or reg_num
                 token = generate_jwt_token(
                     user_id=cand_id,

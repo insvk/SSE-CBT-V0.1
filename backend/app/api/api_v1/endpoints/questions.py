@@ -35,13 +35,44 @@ class BulkImportRequest(BaseModel):
 
 def validate_question_row(row: dict, index: int) -> tuple[bool, str]:
     """Validates a single question row strictly based on CBT rules."""
-    required = ["statement", "opt_a", "opt_b", "opt_c", "opt_d", "correct_answer"]
-    for req in required:
-        if req not in row or not str(row[req]).strip():
-            return False, f"Row {index}: Missing required field '{req}'"
+    stmt = row.get("statement")
+    if not stmt or not str(stmt).strip():
+        if isinstance(row.get("content"), dict) and row["content"].get("statement"):
+            stmt = row["content"]["statement"]
+            row["statement"] = stmt
+        elif row.get("question_text"):
+            stmt = row.get("question_text")
+            row["statement"] = stmt
+        elif row.get("text"):
+            stmt = row.get("text")
+            row["statement"] = stmt
+        else:
+            return False, f"Row {index}: Missing required field 'statement'"
 
-    ans = str(row["correct_answer"]).strip().upper()
-    if ans not in ["A", "B", "C", "D"]:
+    # Normalize options: support either opt_a...opt_d OR options array
+    opts = row.get("options")
+    if isinstance(opts, list) and len(opts) >= 2:
+        if "opt_a" not in row or not str(row["opt_a"]).strip():
+            row["opt_a"] = opts[0] if len(opts) > 0 else ""
+        if "opt_b" not in row or not str(row["opt_b"]).strip():
+            row["opt_b"] = opts[1] if len(opts) > 1 else ""
+        if "opt_c" not in row or not str(row["opt_c"]).strip():
+            row["opt_c"] = opts[2] if len(opts) > 2 else ""
+        if "opt_d" not in row or not str(row["opt_d"]).strip():
+            row["opt_d"] = opts[3] if len(opts) > 3 else ""
+
+    required_options = ["opt_a", "opt_b"]
+    for req in required_options:
+        if req not in row or not str(row[req]).strip():
+            return False, f"Row {index}: Missing required option '{req}'"
+
+    ans = str(row.get("correct_answer", "")).strip().upper()
+    if not ans:
+        return False, f"Row {index}: Missing required field 'correct_answer'"
+    if ans in ["1", "2", "3", "4"]:
+        ans = chr(64 + int(ans))
+        row["correct_answer"] = ans
+    if ans not in ["A", "B", "C", "D", "BONUS"]:
         return False, f"Row {index}: correct_answer must be A, B, C, or D (got '{ans}')"
 
     if "marks" in row and row["marks"]:
@@ -54,17 +85,23 @@ def validate_question_row(row: dict, index: int) -> tuple[bool, str]:
 
 
 def _row_to_db_payload(row: dict, tenant_id: str) -> dict:
-    """Converts a flat question row into the database question_bank schema."""
-    opts = [
-        str(row.get("opt_a", "")).strip(),
-        str(row.get("opt_b", "")).strip(),
-        str(row.get("opt_c", "")).strip(),
-        str(row.get("opt_d", "")).strip(),
-    ]
+    """Converts a question row into the database question_bank schema."""
+    opts = row.get("options")
+    if not isinstance(opts, list) or len(opts) < 4:
+        opts = [
+            str(row.get("opt_a", "")).strip(),
+            str(row.get("opt_b", "")).strip(),
+            str(row.get("opt_c", "")).strip(),
+            str(row.get("opt_d", "")).strip(),
+        ]
+    stmt = str(row.get("statement", "")).strip()
+    if not stmt and isinstance(row.get("content"), dict):
+        stmt = str(row["content"].get("statement", "")).strip()
+
     return {
         "tenant_id": tenant_id,
-        "type": "mcq_single",
-        "content": {"statement": str(row.get("statement", "")).strip()},
+        "type": str(row.get("type") or row.get("question_type") or "mcq_single"),
+        "content": {"statement": stmt},
         "options": opts,
         "correct_answer": str(row.get("correct_answer", "")).strip().upper(),
         "difficulty": str(row.get("difficulty", "Medium")).strip() or "Medium",
@@ -75,8 +112,23 @@ def _row_to_db_payload(row: dict, tenant_id: str) -> dict:
 
 def _format_question_response(q: dict) -> dict:
     content = q.get("content") or {}
-    statement = content.get("statement", "") if isinstance(content, dict) else str(content)
+    statement = ""
+    if isinstance(content, dict):
+        statement = content.get("statement") or content.get("text") or ""
+    elif isinstance(content, str):
+        statement = content
+    if not statement:
+        statement = q.get("statement") or q.get("text") or q.get("question_text") or ""
+
     opts = q.get("options") or []
+    if not opts or not isinstance(opts, list):
+        if isinstance(content, dict) and content.get("options"):
+            opts = content.get("options")
+        elif any(q.get(k) for k in ("opt_a", "opt_b", "opt_c", "opt_d")):
+            opts = [q.get("opt_a", ""), q.get("opt_b", ""), q.get("opt_c", ""), q.get("opt_d", "")]
+        else:
+            opts = []
+
     return {
         "id": str(q["id"]),
         "statement": statement,
@@ -736,7 +788,7 @@ def purge_all_questions(user_context: dict = Depends(require_admin_user)):
 
 
 @router.delete("/{question_id}")
-def delete_question(question_id: str, user_context: dict = Depends(require_admin_user)):
+async def delete_question(question_id: str, user_context: dict = Depends(require_admin_user)):
     """Deletes an individual question from Supabase Cloud DB (Admin Only)."""
     tid = user_context["tenant_id"]
     db = get_db()
@@ -747,6 +799,14 @@ def delete_question(question_id: str, user_context: dict = Depends(require_admin
         _cascade_delete_responses_for_question(db, question_id)
 
         res = db.table("question_bank").delete().eq("id", question_id).execute()
+
+        await ws_manager.broadcast_all({
+            "type": "QUESTION_DELETED",
+            "question_id": question_id,
+            "timestamp": time.time(),
+            "message": f"Question {question_id} deleted from Cloud DB."
+        })
+
         return {
             "status": "success",
             "message": f"Question {question_id} deleted successfully from Cloud DB.",
@@ -756,6 +816,12 @@ def delete_question(question_id: str, user_context: dict = Depends(require_admin
             try:
                 _cascade_delete_responses_for_question(db, question_id)
                 res = db.table("question_bank").delete().eq("id", question_id).execute()
+                await ws_manager.broadcast_all({
+                    "type": "QUESTION_DELETED",
+                    "question_id": question_id,
+                    "timestamp": time.time(),
+                    "message": f"Question {question_id} deleted from Cloud DB."
+                })
                 return {
                     "status": "success",
                     "message": f"Question {question_id} deleted successfully from Cloud DB.",
@@ -779,8 +845,13 @@ async def update_question(
     ensure_tenant_exists(db, tid)
 
     update_data = {}
+    content_dict = {}
     if "statement" in payload:
-        update_data["content"] = {"statement": payload["statement"].strip()}
+        content_dict["statement"] = str(payload["statement"]).strip()
+    if "section" in payload:
+        content_dict["section"] = str(payload["section"]).strip()
+    if content_dict:
+        update_data["content"] = content_dict
     if "options" in payload:
         update_data["options"] = payload["options"]
     if "correct_answer" in payload:
@@ -801,6 +872,7 @@ async def update_question(
             "options": payload.get("options"),
             "correct_answer": payload.get("correct_answer"),
             "subject": payload.get("subject"),
+            "section": payload.get("section"),
             "timestamp": time.time(),
             "message": "Question updated by Administrator."
         })

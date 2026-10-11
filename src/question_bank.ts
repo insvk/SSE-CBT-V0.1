@@ -731,5 +731,26 @@ if (ui.filterStatus) ui.filterStatus.onchange = loadQuestions;
 if (ui.filterDifficulty) ui.filterDifficulty.onchange = renderFilteredQuestions;
 if (ui.searchInput) ui.searchInput.oninput = renderFilteredQuestions;
 
+// 13. Live WebSocket DB Synchronization
+function initQuestionBankWebSocket(): void {
+    const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/admin`;
+    try {
+        const socket = new WebSocket(wsUrl);
+        socket.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (['QUESTION_UPDATED', 'QUESTION_DELETED', 'QUESTION_ADJUDICATED', 'QUESTION_CREATED', 'QUESTION_BANK_PURGED'].includes(msg.type)) {
+                    loadQuestions();
+                    showToast(`Cloud DB Sync: ${msg.message || 'Question bank updated live.'}`);
+                }
+            } catch (_) {}
+        };
+        socket.onclose = () => {
+            setTimeout(initQuestionBankWebSocket, 4000);
+        };
+    } catch (_) {}
+}
+
 // Initialize
 loadQuestions();
+initQuestionBankWebSocket();
