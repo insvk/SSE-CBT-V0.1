@@ -164,6 +164,9 @@ def test_candidate_endpoints_persistence():
     assert created["batch"] == "C"
     assert "SSEC-C-CBT-" in created["registration_number"]
 
+    # Teardown: Clean up test candidate to ensure zero persistent dummy records in Cloud DB
+    client.delete(f"/api/v1/candidates/{created['id']}", headers=headers)
+
 
 def test_bulk_assign_request_body():
     """Verify bulk assign endpoint handles JSON body payload without 422 error."""

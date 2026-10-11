@@ -1444,12 +1444,76 @@
 
             <!-- ACTION TOOLBAR -->
             <div class="action-toolbar">
+              <button class="btn btn-outline" id="btn-infra-audit">🩺 Pre-Flight Infra Audit</button>
+              <button class="btn btn-outline" id="btn-admissions-checkin">🎫 Biometric Admissions</button>
+              <button class="btn btn-outline" id="btn-closing-report">📋 Form 24-B Closing Report</button>
               <button class="btn btn-outline" id="btn-export-attendance">📋 Export Attendance Roster CSV</button>
               <button class="btn btn-outline" id="btn-export-csv">📥 Export Credentials CSV</button>
               <button class="btn btn-outline" id="btn-import">📂 Bulk Import CSV</button>
               <button class="btn btn-primary" id="btn-create">
                 🛡️ Authorize Candidate Account
               </button>
+            </div>
+          </div>
+
+          <!-- TCS iON / NTA AEC EXAM LIFECYCLE PHASE ORCHESTRATOR -->
+          <div class="phase-orchestrator-card" style="background: var(--bg-card); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--card-shadow);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+              <div>
+                <div style="font-size: 0.725rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+                  <span>🏛️ NTA / TCS iON AEC EXAM LIFECYCLE ORCHESTRATOR</span>
+                  <span class="badge-pill badge-live" id="aec-stage-badge" style="background: rgba(79, 70, 229, 0.12); color: var(--brand-blue); font-weight: 800;">STAGE 4: ACTIVE CONCURRENCY</span>
+                </div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-heading); margin-top: 2px;" id="aec-stage-title">
+                  Active Concurrency Shift (Live Multi-Node Assessment)
+                </h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted);" id="aec-stage-desc">
+                  Live examination shift underway. Millisecond cloud response synchronization and active proctoring enforced.
+                </p>
+              </div>
+
+              <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
+                <!-- 256-Bit Question Paper Lock Status Pill -->
+                <div id="paper-custody-pill" style="display: inline-flex; align-items: center; gap: 6px; padding: 0.35rem 0.75rem; border-radius: 9999px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; font-weight: 700; color: #047857;">
+                  <span id="paper-custody-icon">🔓</span>
+                  <span id="paper-custody-text">256-Bit Paper: Decrypted &amp; Live</span>
+                </div>
+
+                <button class="btn btn-outline btn-sm" id="btn-open-decrypt-modal" title="Master Question Paper Custody Decryption Key">
+                  🔑 Decryption Key
+                </button>
+                <button class="btn btn-primary btn-sm" id="btn-advance-phase-modal" style="background: linear-gradient(135deg, #321fdb, #4f46e5);">
+                  ⚡ Advance Phase &rarr;
+                </button>
+              </div>
+            </div>
+
+            <!-- Stepper Progress Bar -->
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 0.75rem;" id="aec-stepper-grid">
+              <div class="stepper-step completed" id="step-1" style="padding: 0.5rem; background: var(--bg-body); border-radius: var(--radius); border-left: 3px solid #10b981; font-size: 0.72rem;">
+                <div style="font-weight: 800; color: #10b981;">1. STAGED</div>
+                <div style="color: var(--text-muted); font-size: 0.68rem; margin-top: 2px;">Pre-flight Audit</div>
+              </div>
+              <div class="stepper-step completed" id="step-2" style="padding: 0.5rem; background: var(--bg-body); border-radius: var(--radius); border-left: 3px solid #10b981; font-size: 0.72rem;">
+                <div style="font-weight: 800; color: #10b981;">2. ADMISSIONS</div>
+                <div style="color: var(--text-muted); font-size: 0.68rem; margin-top: 2px;">Biometric Frisking</div>
+              </div>
+              <div class="stepper-step completed" id="step-3" style="padding: 0.5rem; background: var(--bg-body); border-radius: var(--radius); border-left: 3px solid #10b981; font-size: 0.72rem;">
+                <div style="font-weight: 800; color: #10b981;">3. DECRYPTED</div>
+                <div style="color: var(--text-muted); font-size: 0.68rem; margin-top: 2px;">Custody Released</div>
+              </div>
+              <div class="stepper-step active" id="step-4" style="padding: 0.5rem; background: rgba(79, 70, 229, 0.08); border-radius: var(--radius); border-left: 3px solid #4f46e5; font-size: 0.72rem;">
+                <div style="font-weight: 800; color: #4f46e5;">4. CONCURRENCY</div>
+                <div style="color: var(--text-main); font-size: 0.68rem; margin-top: 2px;">Active Shift</div>
+              </div>
+              <div class="stepper-step" id="step-5" style="padding: 0.5rem; background: var(--bg-body); border-radius: var(--radius); border-left: 3px solid var(--border-color); font-size: 0.72rem; opacity: 0.65;">
+                <div style="font-weight: 700; color: var(--text-muted);">5. CONCLUDED</div>
+                <div style="color: var(--text-muted); font-size: 0.68rem; margin-top: 2px;">Consoles Locked</div>
+              </div>
+              <div class="stepper-step" id="step-6" style="padding: 0.5rem; background: var(--bg-body); border-radius: var(--radius); border-left: 3px solid var(--border-color); font-size: 0.72rem; opacity: 0.65;">
+                <div style="font-weight: 700; color: var(--text-muted);">6. SEALED</div>
+                <div style="color: var(--text-muted); font-size: 0.68rem; margin-top: 2px;">Form 24-B Digest</div>
+              </div>
             </div>
           </div>
 
@@ -1468,6 +1532,9 @@
               </button>
               <button class="btn btn-outline btn-sm" id="btn-hall-resume" style="color: #10b981; border-color: #a7f3d0;" title="Resume countdown timer across active exams">
                 ▶️ Resume Hall
+              </button>
+              <button class="btn btn-outline btn-sm" id="btn-disaster-hold" style="color: #ef4444; border-color: #f87171; font-weight: 700;" title="Hall-wide Emergency Holding & Disaster Recovery Freeze">
+                🚨 Disaster Evacuation Hold
               </button>
               <button class="btn btn-outline btn-sm" id="btn-unlock-sessions" title="Release tab collisions and duplicate locks">
                 🔄 Release Concurrency Locks
@@ -1523,6 +1590,54 @@
               </div>
               <div id="incident-audit-log" style="font-family: var(--font-mono); font-size: 0.75rem; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; color: var(--text-main);">
                 <div style="color: #64748b;">[System Ready] Central Invigilator Proctoring Engine initialized &bull; Awaiting candidate telemetry.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PEARSON VUE / PROMETRIC TELEMETRY & ANOMALY RADAR -->
+          <div style="background: var(--bg-card); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--card-shadow);" id="telemetry-radar-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 8px;">
+                  <span>🛰️ Pearson VUE / Prometric Telemetry &amp; Anomaly Radar</span>
+                  <span class="badge-pill badge-live" style="background: #ecfdf5; color: #047857;">INTEGRITY INDEX: 99.4%</span>
+                </h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                  Real-time algorithmic detection of subnet IP collisions, high-frequency answer guessing velocity (&lt;3s/qn), and terminal packet jitter.
+                </p>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-refresh-radar" style="font-size: 0.75rem;">
+                🔄 Refresh Radar
+              </button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+              <!-- Radar Card 1: IP Collisions -->
+              <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">IP / Subnet Collisions</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #10b981; margin: 4px 0;" id="radar-ip-count">0 Detected</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">Zero proxy or multi-node collusion.</div>
+              </div>
+
+              <!-- Radar Card 2: Guessing Velocity -->
+              <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Rapid Guessing Velocity</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #10b981; margin: 4px 0;" id="radar-velocity-count">0 Anomalies</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">Reading interval threshold: &ge; 3.0s/item.</div>
+              </div>
+
+              <!-- Radar Card 3: Tab-Switch Clusters -->
+              <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Kiosk Tab-Switch Clusters</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: var(--brand-blue); margin: 4px 0;" id="radar-tab-count">0 Breaches</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">Active OS focus lock strictly enforced.</div>
+              </div>
+
+              <!-- Radar Card 4: Terminal Node Health -->
+              <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Active Nodes Online</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #10b981; margin: 4px 0;" id="radar-nodes-count">42 / 42 Nodes</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">100% terminals reporting NTP heartbeat.</div>
               </div>
             </div>
           </div>
@@ -2364,6 +2479,260 @@
           <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
             <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-bulk-reallocate').style.display='none'">Cancel</button>
             <button type="submit" class="btn btn-primary">Migrate All Selected &rarr;</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 1. EXAM LIFECYCLE PHASE ADVANCE MODAL -->
+    <div class="modal-backdrop" id="modal-phase-advance">
+      <div class="modal-box">
+        <h2>🏛️ Advance Examination Lifecycle Phase</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          National CBT Regulations: Authoritative phase transitions synchronize state machines across all candidate nodes.
+        </p>
+
+        <form id="form-phase-advance">
+          <div style="background: var(--bg-body); padding: 0.75rem 1rem; border-radius: var(--radius); margin-bottom: 1rem; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.78rem; color: var(--text-muted);">Current Active Stage:</div>
+            <div style="font-size: 1.1rem; font-weight: 800; color: var(--brand-blue);" id="modal-curr-stage-label">STAGE 4: ACTIVE CONCURRENCY</div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">Select Destination Stage</label>
+            <select class="form-input-ctrl" id="advance-target-phase" required>
+              <option value="staged">Stage 1: Staged &amp; Pre-Flight Audit</option>
+              <option value="admissions_open">Stage 2: Biometric Admissions Open</option>
+              <option value="paper_decrypted">Stage 3: 256-Bit Paper Decrypted</option>
+              <option value="active_concurrency" selected>Stage 4: Active Concurrency (Live Shift)</option>
+              <option value="concluded">Stage 5: Shift Concluded (Consoles Locked)</option>
+              <option value="tabulated_sealed">Stage 6: Tabulated &amp; Sealed (Form 24-B)</option>
+            </select>
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <label class="form-label">Controller Executive Directive Note</label>
+            <input type="text" class="form-input-ctrl" id="advance-phase-note" value="Authorized under SIMATS CBT Examination Directive 2026." required />
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-phase-advance').style.display='none'">Cancel</button>
+            <button type="submit" class="btn btn-primary">Authorize &amp; Advance Phase &rarr;</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 2. 256-BIT QUESTION PAPER CUSTODY DECRYPTION MODAL -->
+    <div class="modal-backdrop" id="modal-paper-decrypt">
+      <div class="modal-box">
+        <h2>🔒 256-Bit Question Paper Custody Decryption</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Pearson VUE / NTA Standard: Question paper items remain cryptographically locked in storage until the Chief Controller supplies the authoritative master custody key.
+        </p>
+
+        <form id="form-paper-decrypt">
+          <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius); padding: 0.85rem 1rem; margin-bottom: 1rem;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--brand-blue);">AES-256 DIGITAL CUSTODY PROTOCOL</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Key release immediately broadcasts <code>PAPER_DECRYPTED</code> token to all terminal nodes.</div>
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <label class="form-label">Master Custody Decryption Key</label>
+            <input type="password" class="form-input-ctrl" id="input-custody-key" placeholder="Enter Controller Custody Key (e.g. SSEC-NTA-KEY-2026)" required />
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+              Default Authorized Key: <code style="font-family: var(--font-mono); color: var(--brand-blue);">SSEC-NTA-KEY-2026</code>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-paper-decrypt').style.display='none'">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669);">Release Paper Custody &rarr;</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 3. PRE-FLIGHT INFRASTRUCTURE AUDIT MODAL -->
+    <div class="modal-backdrop" id="modal-infra-audit">
+      <div class="modal-box" style="max-width: 680px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h2>🩺 Pre-Flight Infrastructure Readiness Audit</h2>
+          <span class="badge-pill badge-live" style="background: #ecfdf5; color: #047857;">COMPLIANT</span>
+        </div>
+        <p style="font-size: 0.825rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Formal diagnostic audit of LAN latency, power backup, CCTV network feeds, and Google NTP synchronization.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; margin-bottom: 1.25rem;" id="audit-metrics-grid">
+          <div style="background: var(--bg-body); padding: 0.85rem; border-radius: var(--radius); border: 1px solid var(--border-color);">
+            <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">LAN NODE CONNECTIVITY</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin: 2px 0;">42 / 42 Online</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Avg Ping: 1.84ms &bull; Zero packet loss</div>
+          </div>
+
+          <div style="background: var(--bg-body); padding: 0.85rem; border-radius: var(--radius); border: 1px solid var(--border-color);">
+            <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">NTP TIME SYNCHRONIZATION</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin: 2px 0;">time.google.com</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Offset: 0.04ms &bull; Jitter: 1.84ms</div>
+          </div>
+
+          <div style="background: var(--bg-body); padding: 0.85rem; border-radius: var(--radius); border: 1px solid var(--border-color);">
+            <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">CCTV SURVEILLANCE FEEDS</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin: 2px 0;">16 / 16 Channels</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">1080p NVR Recording Active</div>
+          </div>
+
+          <div style="background: var(--bg-body); padding: 0.85rem; border-radius: var(--radius); border: 1px solid var(--border-color);">
+            <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">POWER &amp; GENERATOR TELEMETRY</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin: 2px 0;">230.5V (98.4% Batt)</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Diesel Generator on Auto-Standby</div>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-body); border: 1px dashed var(--border-color); border-radius: var(--radius); padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-family: var(--font-mono); font-size: 0.72rem;">
+          <div style="color: var(--text-muted);">Digital Audit Hash (SHA-256):</div>
+          <div style="color: var(--brand-blue); word-break: break-all; font-weight: 700;" id="audit-cert-hash">SHA256: 8FA19B4C720D...</div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-infra-audit').style.display='none'">Close</button>
+          <button type="button" class="btn btn-primary" id="btn-print-audit-cert">📜 Print Audit Certificate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. ADMISSIONS & BIOMETRIC CHECK-IN STATION MODAL -->
+    <div class="modal-backdrop" id="modal-admissions-checkin">
+      <div class="modal-box">
+        <h2>🎫 Candidate Admissions &amp; Biometric Station</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Entry gate check-in: Metal detector clearance, biometric palm/face verification, and terminal node allocation.
+        </p>
+
+        <form id="form-admissions-checkin">
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">Scan Barcode / Enter Registration Number or Roll No</label>
+            <input type="text" class="form-input-ctrl" id="checkin-cand-input" placeholder="e.g. 5254740(V4.3.7) or SSEC-A-CBT-0001" required />
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <label class="form-label">Biometric Match Score</label>
+              <input type="text" class="form-input-ctrl" id="checkin-bio-score" value="98.6% (Verified)" readonly />
+            </div>
+            <div>
+              <label class="form-label">Door Frame Metal Detector</label>
+              <select class="form-input-ctrl" id="checkin-metal-status">
+                <option value="CLEARED">CLEARED (No Metallic Contraband)</option>
+                <option value="FLAGGED">FLAGGED (Secondary Frisking Req)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <label class="form-label">Assigned Terminal Node</label>
+            <input type="text" class="form-input-ctrl" id="checkin-terminal-input" placeholder="e.g. Terminal C-042" value="Terminal C-042" required />
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-admissions-checkin').style.display='none'">Cancel</button>
+            <button type="submit" class="btn btn-primary">Admit &amp; Issue Terminal Seat &rarr;</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 5. OFFICIAL CENTER CLOSING REPORT (FORM 24-B) MODAL -->
+    <div class="modal-backdrop" id="modal-closing-report">
+      <div class="modal-box" style="max-width: 720px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h2>📋 Form 24-B: Center Closing Dossier</h2>
+          <span class="badge-pill" style="background: rgba(50, 31, 219, 0.1); color: var(--brand-blue); font-weight: 800;">OFFICIAL REPORT</span>
+        </div>
+        <p style="font-size: 0.825rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Statutory Center Superintendent Tabulation Dossier for National CBT Examinations.
+        </p>
+
+        <div style="background: #ffffff; color: #0f172a; border: 2px solid #1e293b; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.25rem; font-family: var(--font-sans);" id="closing-report-content">
+          <div style="text-align: center; border-bottom: 2px solid #1e293b; padding-bottom: 0.75rem; margin-bottom: 1rem;">
+            <div style="font-size: 1.1rem; font-weight: 900; letter-spacing: 0.05em;">SIMATS CBT EXAMINATION DIRECTORATE</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: #475569;">FORM 24-B &bull; OFFICIAL SHIFT CLOSING REPORT &bull; SHIFT A</div>
+            <div style="font-size: 0.75rem; color: #64748b;" id="cr-center-name">Center: SIMATS Digital Assessment Center (SIMATS-CBT-01)</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; text-align: center; margin-bottom: 1.25rem;">
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.65rem;">
+              <div style="font-size: 0.7rem; color: #64748b; font-weight: 700;">TOTAL REGISTERED</div>
+              <div style="font-size: 1.5rem; font-weight: 900; color: #1e293b;" id="cr-total-reg">--</div>
+            </div>
+            <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 0.65rem;">
+              <div style="font-size: 0.7rem; color: #166534; font-weight: 700;">APPEARED</div>
+              <div style="font-size: 1.5rem; font-weight: 900; color: #15803d;" id="cr-appeared">--</div>
+            </div>
+            <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; padding: 0.65rem;">
+              <div style="font-size: 0.7rem; color: #991b1b; font-weight: 700;">ABSENT</div>
+              <div style="font-size: 1.5rem; font-weight: 900; color: #b91c1c;" id="cr-absent">--</div>
+            </div>
+            <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 0.65rem;">
+              <div style="font-size: 0.7rem; color: #9a3412; font-weight: 700;">DEBARRED</div>
+              <div style="font-size: 1.5rem; font-weight: 900; color: #c2410c;" id="cr-debarred">0</div>
+            </div>
+          </div>
+
+          <div style="font-size: 0.78rem; line-height: 1.6; color: #334155; margin-bottom: 1rem;">
+            <div>&bull; <strong>Compensatory Concessions Granted:</strong> <span id="cr-comp-mins">0</span> minutes total (PwD/Glitch relief).</div>
+            <div>&bull; <strong>Cryptographic Response Digest:</strong> <code style="font-family: var(--font-mono); font-size: 0.72rem; color: #1e3a8a;" id="cr-sha256-seal">SHA256: 7C14AE9F...</code></div>
+            <div>&bull; <strong>Official Certifying Officer:</strong> Prof. M. Shanmugam (Chief Examination Controller)</div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 1rem; border-top: 1px solid #cbd5e1;">
+            <div style="font-size: 0.72rem; color: #64748b;">
+              Official Timestamp: <span id="cr-timestamp">--</span>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-family: 'Brush Script MT', cursive; font-size: 1.25rem; color: #1e3a8a;">Prof. M. Shanmugam</div>
+              <div style="font-size: 0.7rem; font-weight: 800; color: #0f172a;">Center Superintendent Seal</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-closing-report').style.display='none'">Close</button>
+          <button type="button" class="btn btn-primary" onclick="window.print()">🖨️ Print Form 24-B Dossier</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. DISASTER RECOVERY & EMERGENCY HOLD MODAL -->
+    <div class="modal-backdrop" id="modal-disaster-hold">
+      <div class="modal-box">
+        <h2 style="color: #ef4444;">🚨 Emergency Holding &amp; Disaster Recovery Freeze</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Center Operational Precaution: Immediately halts countdown timers across all terminal nodes, flushes active candidate responses to Cloud DB, and locks screens into standby mode.
+        </p>
+
+        <form id="form-disaster-hold">
+          <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius); padding: 0.85rem 1rem; margin-bottom: 1rem;">
+            <div style="font-size: 0.8rem; font-weight: 800; color: #b91c1c;">DISASTER DRILL / EVACUATION PROTOCOL</div>
+            <div style="font-size: 0.75rem; color: var(--text-main); margin-top: 2px;">
+              Candidate answers are safely stored in Supabase before timer freeze is activated.
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <label class="form-label">Operational Hold Reason</label>
+            <select class="form-input-ctrl" id="disaster-reason-select">
+              <option value="Precautionary Fire / Evacuation Safety Drill">Precautionary Fire / Evacuation Safety Drill</option>
+              <option value="Center Mains Power Switchover to Secondary Diesel Generator">Center Mains Power Switchover to Secondary Diesel Generator</option>
+              <option value="LAN Network Switch Maintenance &amp; Cable Reseat">LAN Network Switch Maintenance &amp; Cable Reseat</option>
+              <option value="Severe Weather / Natural Event Precautionary Standby">Severe Weather / Natural Event Precautionary Standby</option>
+            </select>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-disaster-hold').style.display='none'">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="background: #dc2626; border-color: #dc2626;">Execute Disaster Hold &rarr;</button>
           </div>
         </form>
       </div>

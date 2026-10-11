@@ -100,3 +100,6 @@ def test_full_candidate_examination_lifecycle():
     assert "score" in result_data
     assert "percentile" in result_data
     assert result_data["reference"] == submit_data["reference"]
+
+    # Teardown: Clean up test candidate to ensure zero persistent dummy records in Cloud DB
+    client.delete(f"/api/v1/candidates/{candidate['id']}", headers=headers)

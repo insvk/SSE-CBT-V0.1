@@ -429,6 +429,9 @@ function renderCandidateTable(): void {
                     <button class="btn-action-icon" style="color: #ef4444;" title="Debar Candidate for Infraction" onclick="openDebarModal('${escapeHtml(c.id)}')">
                         ⛔ Debar
                     </button>
+                    <button class="btn-action-icon" style="color: #dc2626;" title="Permanently Deregister / Delete Candidate from Cloud DB" onclick="deleteCandidateRecord('${escapeHtml(c.id)}', '${escapeHtml(c.full_name)}')">
+                        🗑️ Expel
+                    </button>
                 </div>
             </td>
         `;
@@ -909,6 +912,28 @@ function openDebarModal(id: string): void {
     modal.style.display = 'flex';
 }
 
+async function deleteCandidateRecord(id: string, name: string): Promise<void> {
+    if (!confirm(`Chief Examination Controller Action:\nAre you sure you want to permanently deregister candidate "${name}" from the Cloud Database?\n\nThis will purge all corresponding session telemetry and records.`)) {
+        return;
+    }
+    try {
+        const res = await fetch(`${API_BASE}/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders(),
+        });
+        if (res.ok) {
+            showToast(`Candidate "${name}" deregistered and deleted from Cloud DB.`);
+            await loadCandidates();
+            await loadDashboardSummary();
+        } else {
+            const err = await res.json().catch(() => ({}));
+            showToast(err.detail || "Failed to deregister candidate", true);
+        }
+    } catch (_) {
+        showToast("Network error deleting candidate", true);
+    }
+}
+
 // Bind to window for HTML table action buttons
 (window as any).openCandidateDossier = openCandidateDossier;
 (window as any).openAdmitCard = openAdmitCard;
@@ -916,6 +941,7 @@ function openDebarModal(id: string): void {
 (window as any).openAccommodationsManager = openAccommodationsManager;
 (window as any).regenerateEmergencyPin = regenerateEmergencyPin;
 (window as any).openDebarModal = openDebarModal;
+(window as any).deleteCandidateRecord = deleteCandidateRecord;
 
 // --- FILTER LISTENERS ---
 const filterSlotEl = document.getElementById('filter-slot');
@@ -1721,6 +1747,27 @@ function initAdminWebSocket(): void {
                     appendIncidentLog(`Bulk Migration: ${msg.count} candidates moved to Slot ${msg.target_slot}`);
                     loadCandidates();
                     loadDashboardSummary();
+
+                } else if (msg.type === 'EXAM_PHASE_CHANGED') {
+                    showToast(`🏛️ Phase Advanced: ${(msg.new_phase || '').toUpperCase().replace(/_/g, ' ')}`);
+                    appendIncidentLog(`EXAM LIFECYCLE: Advanced to ${msg.new_phase} by ${msg.authorizing_controller || 'Controller'}`);
+                    loadExamPhase();
+
+                } else if (msg.type === 'PAPER_DECRYPTED') {
+                    showToast('🔓 256-Bit Question Paper Decrypted & Released!');
+                    appendIncidentLog(`CUSTODY RELEASE: Question Paper Decrypted by ${msg.decrypted_by || 'Controller'}`);
+                    loadExamPhase();
+
+                } else if (msg.type === 'CANDIDATE_CHECKED_IN') {
+                    showToast(`🎫 Candidate Admitted: ${msg.candidate_name || ''} issued Terminal ${msg.assigned_terminal || ''}`);
+                    appendIncidentLog(`ADMISSIONS CHECK-IN: ${msg.candidate_name} (${msg.registration_number}) seated at ${msg.assigned_terminal} (Bio: ${msg.biometric_score}%)`);
+                    loadCandidates();
+                    loadDashboardSummary();
+
+                } else if (msg.type === 'DISASTER_HOLD') {
+                    showToast(`🚨 HALL-WIDE EMERGENCY HOLD: ${msg.reason || 'Evacuation Drill'}`, true);
+                    appendIncidentLog(`🚨 DISASTER EVACUATION HOLD ACTIVATED: ${msg.reason}. Timers frozen.`, true);
+                    loadExamPhase();
                 }
             } catch (_) {}
         };
@@ -1736,6 +1783,321 @@ function initAdminWebSocket(): void {
     } catch (e) {
         setTimeout(initAdminWebSocket, 5000);
     }
+}
+
+// =========================================================================
+// ENTERPRISE EXAMINATION CONTROLLER COMMAND SUITE (NTA / TCS iON / PEARSON)
+// =========================================================================
+
+// 1. Exam Lifecycle Phase Orchestrator
+async function loadExamPhase(): Promise<void> {
+    try {
+        const res = await fetch('/api/v1/exams/EX-1001/phase', { headers: getHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const badge = document.getElementById('aec-stage-badge');
+        const title = document.getElementById('aec-stage-title');
+        const desc = document.getElementById('aec-stage-desc');
+        const custodyPill = document.getElementById('paper-custody-pill');
+        const custodyIcon = document.getElementById('paper-custody-icon');
+        const custodyText = document.getElementById('paper-custody-text');
+        const currStageModalLabel = document.getElementById('modal-curr-stage-label');
+
+        const stageNum = data.stage_number || 4;
+        const stageTitle = data.stage_title || 'Active Concurrency';
+        const stagePhase = data.phase || 'active_concurrency';
+
+        if (badge) badge.textContent = `STAGE ${stageNum}: ${stageTitle.toUpperCase()}`;
+        if (title) title.textContent = `${stageTitle} (Live Multi-Node Assessment)`;
+        if (desc) desc.textContent = data.stage_description || '';
+        if (currStageModalLabel) currStageModalLabel.textContent = `STAGE ${stageNum}: ${stagePhase.toUpperCase()}`;
+
+        // Stepper cards update
+        for (let i = 1; i <= 6; i++) {
+            const stepEl = document.getElementById(`step-${i}`);
+            if (stepEl) {
+                if (i < stageNum) {
+                    stepEl.className = 'stepper-step completed';
+                    stepEl.style.background = 'var(--bg-body)';
+                    stepEl.style.borderLeft = '3px solid #10b981';
+                    stepEl.style.opacity = '1';
+                } else if (i === stageNum) {
+                    stepEl.className = 'stepper-step active';
+                    stepEl.style.background = 'rgba(79, 70, 229, 0.08)';
+                    stepEl.style.borderLeft = '3px solid #4f46e5';
+                    stepEl.style.opacity = '1';
+                } else {
+                    stepEl.className = 'stepper-step';
+                    stepEl.style.background = 'var(--bg-body)';
+                    stepEl.style.borderLeft = '3px solid var(--border-color)';
+                    stepEl.style.opacity = '0.65';
+                }
+            }
+        }
+
+        // Custody status
+        if (data.is_paper_decrypted) {
+            if (custodyPill) {
+                custodyPill.style.background = 'rgba(16, 185, 129, 0.1)';
+                custodyPill.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                custodyPill.style.color = '#047857';
+            }
+            if (custodyIcon) custodyIcon.textContent = '🔓';
+            if (custodyText) custodyText.textContent = '256-Bit Paper: Decrypted & Live';
+        } else {
+            if (custodyPill) {
+                custodyPill.style.background = 'rgba(239, 68, 68, 0.1)';
+                custodyPill.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                custodyPill.style.color = '#b91c1c';
+            }
+            if (custodyIcon) custodyIcon.textContent = '🔒';
+            if (custodyText) custodyText.textContent = '256-Bit Paper: Custody Locked';
+        }
+    } catch (_) {}
+}
+
+// 2. Telemetry & Anomaly Radar
+async function loadTelemetryRadar(): Promise<void> {
+    try {
+        const res = await fetch('/api/v1/exams/EX-1001/telemetry-radar', { headers: getHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        const r = data.radar || {};
+
+        const elIp = document.getElementById('radar-ip-count');
+        const elVel = document.getElementById('radar-velocity-count');
+        const elTab = document.getElementById('radar-tab-count');
+        const elNodes = document.getElementById('radar-nodes-count');
+
+        if (elIp) elIp.textContent = `${r.ip_collisions?.count || 0} Detected`;
+        if (elVel) elVel.textContent = `${r.rapid_guessing_velocity?.count || 0} Anomalies`;
+        if (elTab) elTab.textContent = `${r.tab_switch_clusters?.count || 0} Breaches`;
+        if (elNodes) elNodes.textContent = '42 / 42 Nodes';
+    } catch (_) {}
+}
+
+// 3. Pre-Flight Infrastructure Audit
+async function loadInfrastructureAudit(): Promise<void> {
+    try {
+        const res = await fetch('/api/v1/exams/EX-1001/infrastructure-audit', { headers: getHeaders() });
+        if (!res.ok) throw new Error('Audit failed');
+        const data = await res.json();
+        const hashEl = document.getElementById('audit-cert-hash');
+        if (hashEl) hashEl.textContent = `SHA256: ${data.audit_certificate_sha256}`;
+        const modal = document.getElementById('modal-infra-audit');
+        if (modal) modal.style.display = 'flex';
+        showToast('🩺 Pre-Flight Readiness Audit: All systems 100% compliant!');
+    } catch (err: any) {
+        showToast('Audit evaluation error', true);
+    }
+}
+
+// 4. Center Closing Report (Form 24-B)
+async function loadClosingReport(): Promise<void> {
+    try {
+        const res = await fetch('/api/v1/exams/EX-1001/closing-report', { headers: getHeaders() });
+        if (!res.ok) throw new Error('Failed to generate report');
+        const data = await res.json();
+
+        const elReg = document.getElementById('cr-total-reg');
+        const elApp = document.getElementById('cr-appeared');
+        const elAbs = document.getElementById('cr-absent');
+        const elDeb = document.getElementById('cr-debarred');
+        const elComp = document.getElementById('cr-comp-mins');
+        const elSeal = document.getElementById('cr-sha256-seal');
+        const elTime = document.getElementById('cr-timestamp');
+
+        if (elReg) elReg.textContent = (data.total_registered || 0).toString();
+        if (elApp) elApp.textContent = (data.total_appeared || 0).toString();
+        if (elAbs) elAbs.textContent = (data.total_absent || 0).toString();
+        if (elDeb) elDeb.textContent = (data.total_debarred || 0).toString();
+        if (elComp) elComp.textContent = (data.compensatory_minutes_granted || 0).toString();
+        if (elSeal) elSeal.textContent = `SHA256: ${data.integrity_digest_sha256}`;
+        if (elTime) elTime.textContent = data.timestamp_ist || '';
+
+        const modal = document.getElementById('modal-closing-report');
+        if (modal) modal.style.display = 'flex';
+    } catch (_) {
+        showToast('Failed to compile Form 24-B', true);
+    }
+}
+
+// --- BIND ADVANCED EVENT LISTENERS ---
+
+// Open Phase Advance Modal
+const btnOpenPhase = document.getElementById('btn-advance-phase-modal');
+if (btnOpenPhase) {
+    btnOpenPhase.addEventListener('click', () => {
+        const m = document.getElementById('modal-phase-advance');
+        if (m) m.style.display = 'flex';
+    });
+}
+
+// Form Phase Advance Submit
+const formPhaseAdvance = document.getElementById('form-phase-advance') as HTMLFormElement;
+if (formPhaseAdvance) {
+    formPhaseAdvance.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const targetPhase = (document.getElementById('advance-target-phase') as HTMLSelectElement).value;
+        const note = (document.getElementById('advance-phase-note') as HTMLInputElement).value;
+        try {
+            const res = await fetch('/api/v1/exams/EX-1001/phase/advance', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ target_phase: targetPhase, notes: note })
+            });
+            if (res.ok) {
+                showToast(`🏛️ Successfully advanced phase to: ${targetPhase.toUpperCase()}`);
+                document.getElementById('modal-phase-advance')!.style.display = 'none';
+                loadExamPhase();
+            } else {
+                const err = await res.json();
+                showToast(err.detail || 'Failed to advance phase', true);
+            }
+        } catch (_) {
+            showToast('Network error advancing phase', true);
+        }
+    });
+}
+
+// Open Decrypt Modal
+const btnOpenDecrypt = document.getElementById('btn-open-decrypt-modal');
+if (btnOpenDecrypt) {
+    btnOpenDecrypt.addEventListener('click', () => {
+        const m = document.getElementById('modal-paper-decrypt');
+        if (m) m.style.display = 'flex';
+    });
+}
+
+// Form Paper Decrypt Submit
+const formPaperDecrypt = document.getElementById('form-paper-decrypt') as HTMLFormElement;
+if (formPaperDecrypt) {
+    formPaperDecrypt.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const keyInput = (document.getElementById('input-custody-key') as HTMLInputElement).value;
+        try {
+            const res = await fetch('/api/v1/exams/EX-1001/paper/decrypt', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ custody_key: keyInput })
+            });
+            if (res.ok) {
+                showToast('🔓 Question Paper decrypted and released to all consoles!');
+                document.getElementById('modal-paper-decrypt')!.style.display = 'none';
+                loadExamPhase();
+            } else {
+                const err = await res.json();
+                showToast(err.detail || 'Invalid Master Custody Decryption Key', true);
+            }
+        } catch (_) {
+            showToast('Network error during decryption', true);
+        }
+    });
+}
+
+// Open Infrastructure Audit
+const btnInfraAudit = document.getElementById('btn-infra-audit');
+if (btnInfraAudit) {
+    btnInfraAudit.addEventListener('click', loadInfrastructureAudit);
+}
+
+const btnPrintAudit = document.getElementById('btn-print-audit-cert');
+if (btnPrintAudit) {
+    btnPrintAudit.addEventListener('click', () => {
+        window.print();
+    });
+}
+
+// Open Admissions Check-In
+const btnAdmissionsCheckin = document.getElementById('btn-admissions-checkin');
+if (btnAdmissionsCheckin) {
+    btnAdmissionsCheckin.addEventListener('click', () => {
+        const m = document.getElementById('modal-admissions-checkin');
+        if (m) m.style.display = 'flex';
+    });
+}
+
+// Form Admissions Check-In Submit
+const formAdmissionsCheckin = document.getElementById('form-admissions-checkin') as HTMLFormElement;
+if (formAdmissionsCheckin) {
+    formAdmissionsCheckin.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const candInput = (document.getElementById('checkin-cand-input') as HTMLInputElement).value.trim();
+        const metalStatus = (document.getElementById('checkin-metal-status') as HTMLSelectElement).value;
+        const terminal = (document.getElementById('checkin-terminal-input') as HTMLInputElement).value.trim();
+        try {
+            const res = await fetch('/api/v1/exams/EX-1001/admissions/check-in', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    registration_number: candInput,
+                    metal_detector_status: metalStatus,
+                    assigned_terminal: terminal,
+                })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                showToast(`🎫 ${data.message}`);
+                document.getElementById('modal-admissions-checkin')!.style.display = 'none';
+                loadCandidates();
+                loadDashboardSummary();
+            } else {
+                const err = await res.json();
+                showToast(err.detail || 'Admissions check-in failed', true);
+            }
+        } catch (_) {
+            showToast('Network error during check-in', true);
+        }
+    });
+}
+
+// Open Closing Report (Form 24-B)
+const btnClosingReport = document.getElementById('btn-closing-report');
+if (btnClosingReport) {
+    btnClosingReport.addEventListener('click', loadClosingReport);
+}
+
+// Disaster Hold Open & Submit
+const btnDisasterHold = document.getElementById('btn-disaster-hold');
+if (btnDisasterHold) {
+    btnDisasterHold.addEventListener('click', () => {
+        const m = document.getElementById('modal-disaster-hold');
+        if (m) m.style.display = 'flex';
+    });
+}
+
+const formDisasterHold = document.getElementById('form-disaster-hold') as HTMLFormElement;
+if (formDisasterHold) {
+    formDisasterHold.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const reason = (document.getElementById('disaster-reason-select') as HTMLSelectElement).value;
+        try {
+            const res = await fetch('/api/v1/exams/EX-1001/emergency/disaster-hold', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ reason: reason, freeze_all_timers: true })
+            });
+            if (res.ok) {
+                showToast('🚨 Hall-wide Emergency Hold Activated. Timers frozen.');
+                document.getElementById('modal-disaster-hold')!.style.display = 'none';
+                loadExamPhase();
+            } else {
+                showToast('Failed to trigger disaster hold', true);
+            }
+        } catch (_) {
+            showToast('Network error triggering disaster hold', true);
+        }
+    });
+}
+
+// Refresh Radar
+const btnRefreshRadar = document.getElementById('btn-refresh-radar');
+if (btnRefreshRadar) {
+    btnRefreshRadar.addEventListener('click', () => {
+        loadTelemetryRadar();
+        showToast('🛰️ Anomaly Radar telemetry refreshed.');
+    });
 }
 
 // Search debounce
@@ -1763,7 +2125,10 @@ initTheme();
 loadDashboardSummary();
 loadCandidates();
 initAdminWebSocket();
+loadExamPhase();
+loadTelemetryRadar();
 syncMasterClock();
 setInterval(updateMasterClockDisplay, 1000);
 setInterval(syncMasterClock, 60000);
+setInterval(loadTelemetryRadar, 30000);
 

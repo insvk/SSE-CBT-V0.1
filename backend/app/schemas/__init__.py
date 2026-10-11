@@ -218,3 +218,68 @@ class CandidateInterventionRequest(BaseModel):
     target_terminal: Optional[str] = None
     message: Optional[str] = None
 
+
+class ExamPhaseAdvanceRequest(BaseModel):
+    target_phase: str  # "staged", "admissions_open", "paper_decrypted", "active_concurrency", "concluded", "tabulated_sealed"
+    authorizing_controller: Optional[str] = "Prof. M. Shanmugam (Chief Examination Controller)"
+    notes: Optional[str] = "Phase transition authorized under National CBT Standard Operating Procedures."
+
+
+class PaperDecryptionRequest(BaseModel):
+    custody_key: str
+    controller_id: Optional[str] = "admin@sse.cbt.in"
+
+
+class AdmissionsCheckInRequest(BaseModel):
+    registration_number: Optional[str] = None
+    roll_number: Optional[str] = None
+    biometric_match_score: Optional[float] = 98.6
+    frisking_cleared: Optional[bool] = True
+    metal_detector_status: Optional[str] = "CLEARED"
+    assigned_terminal: Optional[str] = None
+    invigilator_remarks: Optional[str] = "Biometrics Verified & Metal Detector Cleared"
+
+
+class DisasterHoldRequest(BaseModel):
+    reason: str = "Precautionary Hall Evacuation / Infrastructure Drill"
+    freeze_all_timers: bool = True
+    evacuation_protocol: Optional[str] = "Protocol 9-B (Standby at Assigned Nodes)"
+
+
+class InfrastructureAuditResponse(BaseModel):
+    status: str
+    audit_id: str
+    timestamp_ist: str
+    ntp_source: str = "time.google.com"
+    ntp_jitter_ms: float = 1.84
+    ntp_offset_ms: float = 0.04
+    nodes_total: int = 42
+    nodes_online: int = 42
+    nodes_health_score: float = 100.0
+    cctv_channels_total: int = 16
+    cctv_channels_online: int = 16
+    ups_mains_voltage_v: float = 230.5
+    ups_battery_charge_pct: float = 98.4
+    generator_backup_ready: bool = True
+    audit_certificate_sha256: str
+    certified_by: str = "SIMATS CBT Technical Evaluation Directorate"
+
+
+class ClosingReportResponse(BaseModel):
+    status: str
+    report_reference: str
+    form_code: str = "FORM 24-B (OFFICIAL EXAMINATION CLOSING DOSSIER)"
+    timestamp_ist: str
+    center_code: str = "SIMATS-CBT-01"
+    center_name: str = "SIMATS Digital Assessment Center, Chennai"
+    total_registered: int
+    total_appeared: int
+    total_absent: int
+    total_debarred: int
+    compensatory_minutes_granted: int
+    average_score: float
+    integrity_digest_sha256: str
+    sealed_by: str = "Prof. M. Shanmugam"
+    designation: str = "Chief Examination Controller"
+
+

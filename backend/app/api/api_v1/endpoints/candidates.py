@@ -168,8 +168,8 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
             b = (c.get("metadata") or {}).get("batch", "A").upper()
             batch_counts[b] = batch_counts.get(b, 0) + 1
 
-        # Real question count & subjects
-        q_res = db.table("questions").select("id, subject").execute()
+        # Real question count & subjects from Cloud DB
+        q_res = db.table("question_bank").select("id, subject").execute()
         questions = q_res.data or []
         total_questions = len(questions)
         subject_breakdown = {}
@@ -805,22 +805,29 @@ def bulk_assign(
     }
 
 
-@router.delete("/{candidate_id}")
+@router.post("/{candidate_id}/suspend")
 def suspend_candidate(candidate_id: str, user_context: dict = Depends(require_admin_user)):
     """Suspends a candidate in the database (Admin Only)."""
     tid = user_context["tenant_id"]
     db = get_db()
 
     try:
-        res = db.table("candidates").select("*").eq("tenant_id", tid).eq("id", candidate_id).execute()
+        query = db.table("candidates").select("*").eq("tenant_id", tid)
+        if len(candidate_id) == 36 and "-" in candidate_id:
+            query = query.eq("id", candidate_id)
+        else:
+            query = query.eq("registration_number", candidate_id)
+
+        res = query.execute()
         if not res.data:
             raise HTTPException(status_code=404, detail="Candidate not found")
 
         curr = res.data[0]
+        actual_id = curr["id"]
         meta = curr.get("metadata") or {}
         meta["status"] = "suspended"
 
-        db.table("candidates").update({"metadata": meta}).eq("id", candidate_id).execute()
+        db.table("candidates").update({"metadata": meta}).eq("id", actual_id).execute()
         return {"status": "success", "message": "Candidate suspended"}
     except HTTPException:
         raise
@@ -883,3 +890,66 @@ async def reset_candidate_attempt(candidate_id: str, user_context: dict = Depend
     except Exception as e:
         logger.error("Failed to reset candidate attempt: %s", e)
         raise HTTPException(status_code=500, detail=f"Database reset failed: {str(e)}")
+
+
+@router.delete("/{candidate_id}")
+async def delete_candidate(candidate_id: str, user_context: dict = Depends(require_admin_user)):
+    """
+    Chief Examination Controller Tool:
+    Permanently deregisters candidate from Cloud Database, cascades related attempts,
+    and broadcasts event in real-time.
+    """
+    tid = user_context["tenant_id"]
+    db = get_db()
+    ensure_tenant_exists(db, tid)
+
+    try:
+        # Check if candidate exists by UUID or registration_number
+        query = db.table("candidates").select("id, full_name, registration_number").eq("tenant_id", tid)
+        if len(candidate_id) == 36 and "-" in candidate_id:
+            query = query.eq("id", candidate_id)
+        else:
+            query = query.eq("registration_number", candidate_id)
+        
+        res = query.limit(1).execute()
+        if not res.data:
+            # Also try by id directly if not found
+            res = db.table("candidates").select("id, full_name, registration_number").eq("id", candidate_id).limit(1).execute()
+
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Candidate not found in database")
+
+        cand = res.data[0]
+        actual_id = str(cand["id"])
+        cand_name = cand.get("full_name", "")
+        reg_no = cand.get("registration_number", "")
+
+        # Cascade delete attempts
+        try:
+            db.table("exam_attempts").delete().eq("candidate_id", actual_id).execute()
+        except Exception as e:
+            logger.warning(f"Failed to cascade delete attempts for {actual_id}: {e}")
+
+        # Delete candidate
+        db.table("candidates").delete().eq("id", actual_id).execute()
+
+        await ws_manager.broadcast("admin_feed", {
+            "type": "CANDIDATE_DELETED",
+            "candidate_id": actual_id,
+            "registration_number": reg_no,
+            "candidate_name": cand_name,
+            "timestamp": time.time(),
+            "timestamp_ist": format_ist_now(),
+        })
+
+        return {
+            "status": "success",
+            "message": f"Candidate {cand_name} ({reg_no}) permanently deregistered from Cloud Database.",
+            "candidate_id": actual_id,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to delete candidate: %s", e)
+        raise HTTPException(status_code=500, detail=f"Database delete failed: {str(e)}")
+

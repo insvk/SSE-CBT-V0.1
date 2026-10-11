@@ -1,196 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>General Examination Instructions | JEE (Main) CBT</title>
-    <script>
-      (function() {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          window.location.replace('/login.html');
-        }
-      })();
-    </script>
-    
-    <style>
-      body {
-        background: #f1f5f9;
-        padding: 2.5rem 1rem;
-        font-family: var(--font-sans);
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>General Examination Instructions | ASSESSMENT CBT</title>
+  <script>
+    (function () {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        window.location.replace('/login.html');
       }
-      .instructions-container {
-        max-width: 960px;
-        margin: 0 auto;
-        background: white;
-        padding: 3rem;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-lg);
-        border: 1px solid var(--border-color);
-      }
-      .inst-header {
-        text-align: center;
-        border-bottom: 2px solid var(--primary);
-        padding-bottom: 1.5rem;
-        margin-bottom: 2rem;
-      }
-      .inst-header h1 {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: var(--text-main);
-      }
-      .inst-header p {
-        font-size: 0.95rem;
-        color: var(--text-muted);
-        margin-top: 0.35rem;
-      }
-      .instructions-body {
-        font-size: 0.975rem;
-        line-height: 1.7;
-        color: #334155;
-      }
-      .section-heading {
-        color: #1e3a8a;
-        font-weight: 800;
-        margin: 1.5rem 0 0.75rem 0;
-        font-size: 1.15rem;
-      }
-      .symbol-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 1rem 0 1.5rem 0;
-      }
-      .symbol-table td {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid var(--border-color);
-        vertical-align: middle;
-      }
-      .symbol-box {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 30px;
-        font-weight: 800;
-        font-size: 0.85rem;
-        color: white;
-      }
-      .declaration-panel {
-        background: #eff6ff;
-        border: 1.5px solid #bfdbfe;
-        padding: 1.5rem;
-        border-radius: var(--radius);
-        margin: 2rem 0;
-      }
-    </style>
-    <link rel="stylesheet" href="/assets/style-5f067ebd.css">
-  </head>
-  <body>
-    
-    <div class="instructions-container">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
-        <div style="display: flex; gap: 1rem; align-items: center;">
-          <a href="/candidate_dashboard.html" style="color: #2563eb; font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-            &larr; Back to Dashboard
-          </a>
-          <span style="color: #cbd5e1;">|</span>
-          <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear();" style="color: #ef4444; font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-            Exit to Login
-          </a>
-        </div>
-        <div style="font-size: 0.825rem; color: #64748b; font-weight: 600;">
-          Candidate: <span id="inst-cand-name" style="color: #1e3a8a; font-weight: 700;">Registered Candidate</span> &bull; Terminal: <code style="color: #0284c7;">C-042</code>
-        </div>
+    })();
+  </script>
+  
+  <style>
+    body {
+      background: #f1f5f9;
+      padding: 2.5rem 1rem;
+      font-family: var(--font-sans);
+    }
+
+    .instructions-container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: white;
+      padding: 3rem;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+    }
+
+    .inst-header {
+      text-align: center;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .inst-header h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .inst-header p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+
+    .instructions-body {
+      font-size: 0.975rem;
+      line-height: 1.7;
+      color: #334155;
+    }
+
+    .section-heading {
+      color: #1e3a8a;
+      font-weight: 800;
+      margin: 1.5rem 0 0.75rem 0;
+      font-size: 1.15rem;
+    }
+
+    .symbol-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0 1.5rem 0;
+    }
+
+    .symbol-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    .symbol-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 30px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      color: white;
+    }
+
+    .declaration-panel {
+      background: #eff6ff;
+      border: 1.5px solid #bfdbfe;
+      padding: 1.5rem;
+      border-radius: var(--radius);
+      margin: 2rem 0;
+    }
+  </style>
+  <link rel="stylesheet" href="/assets/style-5f067ebd.css">
+</head>
+
+<body>
+
+  <div class="instructions-container">
+    <div
+      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <a href="/candidate_dashboard.html"
+          style="color: #2563eb; font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+          &larr; Back to Dashboard
+        </a>
+        <span style="color: #cbd5e1;">|</span>
+        <a href="/login.html" onclick="localStorage.clear(); sessionStorage.clear();"
+          style="color: #ef4444; font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+          Exit to Login
+        </a>
       </div>
-
-      <div class="inst-header">
-        <h1>NATIONAL TESTING AGENCY</h1>
-        <p>Joint Entrance Examination (Main) — Computer Based Test Guidelines</p>
-      </div>
-
-      <div class="instructions-body">
-        <h3 class="section-heading">1. General Information &amp; Authoritative Server Clock</h3>
-        <ul style="padding-left: 1.5rem; margin-bottom: 1.5rem;">
-          <li>Total duration of examination is <strong>180 minutes</strong> (3 hours).</li>
-          <li>The clock is synchronized with the central examination server. The timer in the top-right corner displays the remaining time available. When the timer reaches zero, the examination will automatically submit.</li>
-          <li>Each correct answer awards <strong>+4.0 marks</strong>. Each incorrect response incurs <strong>-1.0 mark</strong>. Unanswered questions receive <strong>0 marks</strong>.</li>
-        </ul>
-
-        <h3 class="section-heading">2. Question Palette Status Symbols</h3>
-        <table class="symbol-table">
-          <tr>
-            <td style="width: 60px;">
-              <span class="symbol-box" style="background: #94a3b8; border-radius: 4px;">01</span>
-            </td>
-            <td><strong>Not Visited:</strong> You have not visited the question yet.</td>
-          </tr>
-          <tr>
-            <td>
-              <span class="symbol-box badge-not-answered">02</span>
-            </td>
-            <td><strong>Not Answered:</strong> You have visited the question but have not answered it yet.</td>
-          </tr>
-          <tr>
-            <td>
-              <span class="symbol-box badge-answered">03</span>
-            </td>
-            <td><strong>Answered:</strong> You have answered the question.</td>
-          </tr>
-          <tr>
-            <td>
-              <span class="symbol-box badge-review">04</span>
-            </td>
-            <td><strong>Marked for Review:</strong> You have NOT answered the question, but have marked it for review.</td>
-          </tr>
-          <tr>
-            <td>
-              <span class="symbol-box badge-answered-review">05</span>
-            </td>
-            <td><strong>Answered &amp; Marked for Review:</strong> The question will be evaluated in final scoring.</td>
-          </tr>
-        </table>
-
-        <div class="declaration-panel">
-          <label style="display: flex; align-items: flex-start; gap: 1rem; cursor: pointer;">
-            <input type="checkbox" id="declaration-check" style="margin-top: 0.25rem; width: 1.4rem; height: 1.4rem; accent-color: var(--primary);">
-            <span style="font-size: 0.9rem; font-weight: 600; color: #1e3a8a;">
-              I have read and understood all instructions. All computer hardware allotted to me is in proper working condition. I declare that I am not in possession of any unauthorized electronic gadget.
-            </span>
-          </label>
-        </div>
-
-        <div style="text-align: center; margin-top: 2rem;">
-          <button class="btn btn-primary btn-lg" id="btn-proceed" style="padding: 1rem 3.5rem; font-size: 1.1rem;" disabled>
-            I am Ready to Begin &rarr;
-          </button>
-        </div>
+      <div style="font-size: 0.825rem; color: #64748b; font-weight: 600;">
+        Candidate: <span id="inst-cand-name" style="color: #1e3a8a; font-weight: 700;">Registered Candidate</span>
+        &bull; Terminal: <code style="color: #0284c7;">C-042</code>
       </div>
     </div>
 
-    <script>
-      const check = document.getElementById('declaration-check');
-      const btn = document.getElementById('btn-proceed');
+    <div class="inst-header">
+      <h1>NATIONAL TESTING AGENCY</h1>
+      <p>Joint Entrance Examination (Main) — Computer Based Test Guidelines</p>
+    </div>
 
-      const candNameSpan = document.getElementById('inst-cand-name');
-      if (candNameSpan) {
-        const storedName = localStorage.getItem('candidate_name');
-        const storedReg = localStorage.getItem('reg_no');
-        if (storedName) candNameSpan.textContent = storedName + (storedReg ? ` (${storedReg})` : '');
-      }
+    <div class="instructions-body">
+      <h3 class="section-heading">1. General Information &amp; Authoritative Server Clock</h3>
+      <ul style="padding-left: 1.5rem; margin-bottom: 1.5rem;">
+        <li>Total duration of examination is <strong>180 minutes</strong> (3 hours).</li>
+        <li>The clock is synchronized with the central examination server. The timer in the top-right corner displays
+          the remaining time available. When the timer reaches zero, the examination will automatically submit.</li>
+        <li>Each correct answer awards <strong>+4.0 marks</strong>. Each incorrect response incurs <strong>-1.0
+            mark</strong>. Unanswered questions receive <strong>0 marks</strong>.</li>
+      </ul>
 
-      check.addEventListener('change', (e) => {
-        btn.disabled = !e.target.checked;
-      });
+      <h3 class="section-heading">2. Question Palette Status Symbols</h3>
+      <table class="symbol-table">
+        <tr>
+          <td style="width: 60px;">
+            <span class="symbol-box" style="background: #94a3b8; border-radius: 4px;">01</span>
+          </td>
+          <td><strong>Not Visited:</strong> You have not visited the question yet.</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="symbol-box badge-not-answered">02</span>
+          </td>
+          <td><strong>Not Answered:</strong> You have visited the question but have not answered it yet.</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="symbol-box badge-answered">03</span>
+          </td>
+          <td><strong>Answered:</strong> You have answered the question.</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="symbol-box badge-review">04</span>
+          </td>
+          <td><strong>Marked for Review:</strong> You have NOT answered the question, but have marked it for review.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="symbol-box badge-answered-review">05</span>
+          </td>
+          <td><strong>Answered &amp; Marked for Review:</strong> The question will be evaluated in final scoring.</td>
+        </tr>
+      </table>
 
-      btn.addEventListener('click', () => {
-        if (document.documentElement.requestFullscreen) {
-          document.documentElement.requestFullscreen().finally(() => {
-            window.location.href = '/exam.html';
-          });
-        } else {
+      <div class="declaration-panel">
+        <label style="display: flex; align-items: flex-start; gap: 1rem; cursor: pointer;">
+          <input type="checkbox" id="declaration-check"
+            style="margin-top: 0.25rem; width: 1.4rem; height: 1.4rem; accent-color: var(--primary);">
+          <span style="font-size: 0.9rem; font-weight: 600; color: #1e3a8a;">
+            I have read and understood all instructions. All computer hardware allotted to me is in proper working
+            condition. I declare that I am not in possession of any unauthorized electronic gadget.
+          </span>
+        </label>
+      </div>
+
+      <div style="text-align: center; margin-top: 2rem;">
+        <button class="btn btn-primary btn-lg" id="btn-proceed" style="padding: 1rem 3.5rem; font-size: 1.1rem;"
+          disabled>
+          I am Ready to Begin &rarr;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const check = document.getElementById('declaration-check');
+    const btn = document.getElementById('btn-proceed');
+
+    const candNameSpan = document.getElementById('inst-cand-name');
+    if (candNameSpan) {
+      const storedName = localStorage.getItem('candidate_name');
+      const storedReg = localStorage.getItem('reg_no');
+      if (storedName) candNameSpan.textContent = storedName + (storedReg ? ` (${storedReg})` : '');
+    }
+
+    check.addEventListener('change', (e) => {
+      btn.disabled = !e.target.checked;
+    });
+
+    btn.addEventListener('click', () => {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().finally(() => {
           window.location.href = '/exam.html';
-        }
-      });
-    </script>
-  </body>
+        });
+      } else {
+        window.location.href = '/exam.html';
+      }
+    });
+  </script>
+</body>
+
 </html>

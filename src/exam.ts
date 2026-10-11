@@ -13,189 +13,14 @@ interface ExamQuestion {
     correct_answer?: string;
 }
 
-// 20 Official Fallback Questions with Question 3 matching the user's screenshot exactly
-const DEFAULT_QUESTIONS: ExamQuestion[] = [
-    {
-        id: "q_1",
-        text: "A projectile is fired at an angle \\theta with the horizontal with initial velocity u. The radius of curvature of its trajectory at the highest point is:",
-        options: ["\\frac{u^2 \\cos^2 \\theta}{g}", "\\frac{u^2 \\sin^2 \\theta}{g}", "\\frac{u^2}{g}", "\\frac{u^2 \\cos \\theta}{g}"],
-        subject: "Physics",
-        section: "PHYSICS - SEC-I",
-        correct_answer: "A"
-    },
-    {
-        id: "q_2",
-        text: "Two bodies of masses m_1 and m_2 have equal kinetic energies. The ratio of their linear momenta p_1 / p_2 is equal to:",
-        options: ["\\sqrt{\\frac{m_1}{m_2}}", "\\frac{m_1}{m_2}", "\\frac{m_2}{m_1}", "\\sqrt{\\frac{m_2}{m_1}}"],
-        subject: "Physics",
-        section: "PHYSICS - SEC-I",
-        correct_answer: "A"
-    },
-    {
-        id: "q_3",
-        text: "A particle is moving up with balloon with constant acceleration ( g/8 ) which starts from rest from ground and at a height H , a particle is dropped from balloon, After this event, find time for which the particle will be in air (acceleration due to gravity = gm/s² )",
-        options: ["\\sqrt{\\frac{H}{g}}", "2\\sqrt{\\frac{H}{g}}", "3\\sqrt{\\frac{H}{g}}", "4\\sqrt{\\frac{H}{g}}"],
-        subject: "Physics",
-        section: "PHYSICS - SEC-I",
-        correct_answer: "B"
-    },
-    {
-        id: "q_4",
-        text: "The work done in blowing a soap bubble of radius R is W. The additional work done in blowing it to radius 2R is:",
-        options: ["W", "2W", "3W", "4W"],
-        subject: "Physics",
-        section: "PHYSICS - SEC-I",
-        correct_answer: "C"
-    },
-    {
-        id: "q_5",
-        text: "A parallel plate capacitor with air between the plates has capacitance C_0. When a dielectric slab of dielectric constant K=4 and thickness t=d/2 is introduced, its new capacitance is:",
-        options: ["\\frac{8}{5}C_0", "\\frac{5}{8}C_0", "2C_0", "4C_0"],
-        subject: "Physics",
-        section: "PHYSICS - SEC-II",
-        correct_answer: "A"
-    },
-    {
-        id: "q_6",
-        text: "An alternating voltage V = 200\\sqrt{2}\\sin(100t) \\text{ V} is connected to a 1 \\mu\\text{F} capacitor. The rms value of current through the capacitor is:",
-        options: ["20 mA", "10 mA", "100 mA", "200 mA"],
-        subject: "Physics",
-        section: "PHYSICS - SEC-II",
-        correct_answer: "A"
-    },
-    {
-        id: "q_7",
-        text: "Which of the following molecules has the highest dipole moment?",
-        options: ["\\text{CH}_3\\text{Cl}", "\\text{CH}_2\\text{Cl}_2", "\\text{CHCl}_3", "\\text{CCl}_4"],
-        subject: "Chemistry",
-        section: "CHEMISTRY - SEC-I",
-        correct_answer: "A"
-    },
-    {
-        id: "q_8",
-        text: "The geometry and hybridization of \\text{XeF}_4 are respectively:",
-        options: ["\\text{Square planar, } sp^3d^2", "\\text{Tetrahedral, } sp^3", "\\text{Octahedral, } sp^3d^2", "\\text{See-saw, } sp^3d"],
-        subject: "Chemistry",
-        section: "CHEMISTRY - SEC-I",
-        correct_answer: "A"
-    },
-    {
-        id: "q_9",
-        text: "For a first order reaction, the time required for 99.9% completion is approximately how many times the half-life t_{1/2}?",
-        options: ["10", "4", "2", "8"],
-        subject: "Chemistry",
-        section: "CHEMISTRY - SEC-I",
-        correct_answer: "A"
-    },
-    {
-        id: "q_10",
-        text: "The spin-only magnetic moment of [\\text{Fe(CN)}_6]^{3-} complex ion is:",
-        options: ["1.73 \\text{ BM}", "5.92 \\text{ BM}", "4.90 \\text{ BM}", "0 \\text{ BM}"],
-        subject: "Chemistry",
-        section: "CHEMISTRY - SEC-I",
-        correct_answer: "A"
-    },
-    {
-        id: "q_11",
-        text: "The pH of a buffer solution prepared by mixing 0.1 M \\text{CH}_3\\text{COOH} and 0.1 M \\text{CH}_3\\text{COONa} (pK_a = 4.76) is:",
-        options: ["4.76", "5.76", "3.76", "7.00"],
-        subject: "Chemistry",
-        section: "CHEMISTRY - SEC-II",
-        correct_answer: "A"
-    },
-    {
-        id: "q_12",
-        text: "The standard reduction potential for \\text{Cu}^{2+}/\\text{Cu} is +0.34 V and for \\text{Zn}^{2+}/\\text{Zn} is -0.76 V. The standard EMF of the cell is:",
-        options: ["+1.10 V", "-1.10 V", "+0.42 V", "+0.76 V"],
-        subject: "Chemistry",
-        section: "CHEMISTRY - SEC-II",
-        correct_answer: "A"
-    },
-    {
-        id: "q_13",
-        text: "Which quantum numbers set is not allowed for an electron in an atom?",
-        options: ["n=3, l=3, m=0, s=+1/2", "n=3, l=2, m=-1, s=-1/2", "n=2, l=1, m=0, s=+1/2", "n=4, l=0, m=0, s=-1/2"],
-        subject: "Chemistry",
-        section: "CHEMISTRY - SEC-II",
-        correct_answer: "A"
-    },
-    {
-        id: "q_14",
-        text: "The value of the definite integral \\int_0^{\\pi/2} \\frac{\\sqrt{\\sin x}}{\\sqrt{\\sin x} + \\sqrt{\\cos x}} dx is:",
-        options: ["\\frac{\\pi}{4}", "\\frac{\\pi}{2}", "\\pi", "0"],
-        subject: "Mathematics",
-        section: "MATHS - SEC-I",
-        correct_answer: "A"
-    },
-    {
-        id: "q_15",
-        text: "If A is a 3 \\times 3 non-singular matrix such that |A| = 4, then |\\text{adj}(A)| is equal to:",
-        options: ["16", "4", "64", "256"],
-        subject: "Mathematics",
-        section: "MATHS - SEC-I",
-        correct_answer: "A"
-    },
-    {
-        id: "q_16",
-        text: "The value of \\lim_{x \\to 0} \\frac{e^x - 1 - x}{x^2} is:",
-        options: ["\\frac{1}{2}", "1", "0", "\\infty"],
-        subject: "Mathematics",
-        section: "MATHS - SEC-I",
-        correct_answer: "A"
-    },
-    {
-        id: "q_17",
-        text: "If the vectors \\vec{a} = 2\\hat{i} - \\hat{j} + \\hat{k}, \\vec{b} = \\hat{i} + 2\\hat{j} - 3\\hat{k} and \\vec{c} = 3\\hat{i} + \\lambda\\hat{j} + 5\\hat{k} are coplanar, then \\lambda is:",
-        options: ["-4", "4", "-2", "2"],
-        subject: "Mathematics",
-        section: "MATHS - SEC-I",
-        correct_answer: "A"
-    },
-    {
-        id: "q_18",
-        text: "The area bounded by the curve y^2 = 4x and the line y = 2x is:",
-        options: ["\\frac{1}{3}", "\\frac{2}{3}", "\\frac{4}{3}", "1"],
-        subject: "Mathematics",
-        section: "MATHS - SEC-II",
-        correct_answer: "A"
-    },
-    {
-        id: "q_19",
-        text: "The number of real solutions of the equation \\sin(e^x) = 5^x + 5^{-x} is:",
-        options: ["0", "1", "2", "\\infty"],
-        subject: "Mathematics",
-        section: "MATHS - SEC-II",
-        correct_answer: "A"
-    },
-    {
-        id: "q_20",
-        text: "If \\omega is an imaginary cube root of unity, then the value of (1 + \\omega - \\omega^2)^7 is:",
-        options: ["-128\\omega^2", "128\\omega^2", "-128\\omega", "128\\omega"],
-        subject: "Mathematics",
-        section: "MATHS - SEC-II",
-        correct_answer: "A"
-    }
-];
-
-let allQuestions: ExamQuestion[] = [...DEFAULT_QUESTIONS];
-let currentQuestionIndex = 2; // Start on Question 3 to match the user's screenshot!
+// Authoritative Questions loaded directly from Supabase Cloud DB (Zero hardcoded mock questions)
+let allQuestions: ExamQuestion[] = [];
+let currentQuestionIndex = 0;
 let activeSection = "PHYSICS - SEC-I";
 
 // States: 0=Not Visited, 1=Answered, 2=Marked for Review, 3=Answered & Marked for Review, 4=Not Answered
-let questionState: number[] = new Array(20).fill(0);
-let responses: (number | null)[] = new Array(20).fill(null);
-
-// Initialize initial state matching screenshot:
-// Q1: 4 (Not Answered)
-// Q2: 1 (Answered)
-// Q3: 2 (Marked for Review, currently active)
-// Q4: 4 (Not Answered)
-// Q5 to Q20: 0 (Not Visited)
-questionState[0] = 4;
-questionState[1] = 1;
-responses[1] = 0; // Answered
-questionState[2] = 2; // Marked for Review
-questionState[3] = 4; // Not Answered
+let questionState: number[] = [];
+let responses: (number | null)[] = [];
 
 let timerInterval: any = null;
 let currentRemainingSeconds = 179 * 60 + 41; // 179 minutes 41 seconds exactly matching screenshot!
@@ -373,6 +198,10 @@ function renderPalette(): void {
 }
 
 function loadQuestion(index: number): void {
+    if (allQuestions.length === 0) {
+        if (ui.qText) ui.qText.textContent = "Loading authoritative examination questions from Cloud Database...";
+        return;
+    }
     if (index < 0 || index >= allQuestions.length) return;
     currentQuestionIndex = index;
     const q = allQuestions[index];
@@ -631,6 +460,20 @@ function handleExamSocketMessage(msg: any): void {
         if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg || (msg.candidate_id && msg.candidate_id === myId)) {
             triggerTerminalForceLock(msg.reason || "Terminal locked: Candidate disqualified under examination regulations.");
         }
+    } else if (msg.type === 'PAPER_DECRYPTED') {
+        showLiveToast('🔓 256-Bit Question Paper Decrypted & Unlocked by Examination Controller!');
+        fetchRemoteQuestions();
+    } else if (msg.type === 'DISASTER_HOLD') {
+        isExamPaused = true;
+        const pauseModal = document.getElementById('modal-exam-paused');
+        const pauseReason = document.getElementById('pause-reason-text');
+        if (pauseModal) {
+            if (pauseReason) pauseReason.textContent = msg.reason || 'EMERGENCY OPERATIONAL HOLD. Remain at your terminal.';
+            pauseModal.classList.add('active');
+        }
+        showLiveToast(`🚨 EMERGENCY HOLD: ${msg.reason || 'Timers frozen by Proctor.'}`, true);
+    } else if (msg.type === 'EXAM_PHASE_CHANGED') {
+        showLiveToast(`🏛️ Examination Phase: ${(msg.new_phase || '').toUpperCase().replace(/_/g, ' ')}`);
     } else if (msg.type === 'ACK') {
         updateSyncTime();
     }
@@ -1071,25 +914,39 @@ if (ui.btnManualSync) {
     };
 }
 
-// Fetch Remote DB Questions if Available
+// Fetch Authoritative Questions strictly from Supabase Cloud DB (Zero mock questions)
 async function fetchRemoteQuestions(): Promise<void> {
     try {
         const res = await fetch(`${API_BASE}/${EXAM_ID}/questions`, { headers: getAuthHeaders() });
         if (res.ok) {
             const data = await res.json();
-            if (Array.isArray(data) && data.length >= 5) {
-                // Merge database questions while ensuring the balloon question is at index 2 (Question 3)
+            if (Array.isArray(data) && data.length > 0) {
+                // Ensure balloon question is at index 2 if present
                 const balloonQ = data.find(q => (q.text || '').includes('balloon with constant acceleration'));
                 if (balloonQ) {
                     const others = data.filter(q => q.id !== balloonQ.id);
-                    allQuestions = [others[0] || DEFAULT_QUESTIONS[0], others[1] || DEFAULT_QUESTIONS[1], balloonQ, ...others.slice(2)];
+                    allQuestions = [others[0] || data[0], others[1] || data[1], balloonQ, ...others.slice(2)];
                 } else {
                     allQuestions = data;
                 }
+                responses = new Array(allQuestions.length).fill(null);
+                questionState = new Array(allQuestions.length).fill(0);
+
+                if (questionState.length >= 4) {
+                    questionState[0] = 4; // Not Answered
+                    questionState[1] = 1; // Answered
+                    responses[1] = 0;
+                    questionState[2] = 2; // Marked for Review
+                    questionState[3] = 4; // Not Answered
+                }
+
+                renderPalette();
+                loadQuestion(allQuestions.length > 2 ? 2 : 0);
+                return;
             }
         }
     } catch (_) {}
-    loadQuestion(2); // Question 3 loaded by default matching screenshot
+    if (ui.qText) ui.qText.textContent = "Awaiting Question Paper release from Examination Controller...";
 }
 
 // ============================================================
