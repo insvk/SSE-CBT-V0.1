@@ -1646,7 +1646,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/admin-cd886cf8.js"></script>
+  <script type="module" crossorigin src="/assets/admin-455583fb.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
 </head>
 
@@ -1700,7 +1700,6 @@
           <a href="#exam-management-section" class="nav-link" id="nav-link-exams">
 
             <span class="nav-text">Tests &amp; Exam Operations</span>
-            <span class="badge-pill badge-pro" style="background: #10b981; color: white;">PRO MAXX</span>
           </a>
         </li>
         <li class="nav-item">
@@ -1875,9 +1874,6 @@
                 style="font-weight: 700; border-color: #2563eb; color: #2563eb;">
                 📑 Document Structure &amp; Exam Settings
               </button>
-              <button class="btn btn-outline" id="btn-infra-audit">Pre-Flight Infra Audit</button>
-              <button class="btn btn-outline" id="btn-admissions-checkin">Biometric Admissions</button>
-              <button class="btn btn-outline" id="btn-closing-report">Form 24-B Closing Report</button>
 
               <!-- Overflow Menu Container for Export/Import -->
               <div class="toolbar-overflow-wrap">
@@ -1920,11 +1916,6 @@
               title="Resume countdown timer across active exams">
               Resume Hall
             </button>
-            <button class="btn btn-outline btn-sm" id="btn-disaster-hold"
-              style="color: #ef4444; border-color: #f87171; font-weight: 700;"
-              title="Hall-wide Emergency Holding & Disaster Recovery Freeze">
-              Disaster Evacuation Hold
-            </button>
             <button class="btn btn-outline btn-sm" id="btn-unlock-sessions"
               title="Release tab collisions and duplicate locks">
               Release Concurrency Locks
@@ -1933,7 +1924,6 @@
               style="color: #ef4444; border-color: #fca5a5;" title="Emergency wipe of active exam responses">
               Reset Active Sessions
             </button>
-            <button class="btn btn-primary btn-sm" id="btn-assign" disabled>Assign to Exam</button>
           </div>
         </div>
 
@@ -2001,7 +1991,7 @@
           </div>
         </div>
 
-        <!-- PEARSON VUE / PROMETRIC TELEMETRY & ANOMALY RADAR -->
+        <!-- SYSTEM TELEMETRY & SESSION MONITORING -->
         <div
           style="background: var(--bg-card); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--card-shadow);"
           id="telemetry-radar-section">
@@ -2010,8 +2000,8 @@
             <div>
               <h3
                 style="font-size: 1.15rem; font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 8px;">
-                <span>Telemetry &amp; Anomaly Detection Radar</span>
-                <span class="badge-pill badge-live" style="background: #ecfdf5; color: #047857;">INTEGRITY INDEX:
+                <span>System Telemetry &amp; Session Monitoring</span>
+                <span class="badge-pill badge-live" style="background: #ecfdf5; color: #047857;">SYSTEM COMPLIANCE:
                   99.4%</span>
               </h3>
               <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
@@ -2020,7 +2010,7 @@
               </p>
             </div>
             <button type="button" class="btn btn-outline btn-sm" id="btn-refresh-radar" style="font-size: 0.75rem;">
-              Refresh Radar
+              Refresh Telemetry
             </button>
           </div>
 
@@ -2162,7 +2152,7 @@
         </div>
 
         <!-- =================================================================== -->
-        <!-- PRO MAXX: TESTS & EXAM OPERATIONS MANAGEMENT SUITE                 -->
+        <!-- TESTS & EXAM OPERATIONS MANAGEMENT SUITE                            -->
         <!-- =================================================================== -->
         <div class="exam-card-box" id="exam-management-section">
           <div
@@ -2172,7 +2162,7 @@
                 style="font-size: 0.725rem; font-weight: 800; color: #10b981; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
                 <span>CLOUD EXAM MANAGEMENT SYSTEM</span>
                 <span class="badge-pill"
-                  style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">PRO MAXX &bull;
+                  style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">ACTIVE OPERATIONS &bull;
                   LIVE</span>
               </div>
               <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-heading); margin-top: 2px;">
@@ -2356,7 +2346,7 @@
                     <th>Candidate Identification</th>
                     <th>Subject Slot</th>
                     <th>Terminal &amp; Venue</th>
-                    <th>Biometrics &amp; PwD</th>
+                    <th>Candidate Category &amp; Accommodations</th>
                     <th>Status</th>
                     <th style="text-align: right;">Authority Actions</th>
                   </tr>
@@ -2680,7 +2670,7 @@
             </button>
             <button type="button" class="btn btn-outline btn-sm" id="dos-btn-accommodations"
               style="width: 100%; justify-content: center;">
-              PwD / Scribe
+              Accommodations
             </button>
             <button type="button" class="btn btn-outline btn-sm" id="dos-btn-pin"
               style="width: 100%; justify-content: center; color: #d97706;">

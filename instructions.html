@@ -268,6 +268,24 @@
 
     async function loadActiveExam() {
       const h1 = document.querySelector('.inst-header h1');
+      const pSub = document.querySelector('.inst-header p');
+
+      // 1. Fetch Authoritative Document Templates & Exam Settings
+      try {
+        const sRes = await fetch('/api/v1/exams/settings');
+        if (sRes.ok) {
+          const sData = await sRes.json();
+          const instName = (sData.admit_card && sData.admit_card.institution_name) || sData.institution_name;
+          const exTitle = (sData.admit_card && sData.admit_card.examination_title) || sData.examination_title;
+          if (instName && pSub) {
+            pSub.innerHTML = `${instName} &bull; Examination Guidelines &amp; Candidate Instructions`;
+          }
+          if (exTitle && h1) {
+            h1.textContent = exTitle;
+          }
+        }
+      } catch (_) {}
+
       if (examId) {
         try {
           const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}`);
@@ -293,8 +311,6 @@
           }
         }
       } catch (_) {}
-
-      if (h1) h1.textContent = "Awaiting Scheduled Examination from Cloud DB...";
     }
     loadActiveExam();
 

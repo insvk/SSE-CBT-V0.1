@@ -11,7 +11,7 @@ from app.core.security import get_tenant_user, require_admin_user
 from app.core.db import get_db
 from app.core.tenant import ensure_tenant_exists
 from app.core.ws_manager import ws_manager
-from app.api.api_v1.endpoints.exams import CURRENT_EXAM_SETTINGS
+from app.api.api_v1.endpoints.exams import CURRENT_EXAM_SETTINGS, load_templates_from_cloud_db
 from app.core.master_clock import (
     format_ist_now,
     format_timestamp_to_ist,
@@ -583,11 +583,12 @@ def get_candidate_admit_card(
         cand = _format_candidate_response(res.data[0])
         slot_info = SLOT_SCHEDULE.get(cand.batch, SLOT_SCHEDULE["A"])
 
+        load_templates_from_cloud_db(db)
         settings = CURRENT_EXAM_SETTINGS
         admit_tmpl = settings.get("admit_card") or {}
-        center_name = cand.test_center_name or admit_tmpl.get("test_venue_name") or settings.get("test_venue_name") or "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105"
-        center_code = cand.test_center_code or admit_tmpl.get("test_center_code") or settings.get("test_center_code") or "SSEC-TN-042"
-        lab_num = cand.room_number or admit_tmpl.get("default_lab_room") or settings.get("default_lab_room") or slot_info["lab"]
+        center_name = admit_tmpl.get("test_venue_name") or settings.get("test_venue_name") or cand.test_center_name or "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105"
+        center_code = admit_tmpl.get("test_center_code") or settings.get("test_center_code") or cand.test_center_code or "SSEC-TN-042"
+        lab_num = admit_tmpl.get("default_lab_room") or settings.get("default_lab_room") or cand.room_number or slot_info["lab"]
         term_pref = admit_tmpl.get("terminal_prefix") or settings.get("terminal_prefix") or f"T-{cand.batch}-"
         assigned_terminal = cand.assigned_terminal or f"{term_pref}{cand.id[-4:].upper()}"
         ctrl_name = admit_tmpl.get("controller_name") or settings.get("controller_name") or "ADMIN@SSE.IN"

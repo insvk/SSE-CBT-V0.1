@@ -287,10 +287,18 @@ if (btnViewAdmit && modalAdmit) {
                 if (elExam && (s.admit_card?.examination_title || s.examination_title)) {
                     elExam.textContent = s.admit_card?.examination_title || s.examination_title;
                 }
-                if (elVenue && s.test_venue_name) elVenue.textContent = s.test_venue_name;
-                if (elCenterLab) elCenterLab.textContent = `Center: ${s.test_center_code || 'SSEC-TN-042'} | Room: ${s.default_lab_room || 'LAB-01'}`;
-                if (elController && s.controller_name) elController.textContent = s.controller_name;
-                if (elTerminal) elTerminal.textContent = `${s.terminal_prefix || 'T-A-'}0004`;
+                if (elVenue && (s.admit_card?.test_venue_name || s.test_venue_name)) {
+                    elVenue.textContent = s.admit_card?.test_venue_name || s.test_venue_name;
+                }
+                if (elCenterLab) {
+                    elCenterLab.textContent = `Center: ${s.admit_card?.test_center_code || s.test_center_code || 'SSEC-TN-042'} | Room: ${s.admit_card?.default_lab_room || s.default_lab_room || 'LAB-01'}`;
+                }
+                if (elController && (s.admit_card?.controller_name || s.controller_name)) {
+                    elController.textContent = s.admit_card?.controller_name || s.controller_name;
+                }
+                if (elTerminal) {
+                    elTerminal.textContent = `${s.admit_card?.terminal_prefix || s.terminal_prefix || 'T-A-'}0004`;
+                }
 
                 const admitCard = s.admit_card || {};
                 const elSubtitle = document.getElementById('admit-cand-subtitle');

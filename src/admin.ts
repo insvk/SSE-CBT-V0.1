@@ -36,7 +36,7 @@ const ui = {
     topSearchInput: document.getElementById('top-search-input') as HTMLInputElement,
     btnImport: document.getElementById('btn-import')!,
     btnCreate: document.getElementById('btn-create')!,
-    btnAssign: document.getElementById('btn-assign') as HTMLButtonElement,
+    btnAssign: document.getElementById('btn-assign') as HTMLButtonElement | null,
     btnExportCsv: document.getElementById('btn-export-csv') as HTMLButtonElement,
     btnExtendTime: document.getElementById('btn-extend-time') as HTMLButtonElement,
     btnUnlockSessions: document.getElementById('btn-unlock-sessions') as HTMLButtonElement,
@@ -2219,12 +2219,12 @@ if (formDisasterHold) {
     });
 }
 
-// Refresh Radar
+// Refresh Telemetry
 const btnRefreshRadar = document.getElementById('btn-refresh-radar');
 if (btnRefreshRadar) {
     btnRefreshRadar.addEventListener('click', () => {
         loadTelemetryRadar();
-        showToast('Anomaly Radar telemetry refreshed.');
+        showToast('System telemetry refreshed.');
     });
 }
 
@@ -2249,7 +2249,7 @@ if (ui.topSearchInput) {
 }
 
 // ===================================================================
-// PRO MAXX: TESTS & EXAM OPERATIONS MANAGEMENT SUITE (CLOUD DB)
+// TESTS & EXAM OPERATIONS MANAGEMENT SUITE (CLOUD DB)
 // ===================================================================
 
 // cachedExams declared globally above
@@ -2887,7 +2887,7 @@ async function loadExamMonitoring(examId: string): Promise<void> {
                                 <th style="padding: 8px 12px; text-align: left;">Current Question &amp; Progress</th>
                                 <th style="padding: 8px 12px; text-align: left;">Timer Remaining</th>
                                 <th style="padding: 8px 12px; text-align: left;">Sync &amp; Save State</th>
-                                <th style="padding: 8px 12px; text-align: left;">Integrity / Strikes</th>
+                                <th style="padding: 8px 12px; text-align: left;">Compliance / Violations</th>
                                 <th style="padding: 8px 12px; text-align: left;">Score &amp; Accuracy</th>
                                 <th style="padding: 8px 12px; text-align: right;">Operations</th>
                             </tr>
@@ -3865,15 +3865,46 @@ async function loadExamSettings(): Promise<void> {
             if (inputLabRoom && s.default_lab_room) inputLabRoom.value = s.default_lab_room;
             if (inputTermPrefix && s.terminal_prefix) inputTermPrefix.value = s.terminal_prefix;
 
-            // 4. Update preview elements if visible
+            // 4. Update preview elements comprehensively
             const admitInst = document.getElementById('admit-inst-name');
             const admitExam = document.getElementById('admit-exam-title');
+            const admitSub = document.getElementById('admit-subtitle');
+            const admitWater = document.getElementById('admit-watermark');
+            const admitVenue = document.getElementById('admit-venue-name');
+            const admitCenter = document.getElementById('admit-center-code');
+            const admitLab = document.getElementById('admit-lab');
+            const admitTerm = document.getElementById('admit-terminal');
             const admitCtrl = document.getElementById('admit-controller-name');
             const admitDesig = document.getElementById('admit-controller-desig');
+            const admitCtrlInst = document.getElementById('admit-controller-inst');
+            const admitInstContent = document.getElementById('admit-instructions-content');
+
             if (admitInst && (adm.institution_name || s.institution_name)) admitInst.textContent = adm.institution_name || s.institution_name;
             if (admitExam && (adm.examination_title || s.examination_title)) admitExam.textContent = adm.examination_title || s.examination_title;
+            if (admitSub && adm.header_subtitle) admitSub.textContent = adm.header_subtitle;
+            if (admitWater && adm.watermark_text) admitWater.textContent = adm.watermark_text;
+            if (admitVenue && (adm.test_venue_name || s.test_venue_name)) admitVenue.textContent = adm.test_venue_name || s.test_venue_name;
+            if (admitCenter && (adm.test_center_code || s.test_center_code)) admitCenter.textContent = adm.test_center_code || s.test_center_code;
+            if (admitLab && (adm.default_lab_room || s.default_lab_room)) admitLab.textContent = adm.default_lab_room || s.default_lab_room;
+            if (admitTerm && (adm.terminal_prefix || s.terminal_prefix)) admitTerm.textContent = `${adm.terminal_prefix || s.terminal_prefix}0001`;
             if (admitCtrl && s.controller_name) admitCtrl.textContent = s.controller_name;
             if (admitDesig && s.controller_designation) admitDesig.textContent = s.controller_designation;
+            if (admitCtrlInst && (adm.institution_name || s.institution_name)) admitCtrlInst.textContent = adm.institution_name || s.institution_name;
+            if (admitInstContent && adm.instructions_text) admitInstContent.textContent = adm.instructions_text;
+
+            // Visibility Toggles
+            const elInstBlock = document.getElementById('admit-instructions-block');
+            if (elInstBlock) elInstBlock.style.display = adm.show_instructions !== false ? 'block' : 'none';
+            const elPhoto = document.getElementById('admit-photo-block');
+            if (elPhoto) elPhoto.style.display = adm.show_photo !== false ? 'block' : 'none';
+            const elBarcode = document.getElementById('admit-barcode-block');
+            if (elBarcode) elBarcode.style.display = adm.show_barcode !== false ? 'flex' : 'none';
+            const elSlots = document.getElementById('admit-slots-table');
+            if (elSlots) elSlots.style.display = adm.show_slot_timings !== false ? 'table' : 'none';
+            const elVenueBlock = document.getElementById('admit-venue-block');
+            if (elVenueBlock) elVenueBlock.style.display = adm.show_venue_details !== false ? 'block' : 'none';
+            const elSigBlock = document.getElementById('admit-signatures-block');
+            if (elSigBlock) elSigBlock.style.display = adm.show_signature_block !== false ? 'flex' : 'none';
         }
     } catch (_) {}
 }
@@ -3956,6 +3987,15 @@ if (formExamSettings) {
             });
             if (res.ok) {
                 const updated = await res.json();
+                try {
+                    localStorage.setItem('cbt_exam_settings', JSON.stringify(updated));
+                    if (typeof BroadcastChannel !== 'undefined') {
+                        const bc = new BroadcastChannel('cbt_settings_channel');
+                        bc.postMessage({ type: 'SETTINGS_UPDATED', settings: updated });
+                        bc.close();
+                    }
+                    window.dispatchEvent(new CustomEvent('cbt_settings_updated', { detail: updated }));
+                } catch (_) {}
                 showToast(`Document templates & structures saved in Cloud DB! Signatory: ${updated.controller_name}`);
                 if (modalExamSettings) modalExamSettings.style.display = 'none';
                 loadExamSettings();

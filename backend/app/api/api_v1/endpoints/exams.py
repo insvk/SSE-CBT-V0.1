@@ -41,6 +41,8 @@ from app.schemas import (
     DeviceRegisterRequest,
 )
 import sys
+import os
+import json
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -101,41 +103,76 @@ CURRENT_EXAM_SETTINGS: Dict[str, Any] = {
 }
 
 
-def load_templates_from_cloud_db(db: Any) -> None:
-    """Loads authoritative document templates and settings from Supabase Cloud DB."""
+def _get_settings_file_path() -> str:
+    backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+    return os.path.join(backend_dir, "exam_settings.json")
+
+
+def load_templates_from_cloud_db(db: Any = None) -> None:
+    """Loads authoritative document templates and settings from local JSON and Supabase Cloud DB."""
     global CURRENT_EXAM_SETTINGS
+    # 1. Load from local persistent JSON file if available
     try:
-        res = db.table("exams").select("id, config").order("created_at", desc=False).limit(1).execute()
-        if res.data:
-            cfg = res.data[0].get("config") or {}
-            tmpl = cfg.get("document_templates") or {}
-            if tmpl.get("center_settings"):
-                CURRENT_EXAM_SETTINGS.update(tmpl["center_settings"])
-            if tmpl.get("admit_card"):
-                CURRENT_EXAM_SETTINGS["admit_card"] = {**DEFAULT_ADMIT_CARD_TEMPLATE, **tmpl["admit_card"]}
-            if tmpl.get("scorecard"):
-                CURRENT_EXAM_SETTINGS["scorecard"] = {**DEFAULT_SCORECARD_TEMPLATE, **tmpl["scorecard"]}
+        sf_path = _get_settings_file_path()
+        if os.path.exists(sf_path):
+            with open(sf_path, "r", encoding="utf-8") as f:
+                saved = json.load(f)
+                if isinstance(saved, dict):
+                    CURRENT_EXAM_SETTINGS.update(saved)
+                    if saved.get("admit_card"):
+                        CURRENT_EXAM_SETTINGS["admit_card"] = {**DEFAULT_ADMIT_CARD_TEMPLATE, **saved["admit_card"]}
+                    if saved.get("scorecard"):
+                        CURRENT_EXAM_SETTINGS["scorecard"] = {**DEFAULT_SCORECARD_TEMPLATE, **saved["scorecard"]}
     except Exception as e:
-        logger.warning(f"Could not load templates from Cloud DB: {e}")
+        logger.warning(f"Could not load local exam_settings.json: {e}")
+
+    # 2. Check Supabase Cloud DB exams table if DB connection is supplied
+    if db is not None:
+        try:
+            res = db.table("exams").select("id, config").order("created_at", desc=False).limit(1).execute()
+            if res.data:
+                cfg = res.data[0].get("config") or {}
+                tmpl = cfg.get("document_templates") or {}
+                if tmpl.get("center_settings"):
+                    CURRENT_EXAM_SETTINGS.update(tmpl["center_settings"])
+                if tmpl.get("admit_card"):
+                    CURRENT_EXAM_SETTINGS["admit_card"] = {**DEFAULT_ADMIT_CARD_TEMPLATE, **tmpl["admit_card"]}
+                if tmpl.get("scorecard"):
+                    CURRENT_EXAM_SETTINGS["scorecard"] = {**DEFAULT_SCORECARD_TEMPLATE, **tmpl["scorecard"]}
+        except Exception as e:
+            logger.warning(f"Could not load templates from Cloud DB: {e}")
+
+
+# Initialize settings from file on module load
+load_templates_from_cloud_db(None)
 
 
 @router.get("/settings", response_model=ExamCenterSettings)
 def get_exam_settings(db: Any = Depends(get_db)):
-    """Returns official Examination Center & Controller settings configured by Admin from Cloud DB."""
+    """Returns official Examination Center & Controller settings configured by Admin from Cloud DB & JSON."""
     load_templates_from_cloud_db(db)
     return ExamCenterSettings(**CURRENT_EXAM_SETTINGS)
 
 
 @router.post("/settings", response_model=ExamCenterSettings)
 async def update_exam_settings(payload: ExamCenterSettings, db: Any = Depends(get_db)):
-    """Updates official Examination Center, Controller & Document structures in Cloud DB and broadcasts live."""
+    """Updates official Examination Center, Controller & Document structures in Cloud DB & JSON and broadcasts live."""
     global CURRENT_EXAM_SETTINGS
     data = payload.model_dump()
     for k, v in data.items():
         if v is not None:
             CURRENT_EXAM_SETTINGS[k] = v
 
-    # Legit Cloud DB Persistence: update exams table in Supabase
+    # 1. Local Persistent File Backup
+    try:
+        sf_path = _get_settings_file_path()
+        with open(sf_path, "w", encoding="utf-8") as f:
+            json.dump(CURRENT_EXAM_SETTINGS, f, indent=2, ensure_ascii=False)
+        logger.info(f"Persisted document templates to local JSON at {sf_path}")
+    except Exception as e:
+        logger.error(f"Error persisting document templates to local JSON: {e}")
+
+    # 2. Supabase Cloud DB Persistence: update exams table
     try:
         exams_res = db.table("exams").select("id, config").execute()
         rows = exams_res.data or []
@@ -167,6 +204,7 @@ async def update_exam_settings(payload: ExamCenterSettings, db: Any = Depends(ge
         "timestamp": time.time(),
     })
     return ExamCenterSettings(**CURRENT_EXAM_SETTINGS)
+
 
 
 LIFECYCLE_PHASES = [

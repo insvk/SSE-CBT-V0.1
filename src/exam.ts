@@ -1166,8 +1166,19 @@ async function fetchRemoteQuestions(): Promise<void> {
             if (exInfoRes.ok) {
                 const exInfo = await exInfoRes.json();
                 const titleEl = document.getElementById('exam-header-title');
-                if (titleEl && exInfo.title) {
-                    titleEl.textContent = `${exInfo.title.toUpperCase()} (CBT)`;
+                if (titleEl) {
+                    if (exInfo.title) {
+                        titleEl.textContent = `${exInfo.title.toUpperCase()} (CBT)`;
+                    } else {
+                        try {
+                            const sRes = await fetch(`${API_BASE}/settings`, { headers: getAuthHeaders() });
+                            if (sRes.ok) {
+                                const sData = await sRes.json();
+                                const defTitle = sData.examination_title || sData.admit_card?.examination_title;
+                                if (defTitle) titleEl.textContent = `${defTitle.toUpperCase()} (CBT)`;
+                            }
+                        } catch (_) {}
+                    }
                 }
 
                 // AI Camera proctoring sync
