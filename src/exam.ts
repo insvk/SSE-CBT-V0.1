@@ -2,7 +2,7 @@ export {};
 
 const API_BASE = '/api/v1/exams';
 const urlParams = new URLSearchParams(window.location.search);
-const EXAM_ID = urlParams.get('exam_id') || urlParams.get('id') || 'EX-1001';
+let EXAM_ID = urlParams.get('exam_id') || urlParams.get('id') || localStorage.getItem('active_exam_id') || '';
 
 interface ExamQuestion {
     id: string;
@@ -214,6 +214,11 @@ function loadQuestion(index: number): void {
     if (index < 0 || index >= allQuestions.length) return;
     currentQuestionIndex = index;
     const q = allQuestions[index];
+
+    // Automatically close mobile palette drawer when candidate selects a question on mobile/tablet
+    if (window.innerWidth < 1024) {
+        closeMobilePaletteDrawer();
+    }
 
     // Notify Admin Proctoring stream of candidate's active question transition
     if (examSocket && examSocket.readyState === WebSocket.OPEN) {
@@ -495,8 +500,8 @@ function handleExamSocketMessage(msg: any): void {
     } else if (msg.type === 'TERMINAL_RESEATED') {
         const myReg = localStorage.getItem('reg_no') || '';
         if (myReg && msg.reg_no === myReg) {
-            const termEl = document.getElementById('term-display-id');
-            if (termEl) termEl.textContent = msg.new_terminal || 'C-043';
+            candidateDeviceProfile.nodeId = msg.new_terminal || candidateDeviceProfile.nodeId;
+            applyDeviceNodeToUI();
             showLiveToast(`Terminal migrated to ${msg.new_terminal}. Answers preserved!`);
         }
     } else if (msg.type === 'TERMINAL_UNLOCKED') {
@@ -1065,6 +1070,7 @@ const btnClosePaletteDrawer = document.getElementById('btn-close-palette-drawer'
 function openMobilePaletteDrawer(): void {
     if (ui.sidebarPane) {
         ui.sidebarPane.classList.add('mobile-open');
+        ui.sidebarPane.classList.add('drawer-open');
     }
     if (paletteDrawerBackdrop) {
         paletteDrawerBackdrop.classList.add('active');
@@ -1074,6 +1080,7 @@ function openMobilePaletteDrawer(): void {
 function closeMobilePaletteDrawer(): void {
     if (ui.sidebarPane) {
         ui.sidebarPane.classList.remove('mobile-open');
+        ui.sidebarPane.classList.remove('drawer-open');
     }
     if (paletteDrawerBackdrop) {
         paletteDrawerBackdrop.classList.remove('active');
@@ -1135,9 +1142,27 @@ if (ui.btnManualSync) {
 // Fetch Authoritative Questions strictly from Supabase Cloud DB (Zero mock questions)
 async function fetchRemoteQuestions(): Promise<void> {
     try {
+        if (!EXAM_ID) {
+            try {
+                const exListRes = await fetch(`${API_BASE}/`, { headers: getAuthHeaders() });
+                if (exListRes.ok) {
+                    const exList = await exListRes.json();
+                    if (Array.isArray(exList) && exList.length > 0) {
+                        EXAM_ID = exList[0].id;
+                        localStorage.setItem('active_exam_id', EXAM_ID);
+                    }
+                }
+            } catch (_) {}
+        }
+
+        if (!EXAM_ID) {
+            if (ui.qText) ui.qText.textContent = "No examinations are currently scheduled in Cloud DB. Please contact the Examination Administrator.";
+            return;
+        }
+
         // 1. Fetch Exam Metadata & Title, Sections & AI Camera State
         try {
-            const exInfoRes = await fetch(`${API_BASE}/${EXAM_ID}`, { headers: getAuthHeaders() });
+            const exInfoRes = await fetch(`${API_BASE}/${encodeURIComponent(EXAM_ID)}`, { headers: getAuthHeaders() });
             if (exInfoRes.ok) {
                 const exInfo = await exInfoRes.json();
                 const titleEl = document.getElementById('exam-header-title');
@@ -1356,12 +1381,167 @@ function initAuthAndRole(): void {
     }
 }
 
-// 2. Terminal Identification
-const currentTerminalId = localStorage.getItem('terminal_id') || 'C-042';
-const candTermTag = document.getElementById('cand-terminal-tag');
-if (candTermTag) candTermTag.textContent = currentTerminalId;
-const lockedTermTag = document.getElementById('locked-term-id');
-if (lockedTermTag) lockedTermTag.textContent = currentTerminalId;
+// 2. Client Device Hardware Profiling & Node Identification
+export interface CandidateDeviceProfile {
+    nodeId: string;
+    os: string;
+    osShort: string;
+    browser: string;
+    browserShort: string;
+    screenResolution: string;
+    cores: number;
+    memory: string;
+    platform: string;
+    deviceSummary: string;
+    userAgent: string;
+    registeredAtIst: string;
+}
+
+export function detectCandidateDevice(): CandidateDeviceProfile {
+    const ua = navigator.userAgent;
+    const nav: any = navigator;
+    let os = 'Unknown Operating System';
+    let osShort = 'DEV';
+
+    // 1. Detect Real Client OS
+    if (nav.userAgentData?.platform) {
+        const p = String(nav.userAgentData.platform).toLowerCase();
+        if (p.includes('win')) { os = 'Windows 11/10 (64-bit)'; osShort = 'WIN'; }
+        else if (p.includes('mac')) { os = 'macOS'; osShort = 'MAC'; }
+        else if (p.includes('linux')) { os = 'Linux Workstation'; osShort = 'LNX'; }
+        else if (p.includes('android')) { os = 'Android OS'; osShort = 'AND'; }
+        else if (p.includes('ios')) { os = 'Apple iOS'; osShort = 'IOS'; }
+    } else {
+        if (/Windows NT 10.0/i.test(ua)) { os = 'Windows 11/10 (64-bit)'; osShort = 'WIN'; }
+        else if (/Windows NT 6.3/i.test(ua)) { os = 'Windows 8.1'; osShort = 'WIN8'; }
+        else if (/Windows NT 6.1/i.test(ua)) { os = 'Windows 7'; osShort = 'WIN7'; }
+        else if (/Macintosh|Mac OS X/i.test(ua)) { os = 'macOS'; osShort = 'MAC'; }
+        else if (/CrOS/i.test(ua)) { os = 'ChromeOS'; osShort = 'CROS'; }
+        else if (/Android/i.test(ua)) { os = 'Android OS'; osShort = 'AND'; }
+        else if (/iPhone|iPad|iPod/i.test(ua)) { os = 'Apple iOS'; osShort = 'IOS'; }
+        else if (/Linux/i.test(ua)) { os = 'Linux Workstation'; osShort = 'LNX'; }
+    }
+
+    // 2. Detect Real Client Browser & Major Version
+    let browser = 'Modern Browser';
+    let browserShort = 'WEB';
+    if (/Edg\/([0-9]+)/i.test(ua)) {
+        const ver = ua.match(/Edg\/([0-9]+)/i)?.[1] || '';
+        browser = `Microsoft Edge ${ver}`.trim();
+        browserShort = 'EDG';
+    } else if (/Chrome\/([0-9]+)/i.test(ua)) {
+        const ver = ua.match(/Chrome\/([0-9]+)/i)?.[1] || '';
+        browser = `Google Chrome ${ver}`.trim();
+        browserShort = 'CHR';
+    } else if (/Firefox\/([0-9]+)/i.test(ua)) {
+        const ver = ua.match(/Firefox\/([0-9]+)/i)?.[1] || '';
+        browser = `Mozilla Firefox ${ver}`.trim();
+        browserShort = 'FF';
+    } else if (/Safari\/([0-9]+)/i.test(ua) && !/Chrome/i.test(ua)) {
+        browser = 'Apple Safari';
+        browserShort = 'SAF';
+    } else if (/OPR\/([0-9]+)/i.test(ua)) {
+        browser = 'Opera Browser';
+        browserShort = 'OPR';
+    }
+
+    // 3. Screen Dimensions & Device Pixel Ratio
+    const dpr = window.devicePixelRatio ? Math.round(window.devicePixelRatio * 100) / 100 : 1;
+    const screenRes = `${window.screen.width}x${window.screen.height} (${dpr}x DPR)`;
+
+    // 4. Hardware Concurrency (CPU Threads) & RAM
+    const cores = navigator.hardwareConcurrency || 4;
+    const memory = nav.deviceMemory ? `${nav.deviceMemory} GB RAM` : 'Architecture Native';
+    const platform = navigator.platform || (nav.userAgentData?.platform || 'Desktop');
+
+    // 5. Authentic Workstation Node Assignment
+    const regNo = localStorage.getItem('reg_no') || '';
+    const seed = `${os}_${browser}_${window.screen.width}_${window.screen.height}_${cores}_${regNo}`;
+    let hashNum = 0;
+    for (let i = 0; i < seed.length; i++) {
+        hashNum = ((hashNum << 5) - hashNum) + seed.charCodeAt(i);
+        hashNum |= 0;
+    }
+    const hexHash = Math.abs(hashNum).toString(16).toUpperCase().padStart(4, '0').slice(-4);
+
+    const assignedTerm = localStorage.getItem('assigned_terminal') || localStorage.getItem('terminal_id');
+    const nodeId = (assignedTerm && !assignedTerm.includes('C-042'))
+        ? assignedTerm
+        : `NODE-${osShort}-${browserShort}-${hexHash}`;
+
+    const summary = `${os} • ${browser} • ${screenRes} • ${cores} Cores`;
+
+    return {
+        nodeId,
+        os,
+        osShort,
+        browser,
+        browserShort,
+        screenResolution: screenRes,
+        cores,
+        memory,
+        platform,
+        deviceSummary: summary,
+        userAgent: ua,
+        registeredAtIst: new Date().toLocaleTimeString('en-IN') + ' IST'
+    };
+}
+
+let candidateDeviceProfile: CandidateDeviceProfile = detectCandidateDevice();
+let currentTerminalId = candidateDeviceProfile.nodeId;
+localStorage.setItem('terminal_id', currentTerminalId);
+localStorage.setItem('device_node', currentTerminalId);
+
+// Apply dynamically detected Node to Exam Top Header & Tooltip
+function applyDeviceNodeToUI(): void {
+    const termDisplayEl = document.getElementById('term-display-id');
+    if (termDisplayEl) termDisplayEl.textContent = candidateDeviceProfile.nodeId;
+
+    const termSubEl = document.getElementById('term-device-sub');
+    if (termSubEl) termSubEl.textContent = `[${candidateDeviceProfile.osShort} • ${candidateDeviceProfile.browserShort}]`;
+
+    const termBadge = document.getElementById('terminal-badge');
+    if (termBadge) {
+        termBadge.title = `Workstation Node: ${candidateDeviceProfile.nodeId}\nOperating System: ${candidateDeviceProfile.os}\nBrowser: ${candidateDeviceProfile.browser}\nScreen Resolution: ${candidateDeviceProfile.screenResolution}\nCPU: ${candidateDeviceProfile.cores} Cores | ${candidateDeviceProfile.memory}\nSynced directly to Supabase Cloud DB`;
+    }
+
+    const candTermTag = document.getElementById('cand-terminal-tag');
+    if (candTermTag) candTermTag.textContent = `${candidateDeviceProfile.nodeId} (${candidateDeviceProfile.osShort})`;
+
+    const lockedTermTag = document.getElementById('locked-term-id');
+    if (lockedTermTag) lockedTermTag.textContent = candidateDeviceProfile.nodeId;
+}
+applyDeviceNodeToUI();
+
+// Register and persist authentic device details into Cloud DB
+async function syncCandidateDeviceWithCloudDb(): Promise<void> {
+    const candId = localStorage.getItem('candidate_id') || '';
+    const regNo = localStorage.getItem('reg_no') || '';
+    try {
+        await fetch(`${API_BASE}/${EXAM_ID}/register-device`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                candidate_id: candId,
+                reg_no: regNo,
+                terminal_node: candidateDeviceProfile.nodeId,
+                device_details: {
+                    node_id: candidateDeviceProfile.nodeId,
+                    os: candidateDeviceProfile.os,
+                    os_short: candidateDeviceProfile.osShort,
+                    browser: candidateDeviceProfile.browser,
+                    browser_short: candidateDeviceProfile.browserShort,
+                    screen: candidateDeviceProfile.screenResolution,
+                    cores: candidateDeviceProfile.cores,
+                    memory: candidateDeviceProfile.memory,
+                    user_agent: candidateDeviceProfile.userAgent,
+                    detected_at: new Date().toISOString()
+                }
+            })
+        });
+    } catch (_) {}
+}
+syncCandidateDeviceWithCloudDb();
 
 // 3. Dynamic Moving Watermark
 function initWatermark(): void {
@@ -1373,9 +1553,9 @@ function initWatermark(): void {
 
     const updateWm = () => {
         const timeStr = new Date().toLocaleTimeString();
-        if (row1) row1.textContent = `${name} • ${reg} • TERMINAL ${currentTerminalId} • ${timeStr}`;
-        if (row2) row2.textContent = `SSE CBT PLATFORM V0.1 • OFFICIAL EXAM • AUDIT ACTIVE`;
-        if (row4) row4.textContent = `${name} • ${reg} • TERMINAL ${currentTerminalId} • SECURE CBT`;
+        if (row1) row1.textContent = `${name} • ${reg} • WORKSTATION ${candidateDeviceProfile.nodeId} [${candidateDeviceProfile.osShort}] • ${timeStr}`;
+        if (row2) row2.textContent = `SSE CBT PLATFORM • OFFICIAL EXAM • AUDIT ACTIVE`;
+        if (row4) row4.textContent = `${name} • ${reg} • WORKSTATION ${candidateDeviceProfile.nodeId} • SECURE CBT`;
     };
     updateWm();
     setInterval(updateWm, 5000);

@@ -30,6 +30,10 @@ class CandidateCreate(BaseModel):
     disability_type: Optional[str] = None
     compensatory_minutes: Optional[int] = 0
     assigned_terminal: Optional[str] = None
+    test_center_name: Optional[str] = None
+    test_center_code: Optional[str] = None
+    room_number: Optional[str] = None
+    device_details: Optional[Dict[str, Any]] = None
 
 
 class CandidateResponse(BaseModel):
@@ -50,6 +54,10 @@ class CandidateResponse(BaseModel):
     disability_type: Optional[str] = None
     compensatory_minutes: Optional[int] = 0
     assigned_terminal: Optional[str] = None
+    test_center_name: Optional[str] = None
+    test_center_code: Optional[str] = None
+    room_number: Optional[str] = None
+    device_details: Optional[Dict[str, Any]] = None
     biometric_status: Optional[str] = "verified"
     biometric_score: Optional[float] = 98.4
     exam_status: Optional[str] = "assigned"
@@ -368,6 +376,11 @@ class ExamCreateAdvanced(BaseModel):
     sections: Optional[Union[List[str], List[Dict[str, Any]]]] = None
     assigned_candidate_ids: Optional[List[str]] = []
     assigned_batches: Optional[List[str]] = []
+    test_venue_name: Optional[str] = None
+    test_center_code: Optional[str] = None
+    default_lab_room: Optional[str] = None
+    terminal_prefix: Optional[str] = None
+    slot_batch: Optional[str] = None
     config: Optional[Dict[str, Any]] = None
 
 
@@ -389,7 +402,19 @@ class ExamUpdateAdvanced(BaseModel):
     sections: Optional[Union[List[str], List[Dict[str, Any]]]] = None
     assigned_candidate_ids: Optional[List[str]] = None
     assigned_batches: Optional[List[str]] = None
+    test_venue_name: Optional[str] = None
+    test_center_code: Optional[str] = None
+    default_lab_room: Optional[str] = None
+    terminal_prefix: Optional[str] = None
+    slot_batch: Optional[str] = None
     config: Optional[Dict[str, Any]] = None
+
+
+class DeviceRegisterRequest(BaseModel):
+    candidate_id: Optional[str] = None
+    reg_no: Optional[str] = None
+    terminal_node: str
+    device_details: Dict[str, Any]
 
 
 class CandidateSelfRegisterRequest(BaseModel):

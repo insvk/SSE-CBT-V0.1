@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <title>SSE CBT PLATFORM V0.1 | Computer Based Test</title>
   <!-- Top-of-Head Security Auth Guard -->
   <script>
@@ -125,9 +125,11 @@
           <div class="candidate-roll-sub" id="cand-display-reg">--</div>
         </div>
 
-        <!-- Terminal Node Badge -->
-        <div class="header-action-item terminal-badge-chip" id="terminal-badge" title="Physical CBT Terminal Node">
-          Node: <span id="term-display-id">C-042</span>
+        <!-- Terminal Node Badge (Dynamic Hardware Workstation Node) -->
+        <div class="header-action-item terminal-badge-chip" id="terminal-badge" title="Physical CBT Terminal Node & Device Specs">
+          <span style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">Node:</span>
+          <span id="term-display-id" style="font-weight: 800; color: #1e3a8a; letter-spacing: 0.5px;">Detecting...</span>
+          <span id="term-device-sub" style="font-size: 0.65rem; color: #475569; font-weight: 600; padding: 1px 4px; background: rgba(30, 58, 138, 0.08); border-radius: 3px; margin-left: 4px;"></span>
         </div>
 
         <!-- Palette Toggle Button (Visible on Tablets & Mobile) -->

@@ -57,6 +57,14 @@ const ui = {
     themeIcon: document.getElementById('theme-icon')!,
 };
 
+let cachedExams: any[] = [];
+function getActiveExamId(): string {
+    const selected = (document.getElementById('select-active-exam') as HTMLSelectElement)?.value;
+    if (selected && selected !== 'ALL' && selected !== '') return selected;
+    if (cachedExams.length > 0 && cachedExams[0]?.id) return cachedExams[0].id;
+    return localStorage.getItem('active_exam_id') || '';
+}
+
 // --- THEME MANAGEMENT (REPLICATING LIGHT/DARK REFERENCE SPLIT) ---
 function initTheme(): void {
     const savedTheme = localStorage.getItem('cbt_theme') || 'light';
@@ -85,12 +93,31 @@ if (ui.sidebarThemeToggle) {
     ui.sidebarThemeToggle.addEventListener('click', toggleTheme);
 }
 
-// --- SIDEBAR COLLAPSE TOGGLE ---
+// --- SIDEBAR COLLAPSE & MOBILE DRAWER TOGGLE ---
 if (ui.sidebarToggleBtn && ui.sidebar) {
     ui.sidebarToggleBtn.addEventListener('click', () => {
-        ui.sidebar.classList.toggle('collapsed');
-        const isCollapsed = ui.sidebar.classList.contains('collapsed');
-        ui.sidebarToggleBtn.innerHTML = isCollapsed ? '<span>▶</span>' : '<span>◀</span>';
+        if (window.innerWidth <= 768) {
+            ui.sidebar.classList.toggle('mobile-open');
+            let backdrop = document.getElementById('admin-sidebar-mobile-backdrop');
+            if (ui.sidebar.classList.contains('mobile-open')) {
+                if (!backdrop) {
+                    backdrop = document.createElement('div');
+                    backdrop.id = 'admin-sidebar-mobile-backdrop';
+                    backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:999;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);';
+                    backdrop.onclick = () => {
+                        ui.sidebar.classList.remove('mobile-open');
+                        backdrop?.remove();
+                    };
+                    document.body.appendChild(backdrop);
+                }
+            } else {
+                backdrop?.remove();
+            }
+        } else {
+            ui.sidebar.classList.toggle('collapsed');
+            const isCollapsed = ui.sidebar.classList.contains('collapsed');
+            ui.sidebarToggleBtn.innerHTML = isCollapsed ? '<span>▶</span>' : '<span>◀</span>';
+        }
     });
 }
 
@@ -340,7 +367,10 @@ function renderCandidateTable(): void {
         const isDisqualified = status === 'disqualified' || status === 'invalidated' || (c.metadata && (c.metadata.disqualified === true || c.metadata.exam_status === 'invalidated'));
         const slot = (c.batch || 'A').toUpperCase();
         const rollNo = c.roll_number || c.registration_number || `SSE-${slot}-CBT-0001`;
-        const terminal = c.assigned_terminal || `T-${slot}-01`;
+        const terminal = c.assigned_terminal || c.metadata?.assigned_terminal || c.device_details?.node_id || `NODE-${slot}-01`;
+        const room = c.room_number || c.metadata?.room_number || '';
+        const dev = c.device_details || c.metadata?.device_details || null;
+        const devInfo = dev ? `${dev.os || ''} ${dev.browser || ''}`.trim() : '';
         const isPwd = c.is_pwd || false;
         const extraMins = c.compensatory_minutes || 0;
 
@@ -387,7 +417,9 @@ function renderCandidateTable(): void {
                     <span style="font-family: var(--font-mono); font-weight: 800; font-size: 0.82rem; color: var(--text-heading);">
                         Node: ${escapeHtml(terminal)}
                     </span>
-                    <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">IP: ${escapeHtml(c.ip_address || '10.0.4.12')}</span>
+                    <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">
+                        ${room ? `Room: ${escapeHtml(room)} &bull; ` : ''}${devInfo ? escapeHtml(devInfo) : (c.ip_address ? `IP: ${escapeHtml(c.ip_address)}` : 'Terminal Allocated')}
+                    </span>
                 </div>
             </td>
             <td>
@@ -485,6 +517,9 @@ if (ui.formCreate) {
         const regno = (document.getElementById('c-regno') as HTMLInputElement).value.trim();
         const email = (document.getElementById('c-email') as HTMLInputElement).value.trim();
         const pwd = (document.getElementById('c-password') as HTMLInputElement).value.trim();
+        const venue = (document.getElementById('c-venue') as HTMLInputElement)?.value.trim();
+        const room = (document.getElementById('c-room') as HTMLInputElement)?.value.trim();
+        const terminal = (document.getElementById('c-terminal') as HTMLInputElement)?.value.trim();
 
         const payload = {
             full_name: fullName,
@@ -492,7 +527,10 @@ if (ui.formCreate) {
             batch_or_slot: batch || "A",
             registration_number: regno || undefined,
             email: email || undefined,
-            initial_password: pwd || "12345678"
+            initial_password: pwd || "12345678",
+            test_center_name: venue || undefined,
+            room_number: room || undefined,
+            assigned_terminal: terminal || undefined
         };
 
         try {
@@ -511,16 +549,22 @@ if (ui.formCreate) {
                 const resName = document.getElementById('res-name');
                 const resPwd = document.getElementById('res-pwd');
                 const resSlot = document.getElementById('res-slot');
+                const resVenue = document.getElementById('res-venue');
+                const resRoom = document.getElementById('res-room');
+                const resTerminal = document.getElementById('res-terminal');
 
                 if (resRegno) resRegno.textContent = acc.registration_number || regno || "N/A";
                 if (resName) resName.textContent = acc.full_name || fullName;
                 if (resPwd) resPwd.textContent = acc.password || pwd;
                 if (resSlot) resSlot.textContent = acc.slot || batch || "A";
+                if (resVenue) resVenue.textContent = acc.test_center_name || venue || "Saveetha Engineering College";
+                if (resRoom) resRoom.textContent = acc.room_number || room || "Lab 4";
+                if (resTerminal) resTerminal.textContent = acc.assigned_terminal || terminal || "Auto Assigned";
 
                 ui.credResultBox.style.display = 'block';
 
                 ui.btnCopyCred.onclick = () => {
-                    const slip = `SSE CBT PLATFORM V0.1 CREDENTIALS\nName: ${acc.full_name || fullName}\nRoll No: ${acc.registration_number || regno || "N/A"}\nPassword: ${acc.password || pwd}\nSlot: ${acc.slot || batch || "A"}\nPortal URL: /login.html`;
+                    const slip = `SSE CBT PLATFORM V0.1 CREDENTIALS\nName: ${acc.full_name || fullName}\nRoll No: ${acc.registration_number || regno || "N/A"}\nPassword: ${acc.password || pwd}\nSlot: ${acc.slot || batch || "A"}\nCentre: ${acc.test_center_name || venue || "Saveetha Engineering College"}\nRoom: ${acc.room_number || room || "Lab 4"}\nTerminal Node: ${acc.assigned_terminal || terminal || "Auto Assigned"}\nPortal URL: /login.html`;
                     copyText(slip, "Candidate Credentials Slip");
                 };
 
@@ -605,7 +649,7 @@ if (ui.btnExportCsv) {
 if (ui.btnExtendTime) {
     ui.btnExtendTime.onclick = async () => {
         try {
-            const res = await fetch('/api/v1/exams/EX-1001/extend-time', {
+            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/extend-time`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -622,7 +666,7 @@ if (ui.btnExtendTime) {
 if (ui.btnUnlockSessions) {
     ui.btnUnlockSessions.onclick = async () => {
         try {
-            const res = await fetch('/api/v1/exams/EX-1001/unlock-sessions', {
+            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/unlock-sessions`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -642,7 +686,7 @@ if (ui.btnEmergencyReset) {
             return;
         }
         try {
-            const res = await fetch('/api/v1/exams/EX-1001/reset', {
+            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/reset`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -726,7 +770,7 @@ if (ui.btnAssign) {
         const res = await fetch(`${API_BASE}/bulk-assign`, { 
             method: 'POST', 
             headers: getHeaders(), 
-            body: JSON.stringify({ candidate_ids: selected, exam_id: "EX-1001" }) 
+            body: JSON.stringify({ candidate_ids: selected, exam_id: getActiveExamId() || undefined }) 
         });
         if (res.ok) {
             showToast(`Assigned ${selected.length} candidates to exam.`);
@@ -1395,7 +1439,7 @@ if (formExtendCandidateTime) {
         const reason = (document.getElementById('ext-reason-select') as HTMLSelectElement).value;
 
         try {
-            const res = await fetch(`/api/v1/exams/EX-1001/candidate-intervention`, {
+            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -1447,7 +1491,7 @@ if (formReseatCandidate) {
         const reason = (document.getElementById('reseat-reason') as HTMLSelectElement).value;
 
         try {
-            const res = await fetch(`/api/v1/exams/EX-1001/candidate-intervention`, {
+            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -1480,7 +1524,7 @@ if (formReseatCandidate) {
     const reason = currentlyPaused ? 'Proctor inspection cleared' : 'Central Invigilator verification hold';
 
     try {
-        const res = await fetch(`/api/v1/exams/EX-1001/candidate-intervention`, {
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({
@@ -1508,7 +1552,7 @@ if (btnHallPause) {
     btnHallPause.addEventListener('click', async () => {
         if (!confirm("Are you sure you want to PAUSE examination countdown for ALL connected test-takers?")) return;
         try {
-            const res = await fetch(`/api/v1/exams/EX-1001/candidate-intervention`, {
+            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -1532,7 +1576,7 @@ if (btnHallResume) {
     btnHallResume.addEventListener('click', async () => {
         if (!confirm("Resume examination countdown for all connected candidates?")) return;
         try {
-            const res = await fetch(`/api/v1/exams/EX-1001/candidate-intervention`, {
+            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -1555,7 +1599,7 @@ if (btnHallResume) {
 const btnExportAttendance = document.getElementById('btn-export-attendance');
 if (btnExportAttendance) {
     btnExportAttendance.addEventListener('click', () => {
-        window.location.href = '/api/v1/exams/EX-1001/attendance-roster?format=csv';
+        window.location.href = `/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/attendance-roster?format=csv`;
         showToast("Official Attendance Roster CSV downloaded!");
     });
 }
@@ -1568,7 +1612,7 @@ if (btnExportAttendance) {
     if (adminSocket && adminSocket.readyState === WebSocket.OPEN) {
         adminSocket.send(JSON.stringify({
             type: "SEND_CANDIDATE_WARNING",
-            exam_id: "EX-1001",
+            exam_id: getActiveExamId() || "active",
             reg_no: regNo,
             message: customMsg
         }));
@@ -1587,7 +1631,7 @@ if (btnExportAttendance) {
     if (!isLocked && !confirm(`Are you sure you want to forcibly LOCK the terminal of ${name} (${regNo})?`)) return;
 
     try {
-        const res = await fetch(`/api/v1/exams/EX-1001/candidate-intervention`, {
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({
@@ -1876,7 +1920,7 @@ function initAdminWebSocket(): void {
 // 1. Exam Lifecycle Phase Orchestrator
 async function loadExamPhase(): Promise<void> {
     try {
-        const res = await fetch('/api/v1/exams/EX-1001/phase', { headers: getHeaders() });
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/phase`, { headers: getHeaders() });
         if (!res.ok) return;
         const data = await res.json();
 
@@ -1944,7 +1988,7 @@ async function loadExamPhase(): Promise<void> {
 // 2. Telemetry & Anomaly Radar
 async function loadTelemetryRadar(): Promise<void> {
     try {
-        const res = await fetch('/api/v1/exams/EX-1001/telemetry-radar', { headers: getHeaders() });
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/telemetry-radar`, { headers: getHeaders() });
         if (!res.ok) return;
         const data = await res.json();
         const r = data.radar || {};
@@ -1964,7 +2008,7 @@ async function loadTelemetryRadar(): Promise<void> {
 // 3. Pre-Flight Infrastructure Audit
 async function loadInfrastructureAudit(): Promise<void> {
     try {
-        const res = await fetch('/api/v1/exams/EX-1001/infrastructure-audit', { headers: getHeaders() });
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/infrastructure-audit`, { headers: getHeaders() });
         if (!res.ok) throw new Error('Audit failed');
         const data = await res.json();
         const hashEl = document.getElementById('audit-cert-hash');
@@ -1980,7 +2024,7 @@ async function loadInfrastructureAudit(): Promise<void> {
 // 4. Center Closing Report (Form 24-B)
 async function loadClosingReport(): Promise<void> {
     try {
-        const res = await fetch('/api/v1/exams/EX-1001/closing-report', { headers: getHeaders() });
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/closing-report`, { headers: getHeaders() });
         if (!res.ok) throw new Error('Failed to generate report');
         const data = await res.json();
 
@@ -2026,7 +2070,7 @@ if (formPhaseAdvance) {
         const targetPhase = (document.getElementById('advance-target-phase') as HTMLSelectElement).value;
         const note = (document.getElementById('advance-phase-note') as HTMLInputElement).value;
         try {
-            const res = await fetch('/api/v1/exams/EX-1001/phase/advance', {
+            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/phase/advance`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ target_phase: targetPhase, notes: note })
@@ -2061,7 +2105,7 @@ if (formPaperDecrypt) {
         e.preventDefault();
         const keyInput = (document.getElementById('input-custody-key') as HTMLInputElement).value;
         try {
-            const res = await fetch('/api/v1/exams/EX-1001/paper/decrypt', {
+            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/paper/decrypt`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ custody_key: keyInput })
@@ -2111,7 +2155,7 @@ if (formAdmissionsCheckin) {
         const metalStatus = (document.getElementById('checkin-metal-status') as HTMLSelectElement).value;
         const terminal = (document.getElementById('checkin-terminal-input') as HTMLInputElement).value.trim();
         try {
-            const res = await fetch('/api/v1/exams/EX-1001/admissions/check-in', {
+            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/admissions/check-in`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -2157,7 +2201,7 @@ if (formDisasterHold) {
         e.preventDefault();
         const reason = (document.getElementById('disaster-reason-select') as HTMLSelectElement).value;
         try {
-            const res = await fetch('/api/v1/exams/EX-1001/emergency/disaster-hold', {
+            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/emergency/disaster-hold`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ reason: reason, freeze_all_timers: true })
@@ -2208,7 +2252,7 @@ if (ui.topSearchInput) {
 // PRO MAXX: TESTS & EXAM OPERATIONS MANAGEMENT SUITE (CLOUD DB)
 // ===================================================================
 
-let cachedExams: any[] = [];
+// cachedExams declared globally above
 let cachedQuestionBank: any[] = [];
 let selectedQuestionIds: Set<string> = new Set();
 let currentSummaryExamId: string = '';
@@ -2512,6 +2556,15 @@ function renderExamsTable(): void {
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <strong style="font-size: 0.925rem; color: var(--text-heading);">${title}</strong>
                             <span class="badge-pill" style="background: rgba(50, 31, 219, 0.1); color: var(--brand-blue); font-weight: 800; font-family: var(--font-mono);">${code}</span>
+                        </div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span>🏢 ${escapeHtml(ex.test_venue_name || ex.config?.test_venue_name || 'Saveetha Engineering College')}</span>
+                            <span>&bull;</span>
+                            <span style="font-family: var(--font-mono); font-weight: 600; color: #4b5563;">[${escapeHtml(ex.test_center_code || ex.config?.test_center_code || 'TN-CHE-001')}]</span>
+                            <span>&bull;</span>
+                            <span style="font-weight: 600; color: #0284c7;">Room: ${escapeHtml(ex.default_lab_room || ex.config?.default_lab_room || 'Lab 4')}</span>
+                            <span>&bull;</span>
+                            <span style="font-weight: 600; color: #4f46e5;">Node: ${escapeHtml(ex.terminal_prefix || ex.config?.terminal_prefix || 'NODE-L4-C')}</span>
                         </div>
                         
                         <!-- BUTTONS LOCATED DIRECTLY NEAR THE EXAM NAME -->
@@ -3163,6 +3216,17 @@ function openCreateExamModal(): void {
     (document.getElementById('exam-correct-marks-input') as HTMLInputElement).value = '4';
     (document.getElementById('exam-negative-marks-input') as HTMLInputElement).value = '1';
 
+    const venueInp = document.getElementById('exam-venue-input') as HTMLInputElement;
+    if (venueInp) venueInp.value = 'Saveetha Engineering College, Chennai - 602105';
+    const centerCodeInp = document.getElementById('exam-center-code-input') as HTMLInputElement;
+    if (centerCodeInp) centerCodeInp.value = 'TN-CHE-001';
+    const roomInp = document.getElementById('exam-room-input') as HTMLInputElement;
+    if (roomInp) roomInp.value = 'Lab 4';
+    const nodePrefixInp = document.getElementById('exam-terminal-prefix-input') as HTMLInputElement;
+    if (nodePrefixInp) nodePrefixInp.value = 'NODE-L4-C';
+    const slotInp = document.getElementById('exam-slot-input') as HTMLInputElement;
+    if (slotInp) slotInp.value = 'Shift 1';
+
     // Set default start time (now) and end time (now + 3 hours)
     const now = new Date();
     const end = new Date(now.getTime() + 180 * 60 * 1000);
@@ -3213,6 +3277,17 @@ function openEditExamModal(examId: string): void {
     (document.getElementById('exam-duration-input') as HTMLInputElement).value = String(ex.duration_minutes || 180);
     (document.getElementById('exam-correct-marks-input') as HTMLInputElement).value = String(ex.config?.correct_marks || 4);
     (document.getElementById('exam-negative-marks-input') as HTMLInputElement).value = String(ex.config?.negative_marks || 1);
+
+    const editVenueInp = document.getElementById('exam-venue-input') as HTMLInputElement;
+    if (editVenueInp) editVenueInp.value = ex.test_venue_name || ex.config?.test_venue_name || 'Saveetha Engineering College, Chennai - 602105';
+    const editCenterCodeInp = document.getElementById('exam-center-code-input') as HTMLInputElement;
+    if (editCenterCodeInp) editCenterCodeInp.value = ex.test_center_code || ex.config?.test_center_code || 'TN-CHE-001';
+    const editRoomInp = document.getElementById('exam-room-input') as HTMLInputElement;
+    if (editRoomInp) editRoomInp.value = ex.default_lab_room || ex.config?.default_lab_room || 'Lab 4';
+    const editNodePrefixInp = document.getElementById('exam-terminal-prefix-input') as HTMLInputElement;
+    if (editNodePrefixInp) editNodePrefixInp.value = ex.terminal_prefix || ex.config?.terminal_prefix || 'NODE-L4-C';
+    const editSlotInp = document.getElementById('exam-slot-input') as HTMLInputElement;
+    if (editSlotInp) editSlotInp.value = ex.slot_batch || ex.config?.slot_batch || 'Shift 1';
 
     if (ex.start_time) {
         const st = new Date(ex.start_time);
@@ -3307,6 +3382,11 @@ if (formExamCreate) {
         const endTimeStr = (document.getElementById('exam-end-time-input') as HTMLInputElement).value;
         const correctMarks = parseInt((document.getElementById('exam-correct-marks-input') as HTMLInputElement).value, 10) || 4;
         const negMarks = parseInt((document.getElementById('exam-negative-marks-input') as HTMLInputElement).value, 10) || 1;
+        const venue = (document.getElementById('exam-venue-input') as HTMLInputElement)?.value.trim() || 'Saveetha Engineering College, Chennai - 602105';
+        const centerCode = (document.getElementById('exam-center-code-input') as HTMLInputElement)?.value.trim() || 'TN-CHE-001';
+        const labRoom = (document.getElementById('exam-room-input') as HTMLInputElement)?.value.trim() || 'Lab 4';
+        const terminalPrefix = (document.getElementById('exam-terminal-prefix-input') as HTMLInputElement)?.value.trim() || 'NODE-L4-C';
+        const slotBatch = (document.getElementById('exam-slot-input') as HTMLInputElement)?.value.trim() || 'Shift 1';
 
         if (!startTimeStr || !endTimeStr) {
             showToast('Please provide both Start and End scheduled times', true);
@@ -3362,13 +3442,23 @@ if (formExamCreate) {
                         question_ids: qIdArray,
                         ai_camera_enabled: aiCameraEnabled,
                         sections: validSections,
+                        test_venue_name: venue,
+                        test_center_code: centerCode,
+                        default_lab_room: labRoom,
+                        terminal_prefix: terminalPrefix,
+                        slot_batch: slotBatch,
                         config: {
                             exam_code: code,
                             correct_marks: correctMarks,
                             negative_marks: negMarks,
                             question_ids: qIdArray,
                             ai_camera_enabled: aiCameraEnabled,
-                            sections: validSections
+                            sections: validSections,
+                            test_venue_name: venue,
+                            test_center_code: centerCode,
+                            default_lab_room: labRoom,
+                            terminal_prefix: terminalPrefix,
+                            slot_batch: slotBatch
                         }
                     })
                 });
@@ -3384,13 +3474,23 @@ if (formExamCreate) {
                         question_ids: qIdArray,
                         ai_camera_enabled: aiCameraEnabled,
                         sections: validSections,
+                        test_venue_name: venue,
+                        test_center_code: centerCode,
+                        default_lab_room: labRoom,
+                        terminal_prefix: terminalPrefix,
+                        slot_batch: slotBatch,
                         config: {
                             exam_code: code,
                             correct_marks: correctMarks,
                             negative_marks: negMarks,
                             question_ids: qIdArray,
                             ai_camera_enabled: aiCameraEnabled,
-                            sections: validSections
+                            sections: validSections,
+                            test_venue_name: venue,
+                            test_center_code: centerCode,
+                            default_lab_room: labRoom,
+                            terminal_prefix: terminalPrefix,
+                            slot_batch: slotBatch
                         }
                     })
                 });

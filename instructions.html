@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <title>General Examination Instructions | ASSESSMENT CBT</title>
   <script>
     (function () {
@@ -96,11 +96,21 @@
     }
 
     @media (max-width: 680px) {
+      html, body {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
       body {
-        padding: 1rem 0.5rem;
+        padding: 0.75rem 0.5rem;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
       }
       .instructions-container {
-        padding: 1.25rem 1rem;
+        padding: 1.25rem 0.85rem;
+      }
+      .instructions-container > div:first-child {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem;
       }
       .inst-header h1 {
         font-size: 1.35rem;
@@ -110,8 +120,29 @@
         padding-bottom: 1rem;
       }
       .declaration-panel {
-        padding: 1rem;
+        padding: 1rem 0.85rem;
         margin: 1.25rem 0;
+      }
+      .declaration-panel label {
+        align-items: flex-start !important;
+      }
+      #declaration-check {
+        width: 22px;
+        height: 22px;
+        min-width: 22px;
+        min-height: 22px;
+        margin-top: 2px;
+      }
+      .inst-footer {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.75rem;
+      }
+      .btn {
+        width: 100%;
+        min-height: 48px;
+        justify-content: center;
+        font-size: 1rem;
       }
     }
   </style>
@@ -223,7 +254,7 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const examId = urlParams.get('exam_id') || urlParams.get('id') || 'EX-1001';
+    let examId = urlParams.get('exam_id') || urlParams.get('id') || localStorage.getItem('active_exam_id') || '';
 
     const check = document.getElementById('declaration-check');
     const btn = document.getElementById('btn-proceed');
@@ -235,30 +266,57 @@
       if (storedName) candNameSpan.textContent = storedName + (storedReg ? ` (${storedReg})` : '');
     }
 
-    // Fetch and display active exam title
-    fetch(`/api/v1/exams/${examId}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.title) {
-          const h1 = document.querySelector('.inst-header h1');
-          if (h1) h1.textContent = data.title;
+    async function loadActiveExam() {
+      const h1 = document.querySelector('.inst-header h1');
+      if (examId) {
+        try {
+          const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.title && h1) h1.textContent = data.title;
+            return;
+          }
+        } catch (_) {}
+      }
+
+      // Query active examinations from Cloud DB
+      try {
+        const res = await fetch('/api/v1/exams/');
+        if (res.ok) {
+          const exams = await res.json();
+          if (Array.isArray(exams) && exams.length > 0) {
+            const active = exams.find(e => e.state === 'active') || exams[0];
+            examId = active.id;
+            localStorage.setItem('active_exam_id', examId);
+            if (active.title && h1) h1.textContent = active.title;
+            return;
+          }
         }
-      })
-      .catch(() => {});
+      } catch (_) {}
+
+      if (h1) h1.textContent = "Awaiting Scheduled Examination from Cloud DB...";
+    }
+    loadActiveExam();
 
     check.addEventListener('change', (e) => {
       btn.disabled = !e.target.checked;
     });
 
     btn.addEventListener('click', () => {
-      const targetUrl = `/exam.html?exam_id=${encodeURIComponent(examId)}`;
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().finally(() => {
-          window.location.href = targetUrl;
-        });
-      } else {
-        window.location.href = targetUrl;
+      if (!examId) {
+        alert("No active examination scheduled. Please contact the administrator.");
+        return;
       }
+      const targetUrl = `/exam.html?exam_id=${encodeURIComponent(examId)}`;
+      try {
+        if (document.documentElement && document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen()
+            .then(() => { window.location.href = targetUrl; })
+            .catch(() => { window.location.href = targetUrl; });
+          return;
+        }
+      } catch (_) {}
+      window.location.href = targetUrl;
     });
   </script>
 </body>

@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
     <title>Candidate Portal | SSE CBT PLATFORM V0.1</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -727,7 +727,45 @@
         }
       }
 
+      /* Backdrop for mobile candidate drawer */
+      #candidate-sidebar-mobile-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        z-index: 999;
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        opacity: 1;
+        transition: opacity 0.25s ease;
+      }
+
+      /* ============================================================
+         RESPONSIVE DESIGN SYSTEM (MOBILE, TABLET, LAPTOP)
+         ============================================================ */
+      @media (max-width: 1024px) {
+        .dashboard-top-grid,
+        .stats-duo-grid,
+        .dashboard-bottom-grid {
+          grid-template-columns: 1fr;
+          gap: 1.25rem;
+        }
+        .table-card-box {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .header-search input {
+          width: 180px;
+        }
+      }
+
       @media (max-width: 768px) {
+        html, body {
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+        }
+        input, select, textarea {
+          font-size: 16px !important;
+        }
         .app-layout {
           flex-direction: column;
         }
@@ -737,8 +775,10 @@
           top: 0;
           width: 260px;
           height: 100vh;
+          height: 100dvh;
           z-index: 1000;
-          box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+          box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
+          transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .sidebar.mobile-open {
           left: 0;
@@ -749,15 +789,50 @@
         }
         .page-body {
           padding: 1rem 0.85rem;
+          padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
         }
         .top-header {
           padding: 0 0.85rem;
+          height: 56px;
         }
         .header-search {
           display: none;
         }
         .solid-card {
           min-height: auto;
+        }
+        .btn {
+          min-height: 44px;
+        }
+        .icon-btn {
+          min-width: 44px;
+          min-height: 44px;
+        }
+        #modal-admit-card .modal-box {
+          max-width: 95vw !important;
+          width: 95vw !important;
+          padding: 1.25rem !important;
+          max-height: 90vh !important;
+          max-height: 90dvh !important;
+          overflow-y: auto !important;
+          -webkit-overflow-scrolling: touch;
+        }
+      }
+
+      @media (max-width: 640px) {
+        #admit-cand-main-grid {
+          grid-template-columns: 1fr !important;
+          gap: 1rem !important;
+        }
+        #admit-cand-barcode-block {
+          flex-direction: row !important;
+          padding: 0.75rem !important;
+          justify-content: space-around !important;
+        }
+        #admit-cand-barcode-block div {
+          writing-mode: horizontal-tb !important;
+          transform: none !important;
+          letter-spacing: 4px !important;
         }
       }
 
@@ -771,16 +846,19 @@
           gap: 0.5rem;
         }
         .breadcrumb-title h1 {
-          font-size: 1.35rem;
+          font-size: 1.25rem;
         }
         .table-header-bar {
           flex-direction: column;
           align-items: flex-start;
           gap: 0.5rem;
         }
+        .brand-title {
+          font-size: 0.85rem;
+        }
       }
     </style>
-    <script type="module" crossorigin src="/assets/candidate_dashboard-8fdb016f.js"></script>
+    <script type="module" crossorigin src="/assets/candidate_dashboard-a8775f51.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
   </head>
   <body>
@@ -1018,12 +1096,8 @@
                   </thead>
                   <tbody id="cand-attempts-body">
                     <tr>
-                      <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">EX-1001</td>
-                      <td><strong>NATIONAL ASSESSMENT EXAMINATION</strong></td>
-                      <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Slot A</span></td>
-                      <td><span class="status-pill status-active">Ready to Launch</span></td>
-                      <td style="text-align: right;">
-                        <a href="/instructions.html" class="btn btn-primary btn-sm">Start &rarr;</a>
+                      <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        <div style="font-weight: 600; font-size: 0.95rem;">Syncing allocated examinations from Cloud DB...</div>
                       </td>
                     </tr>
                   </tbody>

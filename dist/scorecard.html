@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <title>Official Score Card | MCQ ASSESSMENT [ SSE CBT 2026 ]</title>
   <script>
     (function () {
@@ -191,13 +191,26 @@
        ============================================================ */
     @media (max-width: 768px) {
       body {
-        padding: 1rem 0.5rem;
+        padding: 0.5rem 0.35rem;
+        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      .scorecard-document {
+        border-radius: var(--radius);
+        border-width: 1px;
       }
       .doc-header {
         padding: 1.25rem 1rem;
         flex-direction: column;
         align-items: flex-start;
-        gap: 1rem;
+        gap: 0.85rem;
+      }
+      .agency-title h1 {
+        font-size: 1.25rem;
+      }
+      .agency-title h2 {
+        font-size: 0.85rem;
       }
       .doc-subhead {
         padding: 0.75rem 1rem;
@@ -213,31 +226,68 @@
       .candidate-photo-box {
         margin: 0 auto;
       }
+      #sc-disq-banner {
+        margin: 1rem 0.75rem !important;
+        padding: 1rem !important;
+      }
       .overall-score-banner {
-        margin: 1rem;
-        padding: 1rem;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
+        margin: 1rem 0.75rem !important;
+        padding: 1.25rem 1rem !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 1.25rem !important;
+      }
+      .overall-score-banner > div {
+        text-align: left !important;
+        border: none !important;
+        padding: 0 !important;
+      }
+      .overall-score-banner > div:not(:last-child) {
+        border-bottom: 1px solid #bfdbfe !important;
+        padding-bottom: 0.85rem !important;
+      }
+      #sc-metrics-grid-container {
+        margin: 0 0.75rem 1.25rem 0.75rem !important;
+      }
+      #sc-metrics-grid-container > div {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+      }
+      #sc-subject-breakdown-container > div:first-child {
+        margin: 0 0.75rem 0.5rem 0.75rem !important;
       }
       .score-table {
-        margin: 0 1rem 1.5rem 1rem;
-        width: calc(100% - 2rem);
+        margin: 0 0.75rem 1.5rem 0.75rem !important;
+        width: calc(100% - 1.5rem) !important;
+        min-width: 520px;
+      }
+      #sc-question-review-container {
+        margin: 1.5rem 0.75rem 0.5rem 0.75rem !important;
+      }
+      #sc-question-review-container .score-table {
+        margin: 0 0 1.5rem 0 !important;
+        width: 100% !important;
+        min-width: 600px;
+      }
+      #sc-signature-container {
+        padding: 1.25rem 1rem !important;
+        justify-content: center !important;
       }
       .doc-actions {
-        padding: 1rem;
+        padding: 1rem 0.75rem;
         flex-direction: column;
         gap: 0.75rem;
       }
       .doc-actions .btn {
         width: 100%;
+        min-height: 44px;
         justify-content: center;
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/scorecard-b996de58.js"></script>
+  <script type="module" crossorigin src="/assets/scorecard-c42de0f4.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
-  <link rel="stylesheet" href="/assets/style-e946e59c.css">
+  <link rel="stylesheet" href="/assets/style-9c5620d5.css">
 </head>
 
 <body>
@@ -384,26 +434,28 @@
       <div style="margin: 0 2.5rem 0.5rem 2.5rem; font-size: 0.95rem; font-weight: 700; color: #1e3a8a;">
         Subject &amp; Section Performance Dossier
       </div>
-      <table class="score-table">
-        <thead>
-          <tr>
-            <th>Subject / Section</th>
-            <th>Total Questions</th>
-            <th>Attempted</th>
-            <th>Correct</th>
-            <th>Incorrect</th>
-            <th>Marks Awarded</th>
-            <th>Accuracy (%)</th>
-          </tr>
-        </thead>
-        <tbody id="sc-table-body">
-          <tr>
-            <td colspan="7" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
-              Loading authoritative scores and subject dossier from Cloud Database...
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <table class="score-table">
+          <thead>
+            <tr>
+              <th>Subject / Section</th>
+              <th>Total Questions</th>
+              <th>Attempted</th>
+              <th>Correct</th>
+              <th>Incorrect</th>
+              <th>Marks Awarded</th>
+              <th>Accuracy (%)</th>
+            </tr>
+          </thead>
+          <tbody id="sc-table-body">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+                Loading authoritative scores and subject dossier from Cloud Database...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- DETAILED QUESTION REVIEW TABLE -->

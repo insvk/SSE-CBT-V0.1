@@ -119,6 +119,10 @@ def _format_candidate_response(row: dict) -> CandidateResponse:
         disability_type=metadata.get("disability_type"),
         compensatory_minutes=int(metadata.get("compensatory_minutes", 0)),
         assigned_terminal=assigned_terminal,
+        test_center_name=metadata.get("test_center_name"),
+        test_center_code=metadata.get("test_center_code"),
+        room_number=metadata.get("room_number") or metadata.get("lab_number"),
+        device_details=metadata.get("device_details"),
         biometric_status=metadata.get("biometric_status", "verified"),
         biometric_score=float(metadata.get("biometric_score", 98.4)),
         exam_status=metadata.get("exam_status", "assigned"),
@@ -305,6 +309,10 @@ async def create_candidate(cand: CandidateCreate, user_context: dict = Depends(r
             "disability_type": cand.disability_type,
             "compensatory_minutes": int(cand.compensatory_minutes or (60 if cand.is_pwd else 0)),
             "assigned_terminal": cand.assigned_terminal,
+            "test_center_name": cand.test_center_name,
+            "test_center_code": cand.test_center_code,
+            "room_number": cand.room_number,
+            "device_details": cand.device_details,
             "reporting_time_ist": slot_info["reporting"],
             "slot_timing_ist": slot_info["timing"],
             "biometric_status": "verified",
@@ -577,9 +585,9 @@ def get_candidate_admit_card(
 
         settings = CURRENT_EXAM_SETTINGS
         admit_tmpl = settings.get("admit_card") or {}
-        center_name = admit_tmpl.get("test_venue_name") or settings.get("test_venue_name") or "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105"
-        center_code = admit_tmpl.get("test_center_code") or settings.get("test_center_code") or "SSEC-TN-042"
-        lab_num = admit_tmpl.get("default_lab_room") or settings.get("default_lab_room") or slot_info["lab"]
+        center_name = cand.test_center_name or admit_tmpl.get("test_venue_name") or settings.get("test_venue_name") or "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105"
+        center_code = cand.test_center_code or admit_tmpl.get("test_center_code") or settings.get("test_center_code") or "SSEC-TN-042"
+        lab_num = cand.room_number or admit_tmpl.get("default_lab_room") or settings.get("default_lab_room") or slot_info["lab"]
         term_pref = admit_tmpl.get("terminal_prefix") or settings.get("terminal_prefix") or f"T-{cand.batch}-"
         assigned_terminal = cand.assigned_terminal or f"{term_pref}{cand.id[-4:].upper()}"
         ctrl_name = admit_tmpl.get("controller_name") or settings.get("controller_name") or "Prof. Dr. M. Shanmugam"

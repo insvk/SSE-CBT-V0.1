@@ -1271,10 +1271,45 @@ body {
 }
 
 /* ============================================================
-   RESPONSIVE DESIGN SYSTEM (MOBILE, TABLET, DESKTOP MATRIX)
+   RESPONSIVE DESIGN SYSTEM (ANDROID, IOS, WINDOWS, TAB, MOBILE, DESKTOP)
    ============================================================ */
 
-/* Tablet & Compact Laptop Displays (Max-Width: 1023px) */
+/* Universal Touch & Mobile Hardware Ergonomics */
+@media (hover: none) and (pointer: coarse) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button, a, input, select, label, .option-card-row, .btn-palette-num {
+    touch-action: manipulation;
+  }
+}
+
+/* Prevent iOS Safari Automatic Zoom on Form Inputs */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Palette Off-Canvas Drawer Backdrop */
+.palette-drawer-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: calc(var(--z-drawer) - 1);
+  transition: opacity 0.25s ease;
+}
+.palette-drawer-backdrop.active {
+  display: block;
+}
+
+/* ------------------------------------------------------------
+   1. TABLETS & COMPACT LAPTOPS (Max-Width: 1023px)
+   (iPad Air, iPad Pro 11", Android Galaxy Tabs, Surface, 13" Laptops)
+   ------------------------------------------------------------ */
 @media (max-width: 1023px) {
   .exam-layout {
     grid-template-columns: 1fr;
@@ -1284,173 +1319,357 @@ body {
     overflow: hidden;
   }
 
+  /* Show Off-Canvas Drawer Toggle in Header */
   .btn-palette-toggle-header {
-    display: inline-flex;
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    font-weight: 700;
+    padding: 0.35rem 0.65rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.8rem;
   }
 
-  /* Question Palette as Slide-in Off-Canvas Drawer */
+  /* Question Palette as Slide-in Drawer */
   .exam-sidebar {
     position: fixed;
     top: 0;
     right: 0;
     bottom: 0;
-    width: 320px;
-    max-width: 88vw;
+    width: 330px;
+    max-width: 86vw;
     z-index: var(--z-drawer);
     border-left: 1px solid var(--border-color);
-    box-shadow: -6px 0 28px rgba(0, 0, 0, 0.22);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.28);
     transform: translateX(100%);
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    background: #ffffff;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
-  .exam-sidebar.drawer-open {
-    transform: translateX(0);
+  .exam-sidebar.drawer-open,
+  .exam-sidebar.mobile-open {
+    transform: translateX(0) !important;
   }
+
   .btn-close-palette-drawer {
-    display: block;
+    display: block !important;
+    min-height: 40px;
+    padding: 0.5rem 1rem;
+    font-weight: 700;
+    color: #dc2626;
+    border-color: #fca5a5;
+    background: #fef2f2;
   }
 
   .exam-main {
     padding: var(--space-4) var(--space-5);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .exam-header {
     padding: 0 var(--space-3);
     gap: var(--space-2);
   }
+
   .exam-header-tools {
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    max-width: 40vw;
+    max-width: 36vw;
   }
   .exam-header-tools::-webkit-scrollbar {
     display: none;
   }
 
+  /* Node Badge: ALWAYS VISIBLE ON TABLET */
+  .terminal-badge-chip {
+    display: inline-flex !important;
+    background: rgba(30, 58, 138, 0.08);
+    border: 1px solid rgba(30, 58, 138, 0.18);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+  }
+
   .footer-left-group {
     gap: var(--space-2);
   }
 }
 
-/* Mobile Devices (Max-Width: 767px) */
+/* ------------------------------------------------------------
+   2. MOBILE DEVICES (Max-Width: 767px)
+   (iPhone 12/13/14/15/16, Samsung Galaxy, Pixel, OnePlus, Xiaomi)
+   ------------------------------------------------------------ */
 @media (max-width: 767px) {
   :root {
-    --header-height: 52px;
-    --section-bar-height: 40px;
+    --header-height: auto;
+    --section-bar-height: 42px;
   }
 
   .exam-header {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
     padding: var(--space-2) var(--space-3);
+    gap: 6px;
     min-height: auto;
-    gap: var(--space-2);
+    background: #ffffff;
+    border-bottom: 1px solid var(--border-color);
   }
 
+  /* Row 1: Brand + Dynamic Workstation Node + Countdown Timer + Palette */
   .exam-header-brand {
-    max-width: 55%;
-  }
-  .exam-title-text {
-    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
   }
 
+  .exam-title-text {
+    font-size: 0.85rem;
+    font-weight: 800;
+    max-width: 48vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Telemetry row on mobile: Node Badge + Timer + Palette */
+  .exam-header-telemetry {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  /* Workstation Node Badge: PROMINENTLY VISIBLE ON MOBILE AT TOP */
+  .terminal-badge-chip {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    background: #e0f2fe !important;
+    border: 1px solid #7dd3fc !important;
+    border-radius: 4px;
+    font-size: 0.72rem !important;
+    font-family: var(--font-mono);
+    color: #0369a1 !important;
+    white-space: nowrap;
+  }
+  .terminal-badge-chip #term-display-id {
+    font-weight: 800;
+    color: #0369a1 !important;
+  }
+
+  /* Countdown Timer Badge */
+  .countdown-widget {
+    padding: 2px 6px;
+  }
+  .countdown-label {
+    display: none;
+  }
+  .countdown-pill {
+    font-size: 0.82rem;
+    font-weight: 800;
+    padding: 3px 8px;
+  }
+
+  /* Row 2: Secondary Quick Toolbar (Calculator, Rough Sheet, Font, Sync) */
   .exam-header-tools {
-    order: 3;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     width: 100%;
     max-width: 100%;
-    padding: 3px 0;
+    overflow-x: auto;
+    padding: 4px 0 2px 0;
     border-top: 1px solid #f1f5f9;
-    justify-content: flex-start;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .exam-header-tools .header-action-item {
+    font-size: 0.74rem;
+    padding: 3px 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    white-space: nowrap;
   }
 
-  .exam-header-telemetry {
-    gap: var(--space-2);
-  }
-
+  /* Candidate Profile chip folds on small mobile to give Node room */
   .candidate-profile-chip {
-    display: none; /* Recorded in watermark and storage */
+    display: none;
   }
-
-  .terminal-badge-chip {
-    display: none; /* Recorded in watermark */
-  }
-
   .header-clock-chip {
     display: none;
   }
 
+  /* Section Selector Bar */
+  .exam-section-bar {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: 0 var(--space-2);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    height: 42px;
+  }
+  .exam-section-bar::-webkit-scrollbar {
+    display: none;
+  }
+  .section-tab-item {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+  }
+
+  /* Question Area Mobile Touch Ergonomics */
   .exam-main {
     padding: var(--space-3) var(--space-3);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .question-top-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
     margin-bottom: var(--space-3);
-    padding-bottom: var(--space-2);
+  }
+  .question-meta-group {
+    width: 100%;
+    justify-content: space-between;
   }
 
+  .question-text-area {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    word-break: break-word;
+  }
+  .question-text-area img {
+    max-width: 100% !important;
+    height: auto !important;
+    border-radius: 6px;
+    margin: 8px 0;
+  }
+  .question-text-area table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+  .katex-display {
+    overflow-x: auto !important;
+    max-width: 100% !important;
+    padding: 6px 0 !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Touch-Friendly Option Cards */
   .option-card-row {
-    min-height: 48px;
-    padding: var(--space-3) var(--space-3);
+    min-height: 52px;
+    padding: 0.75rem 0.85rem;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+  .option-card-row:active {
+    background: #eff6ff;
+  }
+  .option-radio-indicator {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
   }
 
-  /* Two-row mobile bottom footer with 44px touch targets */
+  /* 2-Row Thumb-Accessible Touch Footer */
   .exam-footer {
     flex-direction: column;
     padding: var(--space-2) var(--space-3);
-    padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
-    gap: var(--space-2);
+    padding-bottom: max(var(--space-2), env(safe-area-inset-bottom, 8px));
+    gap: 6px;
     min-height: auto;
+    background: #ffffff;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
   }
 
-  .footer-left-group {
+  .footer-left-group,
+  .footer-right-group {
     width: 100%;
-    flex-direction: column;
-    gap: var(--space-2);
   }
 
   .footer-buttons-row-1 {
+    display: flex;
     width: 100%;
-    gap: var(--space-2);
+    gap: 6px;
   }
   .footer-buttons-row-1 button {
     flex: 1;
-    height: 44px;
-    font-size: 0.74rem;
+    min-height: 44px;
+    font-size: 0.76rem;
+    font-weight: 700;
     padding: 0 4px;
     text-align: center;
   }
 
   .footer-buttons-row-2 {
+    display: flex;
     width: 100%;
-    height: 44px;
+    gap: 6px;
   }
   .footer-buttons-row-2 .btn-nav-split {
     flex: 1;
-    font-size: 0.8rem;
+    min-height: 44px;
+    font-size: 0.82rem;
+    font-weight: 700;
   }
 
-  .footer-right-group {
-    width: 100%;
-    gap: var(--space-2);
-  }
-  .footer-right-group button {
-    flex: 1;
-    height: 44px;
-    font-size: 0.8rem;
-    padding: 0 4px;
-  }
-
-  .calc-window {
-    width: 95vw;
-    left: 2.5vw !important;
+  /* Floating Modals Centered on Mobile */
+  .calc-window,
+  .scratchpad-window {
+    width: min(94vw, 360px) !important;
+    left: 50% !important;
     right: auto !important;
-    top: 50px !important;
+    top: 8% !important;
+    transform: translateX(-50%) !important;
+    max-height: 84vh !important;
+  }
+
+  /* Palette Grid Touch Size */
+  .choose-question-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .btn-palette-num {
+    min-height: 40px;
+    font-size: 0.85rem;
+    font-weight: 700;
   }
 }
 
-/* Small Mobile Devices (Max-Width: 479px) */
+/* ------------------------------------------------------------
+   3. SMALL MOBILE SCREENS (Max-Width: 479px)
+   (iPhone SE, older Galaxy A, compact Android phones)
+   ------------------------------------------------------------ */
 @media (max-width: 479px) {
   .exam-title-text {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
+    max-width: 40vw;
+  }
+
+  .terminal-badge-chip {
+    font-size: 0.68rem !important;
+    padding: 2px 4px !important;
+  }
+  .terminal-badge-chip #term-device-sub {
+    display: none; /* Hide verbose hardware subtitle, retain Node ID */
   }
 
   .countdown-pill {
@@ -1458,14 +1677,50 @@ body {
     padding: 2px 6px;
   }
 
+  .btn-palette-toggle-header span {
+    display: none; /* Icon only */
+  }
+
   .choose-question-grid {
     grid-template-columns: repeat(4, 1fr);
   }
 
-  .btn-action-green,
-  .btn-action-purple,
-  .btn-action-outline-blue {
-    font-size: 0.72rem;
+  .footer-buttons-row-1 button {
+    font-size: 0.7rem;
+  }
+  .footer-buttons-row-2 .btn-nav-split {
+    font-size: 0.76rem;
+  }
+}
+
+/* ------------------------------------------------------------
+   4. MOBILE LANDSCAPE ORIENTATION (Max-Height: 500px)
+   ------------------------------------------------------------ */
+@media (max-height: 500px) and (orientation: landscape) {
+  .exam-header {
+    flex-direction: row;
+    min-height: 42px;
+    padding: 2px 10px;
+  }
+  .exam-header-tools {
+    display: none; /* Clean exam view */
+  }
+  .exam-section-bar {
+    height: 34px;
+  }
+  .exam-footer {
+    flex-direction: row;
+    min-height: 44px;
+    padding: 2px 10px;
+  }
+  .footer-buttons-row-1,
+  .footer-buttons-row-2 {
+    display: inline-flex;
+    width: auto;
+  }
+  .footer-buttons-row-1 button,
+  .footer-buttons-row-2 .btn-nav-split {
+    min-height: 38px;
   }
 }
 

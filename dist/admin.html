@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <title>Administrator Command Centre | SSE CBT PLATFORM V0.1</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1411,6 +1411,20 @@
       background: #f1f5f9;
       border: 1px dashed #94a3b8;
       display: inline-block;
+    }
+
+    /* Backdrop for mobile drawer */
+    #admin-sidebar-mobile-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      z-index: 999;
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      opacity: 1;
+      transition: opacity 0.25s ease;
+    }
+
     /* ============================================================
        RESPONSIVE DESIGN SYSTEM (MOBILE, TABLET, DESKTOP)
        ============================================================ */
@@ -1428,6 +1442,9 @@
       .overflow-menu {
         left: 0;
         right: auto;
+      }
+      .dashboard-bottom-grid {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -1454,9 +1471,26 @@
       .exam-card-box {
         padding: 1rem;
       }
+      .dashboard-top-grid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+      .dashboard-bottom-grid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
     }
 
     @media (max-width: 768px) {
+      /* Universal touch ergonomics */
+      html, body {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      /* Prevent iOS auto-zoom on input focus */
+      input, select, textarea {
+        font-size: 16px !important;
+      }
       .app-layout {
         flex-direction: column;
       }
@@ -1466,8 +1500,10 @@
         top: 0;
         width: 260px;
         height: 100vh;
+        height: 100dvh;
         z-index: 1000;
-        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
+        transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       }
       .sidebar.mobile-open {
         left: 0;
@@ -1478,9 +1514,11 @@
       }
       .page-body {
         padding: 1rem 0.85rem;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
       }
       .top-header {
         padding: 0 0.85rem;
+        height: 56px;
       }
       .master-clock-widget {
         display: none;
@@ -1488,20 +1526,56 @@
       .header-search {
         display: none;
       }
+      /* Single-column modal layouts on mobile */
       .modal-box {
         width: 95vw !important;
         max-width: 95vw !important;
         margin: 1rem auto !important;
         padding: 1.25rem !important;
         max-height: 90vh !important;
+        max-height: 90dvh !important;
         overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
       }
+      .form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem;
+      }
+      .form-group-full {
+        grid-column: span 1 !important;
+      }
+      .stats-duo-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+      }
+      .dossier-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+      }
+      .dossier-fields-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.65rem;
+      }
+      .dossier-photo-card {
+        margin-bottom: 0.5rem;
+      }
+      /* Smooth touch scrolling for tables */
       .table-responsive,
       .exam-card-box div[style*="overflow-x"],
+      .table-card-box div[style*="overflow-x"],
       table {
         max-width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+      }
+      /* Touch-friendly buttons */
+      .btn {
+        min-height: 44px;
+        padding: 0.6rem 1rem;
+      }
+      .icon-btn {
+        min-width: 44px;
+        min-height: 44px;
       }
     }
 
@@ -1510,10 +1584,17 @@
         padding: 0.85rem 0.5rem;
       }
       .page-title-region h1 {
-        font-size: 1.35rem;
+        font-size: 1.25rem;
+      }
+      .stat-mini-card {
+        padding: 1rem;
+      }
+      .stat-mini-info .value {
+        font-size: 1.5rem !important;
       }
       .toolbar-primary-row {
         width: 100%;
+        flex-direction: column;
       }
       .toolbar-primary-row .btn {
         width: 100%;
@@ -1521,6 +1602,7 @@
       }
       .toolbar-secondary-row {
         width: 100%;
+        flex-direction: column;
       }
       .toolbar-secondary-row .btn,
       .toolbar-overflow-wrap,
@@ -1531,6 +1613,12 @@
       .overflow-menu {
         width: 100%;
         min-width: unset;
+      }
+      .admit-card-box {
+        padding: 0.85rem !important;
+      }
+      .brand-title {
+        font-size: 0.85rem;
       }
     }
 
@@ -1558,7 +1646,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/admin-3aafa969.js"></script>
+  <script type="module" crossorigin src="/assets/admin-0157f6f3.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
 </head>
 
@@ -2372,6 +2460,21 @@
             <input type="email" class="form-input-ctrl" id="c-email" placeholder="Auto-generated if blank" />
           </div>
 
+          <div>
+            <label class="form-label">Exam Centre / Venue (Optional)</label>
+            <input type="text" class="form-input-ctrl" id="c-venue" placeholder="e.g. Saveetha Engineering College" />
+          </div>
+
+          <div>
+            <label class="form-label">Exam Room / Lab Hall (Optional)</label>
+            <input type="text" class="form-input-ctrl" id="c-room" placeholder="e.g. Lab 4" />
+          </div>
+
+          <div>
+            <label class="form-label">Assigned Terminal Node (Optional)</label>
+            <input type="text" class="form-input-ctrl" id="c-terminal" placeholder="e.g. NODE-L4-C01 (auto if blank)" />
+          </div>
+
           <div class="form-group-full">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
               <label class="form-label" style="margin-bottom: 0;">Password / Passcode</label>
@@ -2392,6 +2495,9 @@
             <div>Name: <span id="res-name"></span></div>
             <div>Password: <span id="res-pwd" style="font-weight: 700; color: #d97706;"></span></div>
             <div>Slot: <span id="res-slot"></span></div>
+            <div>Centre: <span id="res-venue"></span></div>
+            <div>Room: <span id="res-room"></span></div>
+            <div>Terminal Node: <span id="res-terminal" style="font-weight: 700; color: #0284c7;"></span></div>
           </div>
           <button type="button" class="btn btn-outline btn-sm" id="btn-copy-cred"
             style="margin-top: 0.65rem; width: 100%;">
@@ -3438,6 +3544,48 @@
           <div>
             <label class="form-label">Negative Marks (Penalty)</label>
             <input type="number" class="form-input-ctrl" id="exam-negative-marks-input" value="1" min="0" max="10" />
+          </div>
+        </div>
+
+        <!-- VENUE, CENTER CODE, ROOM NO & TERMINAL ALLOCATION SETTINGS -->
+        <div
+          style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; margin-bottom: 1.25rem;">
+          <div
+            style="font-size: 0.85rem; font-weight: 800; color: var(--text-heading); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 6px;">
+            <span>🏢 Examination Centre &amp; Lab Infrastructure Configuration</span>
+            <span class="badge-pill"
+              style="background: rgba(14, 165, 233, 0.15); color: #0284c7; font-weight: 800;">VENUE CONTROLLER</span>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            Admin configuration for physical test venue, room number, shift/slot batch, and terminal node prefix assigned to candidate workstations.
+          </div>
+          <div class="form-grid">
+            <div class="form-group-full">
+              <label class="form-label">Exam Centre / Venue Name</label>
+              <input type="text" class="form-input-ctrl" id="exam-venue-input"
+                placeholder="e.g. Saveetha Engineering College - Online Assessment Centre 1" value="Saveetha Engineering College, Chennai - 602105" />
+            </div>
+            <div>
+              <label class="form-label">Centre Code</label>
+              <input type="text" class="form-input-ctrl" id="exam-center-code-input"
+                placeholder="e.g. TN-CHE-001" value="TN-CHE-001" />
+            </div>
+            <div>
+              <label class="form-label">Exam Room / Lab Hall</label>
+              <input type="text" class="form-input-ctrl" id="exam-room-input"
+                placeholder="e.g. LAB-04 (Computing Block B)" value="Lab 4" />
+            </div>
+            <div>
+              <label class="form-label">Terminal Node Prefix</label>
+              <input type="text" class="form-input-ctrl" id="exam-terminal-prefix-input"
+                placeholder="e.g. NODE-L4-C" value="NODE-L4-C" />
+              <span style="font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; display: block;">Combined with candidate device footprint</span>
+            </div>
+            <div>
+              <label class="form-label">Shift / Slot Batch</label>
+              <input type="text" class="form-input-ctrl" id="exam-slot-input"
+                placeholder="e.g. Shift 1 (Morning)" value="Shift 1" />
+            </div>
           </div>
         </div>
 

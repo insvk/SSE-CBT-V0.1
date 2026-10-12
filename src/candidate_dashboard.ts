@@ -79,6 +79,20 @@ if (toggleBtnEl && sidebarEl) {
     toggleBtnEl.addEventListener('click', () => {
         if (window.innerWidth <= 768) {
             sidebarEl.classList.toggle('mobile-open');
+            let backdrop = document.getElementById('candidate-sidebar-mobile-backdrop');
+            if (sidebarEl.classList.contains('mobile-open')) {
+                if (!backdrop) {
+                    backdrop = document.createElement('div');
+                    backdrop.id = 'candidate-sidebar-mobile-backdrop';
+                    backdrop.onclick = () => {
+                        sidebarEl.classList.remove('mobile-open');
+                        backdrop?.remove();
+                    };
+                    document.body.appendChild(backdrop);
+                }
+            } else {
+                backdrop?.remove();
+            }
         } else {
             sidebarEl.classList.toggle('collapsed');
             const isCollapsed = sidebarEl.classList.contains('collapsed');
@@ -115,15 +129,30 @@ async function loadPortalData(): Promise<void> {
         const examsRes = await fetch('/api/v1/exams/', { headers: getHeaders() });
         if (examsRes.ok) {
             const exams = await examsRes.json();
-            if (Array.isArray(exams) && exams.length > 0 && ui.candAttemptsBody) {
+            if (Array.isArray(exams) && ui.candAttemptsBody) {
+                if (exams.length === 0) {
+                    ui.candAttemptsBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                                <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-heading); margin-bottom: 0.35rem;">No Active Examinations Scheduled</div>
+                                <div style="font-size: 0.85rem;">Examinations scheduled by the administrator in Cloud DB will automatically appear here.</div>
+                            </td>
+                        </tr>
+                    `;
+                    if (ui.candStatStatus) {
+                        ui.candStatStatus.textContent = "0 Tests Enrolled";
+                    }
+                    return;
+                }
+
                 let html = '';
                 for (const ex of exams) {
-                    const examId = ex.id || 'EX-1001';
+                    const examId = ex.id;
                     const code = ex.config?.exam_code || ex.code || 'CBT-' + examId.substring(0, 6).toUpperCase();
                     const title = ex.title || 'National Assessment Examination';
                     const schedStatus = ex.schedule_status || 'active';
                     const duration = ex.duration_minutes || 180;
-                    const qCount = ex.question_count || ex.config?.question_ids?.length || 30;
+                    const qCount = ex.question_count || ex.config?.question_ids?.length || 0;
 
                     let statusBadge = '<span class="status-pill status-active">Ready to Launch</span>';
                     let actionBtn = `<a href="/instructions.html?exam_id=${encodeURIComponent(examId)}" class="btn btn-primary btn-sm">Start Exam &rarr;</a>`;
@@ -146,7 +175,7 @@ async function loadPortalData(): Promise<void> {
                                     Duration: ${duration} Mins &bull; ${qCount} Questions
                                 </div>
                             </td>
-                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot ${localStorage.getItem('batch_slot') || 'A'}</span></td>
+                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot ${localStorage.getItem('batch_slot') || ex.slot_batch || 'A'}</span></td>
                             <td>${statusBadge}</td>
                             <td style="text-align: right; white-space: nowrap;">
                                 ${actionBtn}
@@ -163,62 +192,65 @@ async function loadPortalData(): Promise<void> {
         }
     } catch (_) {}
 
-    // Fallback check for single exam attempt
-    try {
-        const reg = localStorage.getItem('reg_no') || '';
-        const candId = localStorage.getItem('candidate_id') || '';
-        const qParams = new URLSearchParams();
-        if (reg) qParams.set('reg_no', reg);
-        if (candId) qParams.set('candidate_id', candId);
+    // If candidate has an active exam id stored, check their official result
+    const activeExamId = localStorage.getItem('active_exam_id');
+    if (activeExamId) {
+        try {
+            const reg = localStorage.getItem('reg_no') || '';
+            const candId = localStorage.getItem('candidate_id') || '';
+            const qParams = new URLSearchParams();
+            if (reg) qParams.set('reg_no', reg);
+            if (candId) qParams.set('candidate_id', candId);
 
-        const resRes = await fetch(`/api/v1/exams/EX-1001/result?${qParams.toString()}`, { headers: getHeaders() });
-        if (resRes.ok) {
-            const resultData = await resRes.json();
-            if (resultData && resultData.score !== '-- / --' && ui.candAttemptsBody) {
-                if (resultData.disqualified === true || resultData.status === 'disqualified') {
-                    if (ui.candStatStatus) {
-                        ui.candStatStatus.textContent = "Attempt Invalidated (Disqualified)";
-                    }
-                    ui.candAttemptsBody.innerHTML = `
-                        <tr>
-                            <td style="font-family: var(--font-mono); font-weight: 700; color: #dc2626;">EX-1001</td>
-                            <td><strong>${resultData.exam_title || 'NATIONAL ASSESSMENT EXAMINATION'}</strong></td>
-                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(239, 68, 68, 0.1); color: #dc2626; border-radius: 4px;">Disqualified</span></td>
-                            <td>
-                                <span class="status-pill status-suspended" style="background: #fee2e2; color: #b91c1c; font-weight: 700;">
-                                    Scores Annulled (Security Infraction)
-                                </span>
-                            </td>
-                            <td style="text-align: right; white-space: nowrap;">
-                                <a href="/scorecard.html" class="btn btn-outline btn-sm">View Status</a>
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    if (ui.candStatStatus) {
-                        ui.candStatStatus.textContent = "Attempt Completed";
-                    }
+            const resRes = await fetch(`/api/v1/exams/${encodeURIComponent(activeExamId)}/result?${qParams.toString()}`, { headers: getHeaders() });
+            if (resRes.ok) {
+                const resultData = await resRes.json();
+                if (resultData && resultData.score !== '-- / --' && ui.candAttemptsBody) {
+                    if (resultData.disqualified === true || resultData.status === 'disqualified') {
+                        if (ui.candStatStatus) {
+                            ui.candStatStatus.textContent = "Attempt Invalidated (Disqualified)";
+                        }
+                        ui.candAttemptsBody.innerHTML = `
+                            <tr>
+                                <td style="font-family: var(--font-mono); font-weight: 700; color: #dc2626;">${resultData.exam_code || 'EXAM'}</td>
+                                <td><strong>${resultData.exam_title || 'Examination Assessment'}</strong></td>
+                                <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(239, 68, 68, 0.1); color: #dc2626; border-radius: 4px;">Disqualified</span></td>
+                                <td>
+                                    <span class="status-pill status-suspended" style="background: #fee2e2; color: #b91c1c; font-weight: 700;">
+                                        Scores Annulled (Security Infraction)
+                                    </span>
+                                </td>
+                                <td style="text-align: right; white-space: nowrap;">
+                                    <a href="/scorecard.html?exam_id=${encodeURIComponent(activeExamId)}" class="btn btn-outline btn-sm">View Status</a>
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        if (ui.candStatStatus) {
+                            ui.candStatStatus.textContent = "Attempt Completed";
+                        }
 
-                    ui.candAttemptsBody.innerHTML = `
-                        <tr>
-                            <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">EX-1001</td>
-                            <td><strong>${resultData.exam_title || 'NATIONAL ASSESSMENT EXAMINATION'}</strong></td>
-                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot A</span></td>
-                            <td>
-                                <span class="status-pill status-active" style="background: #ecfdf5; color: #047857;">
-                                    Score: ${resultData.score} ${resultData.percentage != null ? `(${resultData.percentage}%)` : ''}
-                                </span>
-                            </td>
-                            <td style="text-align: right; white-space: nowrap;">
-                                <a href="/scorecard.html" class="btn btn-outline btn-sm" style="margin-right: 0.35rem;">View Scorecard</a>
-                                <a href="/instructions.html" class="btn btn-primary btn-sm">Retake Exam</a>
-                            </td>
-                        </tr>
-                    `;
+                        ui.candAttemptsBody.innerHTML = `
+                            <tr>
+                                <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">${resultData.exam_code || 'EXAM'}</td>
+                                <td><strong>${resultData.exam_title || 'Examination Assessment'}</strong></td>
+                                <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot A</span></td>
+                                <td>
+                                    <span class="status-pill status-active" style="background: #ecfdf5; color: #047857;">
+                                        Score: ${resultData.score} ${resultData.percentage != null ? `(${resultData.percentage}%)` : ''}
+                                    </span>
+                                </td>
+                                <td style="text-align: right; white-space: nowrap;">
+                                    <a href="/scorecard.html?exam_id=${encodeURIComponent(activeExamId)}" class="btn btn-outline btn-sm" style="margin-right: 0.35rem;">View Scorecard</a>
+                                    <a href="/instructions.html?exam_id=${encodeURIComponent(activeExamId)}" class="btn btn-primary btn-sm">Retake Exam</a>
+                                </td>
+                            </tr>
+                        `;
+                    }
                 }
             }
-        }
-    } catch (_) {}
+        } catch (_) {}
+    }
 }
 
 // Admit Card Modal Wiring

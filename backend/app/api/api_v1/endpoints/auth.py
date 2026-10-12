@@ -38,6 +38,9 @@ class CreateAccountRequest(BaseModel):
     batch_or_slot: str = "A"
     initial_password: Optional[str] = "12345678"
     registration_number: Optional[str] = None
+    test_center_name: Optional[str] = None
+    room_number: Optional[str] = None
+    assigned_terminal: Optional[str] = None
 
 
 def generate_jwt_token(user_id: str, email: str, role: str, god_mode: bool = False) -> str:
@@ -184,6 +187,9 @@ def create_account(
                 "email": req.email.strip() if req.email else f"{reg_number.lower()}@ssecbt.in",
                 "password": req.initial_password or "12345678",
                 "roll_number": reg_number,
+                "test_center_name": req.test_center_name,
+                "room_number": req.room_number,
+                "assigned_terminal": req.assigned_terminal,
             }
         }
 

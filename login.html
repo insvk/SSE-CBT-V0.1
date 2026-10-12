@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
     <title>Sign In | SSE CBT PLATFORM V0.1</title>
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -455,25 +455,50 @@
         .left-pane {
           width: 100%;
           padding: 2rem 1.5rem;
+          padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
         }
         .right-pane {
           width: 100%;
-          height: 220px;
+          height: 180px;
         }
         .login-box {
           max-width: 100%;
         }
       }
 
+      @media (max-width: 768px) {
+        html, body {
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+        }
+        input, select, textarea {
+          font-size: 16px !important;
+        }
+        .btn-primary, .btn-secondary, button {
+          min-height: 46px;
+        }
+      }
+
       @media (max-width: 480px) {
         .left-pane {
-          padding: 1.5rem 1rem;
+          padding: 1.25rem 0.85rem;
+          padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
         }
         .welcome-title {
-          font-size: 1.5rem;
+          font-size: 1.35rem;
         }
         .saveetha-brand-img {
-          max-width: 220px;
+          max-width: 200px;
+        }
+        .right-pane {
+          height: 140px;
+        }
+        .portal-tabs {
+          gap: 0.25rem;
+        }
+        .portal-tab {
+          padding: 0.65rem 0.75rem;
+          font-size: 0.85rem;
         }
       }
     </style>
@@ -790,7 +815,12 @@
 
         // Google SSO connect
         document.getElementById('sso-connect-btn').addEventListener('click', () => {
-          const email = document.getElementById('sso-email-field').value.trim() || 'candidate@saveetha.com';
+          const email = document.getElementById('sso-email-field').value.trim();
+          if (!email) {
+            alert('Please enter your registered candidate email address.');
+            document.getElementById('sso-email-field').focus();
+            return;
+          }
           localStorage.setItem('access_token', 'google_sso_token_' + Date.now());
           localStorage.setItem('user_role', 'candidate');
           localStorage.setItem('god_mode', 'false');
