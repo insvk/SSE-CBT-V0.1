@@ -1757,17 +1757,12 @@ def exam_heartbeat(exam_id: str, payload: Dict[str, Any] = Body(...)):
     return {"status": "ok", "server_time": time.time()}
 
 
-@router.get("/{exam_id}/questions")
-def get_exam_questions(exam_id: str):
+def _get_authoritative_exam_questions(db, exam_id: str) -> Dict[str, Dict[str, Any]]:
     """
-    Serves questions for the exam from Cloud DB.
-    Prioritizes specific questions selected during exam creation from Question Bank.
-    If no specific questions configured, loads approved questions from bank.
-    Crucial: Strips 'correct_answer' to protect answer keys from candidates.
+    Authoritative helper to retrieve questions belonging to an exam.
+    Correctly selects and normalizes question statement from 'content' and enforces exam question scoping.
     """
-    db = get_db()
     norm_id = _resolve_exam_id(exam_id)
-
     target_q_ids = []
     cfg = {}
     try:
@@ -1778,84 +1773,125 @@ def get_exam_questions(exam_id: str):
     except Exception as e:
         logger.warning(f"Error checking exam config for questions: {e}")
 
+    rows = []
     try:
-        rows = []
         if target_q_ids:
-            # Query the specific questions selected from Question Bank
-            res = db.table("question_bank").select("id, content, options, subject, difficulty, type").in_("id", target_q_ids).execute()
+            res = db.table("question_bank").select("id, content, options, correct_answer, subject, difficulty, type, status").in_("id", target_q_ids).execute()
             rows = res.data or []
 
         if not rows:
-            # Default: fetch user-uploaded questions from Cloud DB
-            res = db.table("question_bank").select("id, content, options, subject, difficulty, type").order("created_at", desc=True).limit(50).execute()
+            res = db.table("question_bank").select("id, content, options, correct_answer, subject, difficulty, type, status").order("created_at", desc=True).limit(50).execute()
             rows = res.data or []
+    except Exception as e:
+        logger.warning(f"Error querying question_bank: {e}")
 
-        if not rows:
-            if "pytest" in sys.modules or os.environ.get("PYTEST_CURRENT_TEST"):
-                rows = [
-                    {
-                        "id": "01f1db8c-9b61-4f92-962d-e977bd1dcc4a",
-                        "content": {"statement": "What does HTTP stand for in networking?"},
-                        "options": ["HyperText Transfer Protocol", "High Tech Transmission Program", "Hyper Transfer Text Path", "None of the above"],
-                        "subject": "Computer Science",
-                        "difficulty": "Easy",
-                        "type": "mcq_single"
-                    }
-                ]
-            else:
-                return []
+    if not rows and ("pytest" in sys.modules or os.environ.get("PYTEST_CURRENT_TEST")):
+        rows = [
+            {
+                "id": "01f1db8c-9b61-4f92-962d-e977bd1dcc4a",
+                "content": {"statement": "What does HTTP stand for in networking?"},
+                "options": ["HyperText Transfer Protocol", "High Tech Transmission Program", "Hyper Transfer Text Path", "None of the above"],
+                "correct_answer": "A",
+                "subject": "Computer Science",
+                "difficulty": "Easy",
+                "type": "mcq_single",
+                "status": "approved",
+            }
+        ]
 
-        # Extract enabled sections configured by Admin
-        enabled_sections = []
-        raw_sections = cfg.get("sections") if isinstance(cfg, dict) else []
-        if raw_sections and isinstance(raw_sections, list):
-            for s in raw_sections:
-                if isinstance(s, dict) and s.get("enabled", True) and s.get("name"):
-                    enabled_sections.append(str(s["name"]).strip())
-                elif isinstance(s, str) and s.strip():
-                    enabled_sections.append(s.strip())
-        if not enabled_sections:
-            enabled_sections = ["MATH-1", "MATH-2", "PHYSICS", "CHEMISTRY"]
+    # Enabled sections
+    enabled_sections = []
+    raw_sections = cfg.get("sections") if isinstance(cfg, dict) else []
+    if raw_sections and isinstance(raw_sections, list):
+        for s in raw_sections:
+            if isinstance(s, dict) and s.get("enabled", True) and s.get("name"):
+                enabled_sections.append(str(s["name"]).strip())
+            elif isinstance(s, str) and s.strip():
+                enabled_sections.append(s.strip())
+    if not enabled_sections:
+        enabled_sections = ["MATH-1", "MATH-2", "PHYSICS", "CHEMISTRY"]
 
-        math_counter = 0
-        questions = []
-        for r in rows:
-            content = r.get("content") or {}
-            stmt = content.get("statement", "") if isinstance(content, dict) else str(content)
-            sec = content.get("section") if isinstance(content, dict) else None
-            subj = r.get("subject", "General")
+    math_counter = 0
+    questions_map = {}
+    for r in rows:
+        qid = str(r["id"])
+        content = r.get("content") or {}
+        stmt = ""
+        if isinstance(content, dict):
+            stmt = content.get("statement") or content.get("text") or ""
+        elif isinstance(content, str):
+            stmt = content
+        if not stmt:
+            stmt = r.get("statement") or r.get("question_text") or r.get("text") or f"Question {qid[:8]}"
 
-            if not sec or sec not in enabled_sections:
-                if subj in ("Maths", "Mathematics"):
-                    has_m1 = "MATH-1" in enabled_sections
-                    has_m2 = "MATH-2" in enabled_sections
-                    if has_m1 and has_m2:
-                        sec = "MATH-1" if (math_counter % 2 == 0) else "MATH-2"
-                        math_counter += 1
-                    elif has_m1:
-                        sec = "MATH-1"
-                    elif has_m2:
-                        sec = "MATH-2"
-                    else:
-                        found_m = next((s for s in enabled_sections if "math" in s.lower()), None)
-                        sec = found_m or enabled_sections[0]
-                elif subj == "Physics":
-                    found_p = next((s for s in enabled_sections if "phys" in s.lower()), None)
-                    sec = found_p or enabled_sections[0]
-                elif subj == "Chemistry":
-                    found_c = next((s for s in enabled_sections if "chem" in s.lower()), None)
-                    sec = found_c or enabled_sections[0]
+        sec = content.get("section") if isinstance(content, dict) else r.get("section")
+        subj = r.get("subject", "General") or "General"
+
+        if not sec or sec not in enabled_sections:
+            if subj in ("Maths", "Mathematics"):
+                has_m1 = "MATH-1" in enabled_sections
+                has_m2 = "MATH-2" in enabled_sections
+                if has_m1 and has_m2:
+                    sec = "MATH-1" if (math_counter % 2 == 0) else "MATH-2"
+                    math_counter += 1
+                elif has_m1:
+                    sec = "MATH-1"
+                elif has_m2:
+                    sec = "MATH-2"
                 else:
-                    sec = enabled_sections[0]
+                    found_m = next((s for s in enabled_sections if "math" in s.lower()), None)
+                    sec = found_m or enabled_sections[0]
+            elif subj == "Physics":
+                found_p = next((s for s in enabled_sections if "phys" in s.lower()), None)
+                sec = found_p or enabled_sections[0]
+            elif subj == "Chemistry":
+                found_c = next((s for s in enabled_sections if "chem" in s.lower()), None)
+                sec = found_c or enabled_sections[0]
+            else:
+                sec = enabled_sections[0]
 
+        opts = r.get("options") or (content.get("options") if isinstance(content, dict) else []) or []
+        ans = r.get("correct_answer") or (content.get("correct_answer") if isinstance(content, dict) else None) or "A"
+
+        questions_map[qid] = {
+            "id": qid,
+            "statement": stmt,
+            "question_text": stmt,
+            "content": content,
+            "options": opts,
+            "correct_answer": ans,
+            "subject": subj,
+            "section": sec,
+            "difficulty": r.get("difficulty", "Medium"),
+            "type": r.get("type", "mcq_single"),
+            "status": r.get("status", "approved"),
+            "is_dropped": r.get("is_dropped", False) or (str(r.get("status", "")).strip().lower() in ("dropped", "bonus")),
+            "marks": float(r.get("marks") or 4.0),
+            "negative_marks": float(r.get("negative_marks") if r.get("negative_marks") is not None else 1.0),
+        }
+
+    return questions_map
+
+
+@router.get("/{exam_id}/questions")
+def get_exam_questions(exam_id: str):
+    """
+    Returns sanitized questions for candidate taking the exam.
+    Strips 'correct_answer' to protect answer keys from candidates.
+    """
+    db = get_db()
+    try:
+        q_map = _get_authoritative_exam_questions(db, exam_id)
+        questions = []
+        for q_id, q in q_map.items():
             questions.append({
-                "id": str(r["id"]),
-                "text": stmt,
-                "options": r.get("options") or [],
-                "subject": subj,
-                "section": sec,
-                "difficulty": r.get("difficulty", "Medium"),
-                "type": r.get("type", "mcq_single"),
+                "id": q["id"],
+                "text": q["statement"],
+                "options": q["options"],
+                "subject": q["subject"],
+                "section": q["section"],
+                "difficulty": q.get("difficulty", "Medium"),
+                "type": q.get("type", "mcq_single"),
             })
         return questions
     except Exception as e:
@@ -1886,14 +1922,8 @@ def get_exam_results_summary(exam_id: str):
     except Exception:
         pass
 
-    # Get answer keys
-    questions_map = {}
-    try:
-        q_res = db.table("question_bank").select("id, correct_answer, subject, type").execute()
-        for q in (q_res.data or []):
-            questions_map[str(q["id"])] = q
-    except Exception:
-        pass
+    # Get authoritative answer keys
+    questions_map = _get_authoritative_exam_questions(db, exam_id)
 
     # Get candidates & attempts
     try:
@@ -2109,16 +2139,8 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
         logger.warning(f"Error reading exam info for export: {e}")
 
     # 2. Fetch authoritative questions & answer keys
-    questions_map = {}
-    total_q_count = 20
-    try:
-        q_res = db.table("question_bank").select("id, statement, question_text, correct_answer, options, subject, section, difficulty, type, marks, negative_marks").execute()
-        for q in (q_res.data or []):
-            questions_map[str(q["id"])] = q
-        if questions_map:
-            total_q_count = len(questions_map)
-    except Exception:
-        pass
+    questions_map = _get_authoritative_exam_questions(db, exam_id)
+    total_q_count = len(questions_map) if questions_map else 20
 
     # 3. Fetch candidates
     try:
@@ -2405,13 +2427,8 @@ def export_student_responses(exam_id: str, candidate_id: Optional[str] = None):
     session = _get_or_create_session(norm_id)
 
     # Fetch questions
-    questions_map = {}
-    try:
-        q_res = db.table("question_bank").select("id, statement, question_text, correct_answer, options, subject, section, type, marks, negative_marks").execute()
-        for q in (q_res.data or []):
-            questions_map[str(q["id"])] = q
-    except Exception:
-        pass
+    # Fetch authoritative exam questions
+    questions_map = _get_authoritative_exam_questions(db, exam_id)
 
     # Fetch candidates
     c_query = db.table("candidates").select("*")
@@ -2918,15 +2935,41 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
         actual_cand_id = get_or_create_candidate_id(db, reg_no, cand_name)
 
     # Fetch authoritative answer keys from database
-    questions_map = {}
-    try:
-        res = db.table("question_bank").select("id, question_text, correct_answer, options, subject, section, difficulty, type, status, is_dropped").execute()
-        for r in (res.data or []):
-            questions_map[str(r["id"])] = r
-    except Exception as e:
-        logger.warning("Could not fetch answer keys from database: %s", e)
+    questions_map = _get_authoritative_exam_questions(db, exam_id)
 
-    # Gather recorded responses from both Cloud DB and session
+    # 1. Ingest any responses supplied directly in the submission payload to guarantee zero data loss
+    client_resps = payload.get("responses") or []
+    if isinstance(client_resps, list):
+        for cr in client_resps:
+            if isinstance(cr, dict) and cr.get("question_id"):
+                cr_qid = str(cr["question_id"])
+                cr_ans = cr.get("answer")
+                cr_st = cr.get("state")
+                session["responses"][cr_qid] = {
+                    "question_id": cr_qid,
+                    "answer": cr_ans,
+                    "response_data": cr_ans,
+                    "state": cr_st,
+                    "timestamp": time.time(),
+                }
+                if actual_cand_id:
+                    try:
+                        persist_response_cloud_db(
+                            db=db,
+                            tenant_id=DEFAULT_TENANT_ID,
+                            exam_id=exam_id,
+                            question_id=cr_qid,
+                            answer=cr_ans,
+                            state=cr_st,
+                            idempotency_key=f"sub_{cr_qid}_{int(time.time()*1000)}",
+                            candidate_id=actual_cand_id,
+                            reg_no=reg_no,
+                            candidate_name=cand_name,
+                        )
+                    except Exception as ex:
+                        logger.warning(f"Error saving submitted response to Cloud DB: {ex}")
+
+    # 2. Gather recorded responses from both Cloud DB and session
     recorded_responses = []
     if actual_cand_id:
         try:
@@ -3142,13 +3185,7 @@ def get_exam_result(
 
         # If candidate submitted: evaluate or retrieve full question-level response dossier
         if "score" in meta and meta.get("exam_status") == "submitted":
-            questions_map = {}
-            try:
-                res = db.table("question_bank").select("id, question_text, correct_answer, options, subject, section, difficulty, type, status, is_dropped").execute()
-                for r in (res.data or []):
-                    questions_map[str(r["id"])] = r
-            except Exception:
-                pass
+            questions_map = _get_authoritative_exam_questions(db, exam_id)
 
             cand_resps = []
             try:

@@ -40,34 +40,48 @@ def resolve_exam_uuid(raw_id: str) -> str:
         return str(uuid.uuid5(uuid.NAMESPACE_DNS, raw_id))
 
 
-def resolve_question_uuid(db, q_id: str) -> str:
+def resolve_question_uuid(db, q_id: str, tenant_id: str = "00000000-0000-0000-0000-000000000001") -> str:
     """
     Resolves question ID into an authoritative question_bank UUID.
-    Checks if question exists in Cloud DB; if not, falls back to an active question from the bank
-    to guarantee foreign key integrity in public.responses.
+    Guarantees that each question has its own distinct UUID and guarantees foreign key integrity
+    in public.responses by ensuring a record exists in question_bank without ever overwriting
+    other questions.
     """
     if not q_id:
         return ""
 
-    # Check if exact UUID exists in question_bank
     try:
         val = uuid.UUID(str(q_id))
-        str_val = str(val)
-        chk = db.table("question_bank").select("id").eq("id", str_val).limit(1).execute()
-        if chk.data:
-            return str_val
+        target_uuid = str(val)
     except Exception:
-        pass
+        target_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(q_id)))
 
-    # Lookup dynamic question from Cloud DB
+    # Check if this exact UUID exists in question_bank
     try:
-        res = db.table("question_bank").select("id").limit(1).execute()
-        if res.data:
-            return str(res.data[0]["id"])
+        chk = db.table("question_bank").select("id").eq("id", target_uuid).limit(1).execute()
+        if chk.data:
+            return target_uuid
     except Exception:
         pass
 
-    return str(uuid.uuid5(uuid.NAMESPACE_DNS, str(q_id)))
+    # Ensure question exists in question_bank so foreign key in public.responses is satisfied
+    try:
+        db.table("question_bank").upsert({
+            "id": target_uuid,
+            "tenant_id": tenant_id,
+            "type": "mcq_single",
+            "content": {"statement": f"Assessment Question {q_id}"},
+            "options": ["A", "B", "C", "D"],
+            "correct_answer": "A",
+            "difficulty": "Medium",
+            "subject": "General",
+            "status": "approved",
+        }).execute()
+        return target_uuid
+    except Exception as e:
+        logger.warning(f"Could not upsert question_bank record for {target_uuid}: {e}")
+
+    return target_uuid
 
 
 def ensure_candidate_exists(
@@ -193,7 +207,7 @@ def persist_response_cloud_db(
     Persists a candidate's response into Supabase Cloud DB with idempotency.
     """
     exam_uuid = resolve_exam_uuid(exam_id)
-    q_uuid = resolve_question_uuid(db, question_id)
+    q_uuid = resolve_question_uuid(db, question_id, tenant_id=tenant_id)
     attempt_id, cand_uuid = get_or_create_attempt(
         db, tenant_id, exam_uuid, candidate_id, reg_no, candidate_name
     )
@@ -255,10 +269,16 @@ def mark_attempt_submitted_cloud_db(
 
     # 1. Update public.exam_attempts
     try:
-        db.table("exam_attempts").update({
+        att_update = {
             "status": status_str,
             "end_time": now_iso,
-        }).eq("id", attempt_id).execute()
+        }
+        if scoring_result:
+            att_update["score"] = float(scoring_result.get("total_score", 0.0))
+            att_update["total_questions"] = int(scoring_result.get("total_questions", 0))
+        elif is_disqualified:
+            att_update["score"] = 0.0
+        db.table("exam_attempts").update(att_update).eq("id", attempt_id).execute()
     except Exception as e:
         logger.error(f"Error marking attempt {status_str}: {e}")
 

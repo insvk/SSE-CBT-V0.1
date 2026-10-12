@@ -762,13 +762,21 @@ async function performFinalSubmission(): Promise<void> {
         const candName = localStorage.getItem('candidate_name') || 'Candidate';
         const regNo = localStorage.getItem('reg_no') || '';
 
+        // Pack full candidate responses array to guarantee zero data loss
+        const fullResponses = allQuestions.map((q, idx) => ({
+            question_id: q.id,
+            answer: responses[idx],
+            state: questionState[idx]
+        }));
+
         const res = await fetch(`${API_BASE}/${EXAM_ID}/submit`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify({
                 candidate_id: candId,
                 candidate_name: candName,
-                reg_no: regNo
+                reg_no: regNo,
+                responses: fullResponses
             })
         });
 

@@ -447,22 +447,64 @@
         background: #cbd5e1;
       }
 
-      /* Responsive Rules */
+      /* Mobile & Cross-Platform Responsive Rules */
       @media (max-width: 960px) {
         .split-layout {
-          flex-direction: column-reverse;
+          flex-direction: column;
+          width: 100vw;
+          min-height: 100vh;
+          min-height: 100dvh;
+          background: #ffffff;
+        }
+        .right-pane {
+          display: none !important;
         }
         .left-pane {
           width: 100%;
-          padding: 2rem 1.5rem;
-          padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
-        }
-        .right-pane {
-          width: 100%;
-          height: 180px;
+          min-height: 100vh;
+          min-height: 100dvh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 2.25rem 1.5rem;
+          padding-top: max(2rem, env(safe-area-inset-top, 24px));
+          padding-bottom: max(2rem, env(safe-area-inset-bottom, 24px));
+          box-sizing: border-box;
+          overflow-y: auto;
         }
         .login-box {
-          max-width: 100%;
+          max-width: 440px;
+          width: 100%;
+          margin: auto;
+        }
+        .saveetha-brand-img {
+          max-width: 240px;
+        }
+        .welcome-title {
+          font-size: 1.65rem;
+          line-height: 1.25;
+          margin-top: 0.75rem;
+          margin-bottom: 0.25rem;
+        }
+        .platform-subtitle {
+          margin-bottom: 1.5rem;
+        }
+        .form-input {
+          height: 48px;
+          font-size: 16px !important;
+          border-radius: 8px;
+        }
+        .btn-login {
+          height: 48px;
+          font-size: 0.95rem;
+          font-weight: 700;
+          border-radius: 8px;
+        }
+        .btn-google {
+          height: 48px;
+          border-radius: 8px;
+          font-size: 0.9rem;
         }
       }
 
@@ -474,31 +516,51 @@
         input, select, textarea {
           font-size: 16px !important;
         }
-        .btn-primary, .btn-secondary, button {
-          min-height: 46px;
+        .password-toggle-btn {
+          min-width: 44px;
+          min-height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .modal-card {
+          width: 94vw;
+          max-width: 440px;
+          margin: 0 auto;
         }
       }
 
       @media (max-width: 480px) {
         .left-pane {
-          padding: 1.25rem 0.85rem;
-          padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+          padding: 1.5rem 1rem;
+          padding-top: max(1.25rem, env(safe-area-inset-top, 16px));
+          padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 20px));
         }
-        .welcome-title {
-          font-size: 1.35rem;
+        .login-box {
+          max-width: 100%;
         }
         .saveetha-brand-img {
-          max-width: 200px;
+          max-width: 210px;
         }
-        .right-pane {
-          height: 140px;
+        .welcome-title {
+          font-size: 1.45rem;
         }
-        .portal-tabs {
-          gap: 0.25rem;
+        .platform-subtitle {
+          font-size: 0.7rem;
+          margin-bottom: 1.25rem;
         }
-        .portal-tab {
-          padding: 0.65rem 0.75rem;
-          font-size: 0.85rem;
+        .options-row {
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 0.8rem;
+          gap: 6px;
+        }
+        .divider-wrapper {
+          margin: 1.25rem 0;
+        }
+        .btn-google {
+          margin-bottom: 1.25rem;
         }
       }
     </style>
