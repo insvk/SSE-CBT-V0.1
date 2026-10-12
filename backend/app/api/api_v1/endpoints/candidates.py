@@ -576,15 +576,20 @@ def get_candidate_admit_card(
         slot_info = SLOT_SCHEDULE.get(cand.batch, SLOT_SCHEDULE["A"])
 
         settings = CURRENT_EXAM_SETTINGS
-        center_name = settings.get("test_venue_name") or "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105"
-        center_code = settings.get("test_center_code") or "SSEC-TN-042"
-        lab_num = settings.get("default_lab_room") or slot_info["lab"]
-        term_pref = settings.get("terminal_prefix") or f"T-{cand.batch}-"
+        admit_tmpl = settings.get("admit_card") or {}
+        center_name = admit_tmpl.get("test_venue_name") or settings.get("test_venue_name") or "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105"
+        center_code = admit_tmpl.get("test_center_code") or settings.get("test_center_code") or "SSEC-TN-042"
+        lab_num = admit_tmpl.get("default_lab_room") or settings.get("default_lab_room") or slot_info["lab"]
+        term_pref = admit_tmpl.get("terminal_prefix") or settings.get("terminal_prefix") or f"T-{cand.batch}-"
         assigned_terminal = cand.assigned_terminal or f"{term_pref}{cand.id[-4:].upper()}"
-        ctrl_name = settings.get("controller_name") or "Prof. Dr. M. Shanmugam"
-        ctrl_desig = settings.get("controller_designation") or "Controller of Examinations"
-        inst_name = settings.get("institution_name") or "SSE CBT PLATFORM"
-        exam_title = settings.get("examination_title") or "MCQ ASSESSMENT [ SSE CBT 2026 ]"
+        ctrl_name = admit_tmpl.get("controller_name") or settings.get("controller_name") or "Prof. Dr. M. Shanmugam"
+        ctrl_desig = admit_tmpl.get("controller_designation") or settings.get("controller_designation") or "Controller of Examinations"
+        inst_name = admit_tmpl.get("institution_name") or settings.get("institution_name") or "SSE CBT PLATFORM"
+        exam_title = admit_tmpl.get("examination_title") or settings.get("examination_title") or "MCQ ASSESSMENT [ SSE CBT 2026 ]"
+
+        watermark = admit_tmpl.get("watermark_text") or "CONFIDENTIAL"
+        subtitle = admit_tmpl.get("header_subtitle") or "PROVISIONAL ADMIT CARD / HALL TICKET • COMPUTER BASED TEST (CBT)"
+        instructions = admit_tmpl.get("instructions_text") or "1. Government photo ID card mandatory for physical entrance.\n2. Electronic devices, smartwatches, and calculators strictly prohibited.\n3. Continuous webcam biometric tracking and screen proctoring active.\n4. Candidates must report at the allocated test center prior to gate closure."
 
         return AdmitCardResponse(
             status="success",
@@ -613,6 +618,16 @@ def get_candidate_admit_card(
             examination_title=exam_title,
             generated_at_ist=format_ist_now(),
             barcode_data=f"SSE*2026*{cand.roll_number}*{cand.registration_number}",
+            watermark_text=watermark,
+            header_subtitle=subtitle,
+            instructions_text=instructions,
+            show_barcode=admit_tmpl.get("show_barcode", True),
+            show_photo=admit_tmpl.get("show_photo", True),
+            show_biometric_badge=admit_tmpl.get("show_biometric_badge", True),
+            show_slot_timings=admit_tmpl.get("show_slot_timings", True),
+            show_venue_details=admit_tmpl.get("show_venue_details", True),
+            show_instructions=admit_tmpl.get("show_instructions", True),
+            show_signature_block=admit_tmpl.get("show_signature_block", True),
         )
     except HTTPException:
         raise

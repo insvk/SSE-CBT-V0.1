@@ -235,7 +235,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/scorecard-4c371c9c.js"></script>
+  <script type="module" crossorigin src="/assets/scorecard-b996de58.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
   <link rel="stylesheet" href="/assets/style-e946e59c.css">
 </head>
@@ -249,7 +249,7 @@
         <h1 id="sc-agency">SSE CBT PLATFORM</h1>
         <h2 id="sc-title">MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card</h2>
       </div>
-      <div class="cbt-seal">
+      <div class="cbt-seal" id="sc-seal">
         SSE CBT<br>OFFICIAL
       </div>
     </div>
@@ -257,7 +257,7 @@
     <div class="doc-subhead">
       <div>Assessment: <span style="color: var(--primary);" id="sc-subhead-exam">MCQ Assessment 2026</span></div>
       <div>Date of Exam: <span>October 2026</span></div>
-      <div style="color: #16a34a;">Status: Authenticated &amp; Verified</div>
+      <div id="sc-subhead-status" style="color: #16a34a;">Status: Authenticated &amp; Verified</div>
     </div>
 
     <!-- CANDIDATE INFO -->
@@ -342,7 +342,7 @@
     </div>
 
     <!-- PERFORMANCE SUMMARY METRICS GRID -->
-    <div style="margin: 0 2.5rem 1.5rem 2.5rem;">
+    <div id="sc-metrics-grid-container" style="margin: 0 2.5rem 1.5rem 2.5rem;">
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;">
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.75rem; text-align: center;">
           <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b;">Total Questions</div>
@@ -380,32 +380,34 @@
     </div>
 
     <!-- SECTION SCORES -->
-    <div style="margin: 0 2.5rem 0.5rem 2.5rem; font-size: 0.95rem; font-weight: 700; color: #1e3a8a;">
-      Subject &amp; Section Performance Dossier
+    <div id="sc-subject-breakdown-container">
+      <div style="margin: 0 2.5rem 0.5rem 2.5rem; font-size: 0.95rem; font-weight: 700; color: #1e3a8a;">
+        Subject &amp; Section Performance Dossier
+      </div>
+      <table class="score-table">
+        <thead>
+          <tr>
+            <th>Subject / Section</th>
+            <th>Total Questions</th>
+            <th>Attempted</th>
+            <th>Correct</th>
+            <th>Incorrect</th>
+            <th>Marks Awarded</th>
+            <th>Accuracy (%)</th>
+          </tr>
+        </thead>
+        <tbody id="sc-table-body">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+              Loading authoritative scores and subject dossier from Cloud Database...
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <table class="score-table">
-      <thead>
-        <tr>
-          <th>Subject / Section</th>
-          <th>Total Questions</th>
-          <th>Attempted</th>
-          <th>Correct</th>
-          <th>Incorrect</th>
-          <th>Marks Awarded</th>
-          <th>Accuracy (%)</th>
-        </tr>
-      </thead>
-      <tbody id="sc-table-body">
-        <tr>
-          <td colspan="7" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
-            Loading authoritative scores and subject dossier from Cloud Database...
-          </td>
-        </tr>
-      </tbody>
-    </table>
 
     <!-- DETAILED QUESTION REVIEW TABLE -->
-    <div style="margin: 2rem 2.5rem 0.5rem 2.5rem;">
+    <div id="sc-question-review-container" style="margin: 2rem 2.5rem 0.5rem 2.5rem;">
       <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.5rem;">
         <div>
           <div style="font-size: 1.05rem; font-weight: 800; color: #1e3a8a;">Authoritative Itemized Question Review</div>
@@ -440,7 +442,7 @@
     </div>
 
     <!-- CONTROLLER OF EXAMINATIONS SIGNATURE SECTION -->
-    <div style="padding: 1.5rem 2.5rem; display: flex; justify-content: flex-end; align-items: flex-end; border-top: 1px solid var(--border-color); background: white;">
+    <div id="sc-signature-container" style="padding: 1.5rem 2.5rem; display: flex; justify-content: flex-end; align-items: flex-end; border-top: 1px solid var(--border-color); background: white;">
       <div style="text-align: center;">
         <div style="font-family: 'Brush Script MT', cursive; font-size: 1.35rem; color: #1e3a8a; font-weight: 700;" id="sc-controller-name">
           Prof. Dr. M. Shanmugam
@@ -466,7 +468,7 @@
     <!-- OFFICIAL INSTITUTIONAL FOOTER -->
     <footer
       style="margin-top: 3rem; padding: 1.5rem 0; border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #64748b; flex-wrap: wrap; gap: 1rem;">
-      <div>
+      <div id="sc-footer-disclaimer">
         &copy; 2026 Saveetha School of Engineering &bull; CBT Examination Directorate. All rights reserved.
       </div>
       <div style="display: flex; gap: 1.5rem;">

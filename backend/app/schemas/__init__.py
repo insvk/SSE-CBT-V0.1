@@ -94,6 +94,46 @@ class EmergencyCredentialsResponse(BaseModel):
     expires_at_ist: str
 
 
+class AdmitCardStructure(BaseModel):
+    institution_name: Optional[str] = "SSE CBT PLATFORM"
+    examination_title: Optional[str] = "MCQ ASSESSMENT [ SSE CBT 2026 ]"
+    header_subtitle: Optional[str] = "PROVISIONAL ADMIT CARD / HALL TICKET • COMPUTER BASED TEST (CBT)"
+    watermark_text: Optional[str] = "CONFIDENTIAL"
+    test_venue_name: Optional[str] = "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105"
+    test_center_code: Optional[str] = "SSEC-TN-042"
+    default_lab_room: Optional[str] = "LAB-01 (Block-A)"
+    terminal_prefix: Optional[str] = "T-A-"
+    controller_name: Optional[str] = "Prof. Dr. M. Shanmugam"
+    controller_designation: Optional[str] = "Controller of Examinations"
+    instructions_text: Optional[str] = "1. Government photo ID card mandatory for physical entrance.\n2. Electronic devices, smartwatches, and calculators strictly prohibited.\n3. Continuous webcam biometric tracking and screen proctoring active.\n4. Candidates must report at the allocated test center prior to gate closure."
+    show_barcode: Optional[bool] = True
+    show_photo: Optional[bool] = True
+    show_biometric_badge: Optional[bool] = True
+    show_slot_timings: Optional[bool] = True
+    show_venue_details: Optional[bool] = True
+    show_instructions: Optional[bool] = True
+    show_signature_block: Optional[bool] = True
+
+
+class ScorecardStructure(BaseModel):
+    institution_name: Optional[str] = "SSE CBT PLATFORM"
+    document_title: Optional[str] = "MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card"
+    subhead_status_text: Optional[str] = "Status: Authenticated & Cloud Verified"
+    controller_name: Optional[str] = "Prof. Dr. M. Shanmugam"
+    controller_designation: Optional[str] = "Controller of Examinations"
+    test_venue_name: Optional[str] = "SSE Digital Assessment Hub Node 01"
+    footer_disclaimer: Optional[str] = "© 2026 Saveetha School of Engineering • CBT Examination Directorate. All rights reserved."
+    show_score_banner: Optional[bool] = True
+    show_percentage: Optional[bool] = True
+    show_accuracy: Optional[bool] = True
+    show_metrics_grid: Optional[bool] = True
+    show_subject_breakdown: Optional[bool] = True
+    show_question_review: Optional[bool] = True
+    show_time_analytics: Optional[bool] = True
+    show_signature_block: Optional[bool] = True
+    show_seal: Optional[bool] = True
+
+
 class AdmitCardResponse(BaseModel):
     status: str
     admit_card_number: str
@@ -121,6 +161,16 @@ class AdmitCardResponse(BaseModel):
     examination_title: Optional[str] = "MCQ ASSESSMENT [ SSE CBT 2026 ]"
     generated_at_ist: str
     barcode_data: str
+    watermark_text: Optional[str] = "CONFIDENTIAL"
+    header_subtitle: Optional[str] = "PROVISIONAL ADMIT CARD / HALL TICKET • COMPUTER BASED TEST (CBT)"
+    instructions_text: Optional[str] = None
+    show_barcode: Optional[bool] = True
+    show_photo: Optional[bool] = True
+    show_biometric_badge: Optional[bool] = True
+    show_slot_timings: Optional[bool] = True
+    show_venue_details: Optional[bool] = True
+    show_instructions: Optional[bool] = True
+    show_signature_block: Optional[bool] = True
 
 
 class ExamCenterSettings(BaseModel):
@@ -128,10 +178,12 @@ class ExamCenterSettings(BaseModel):
     examination_title: Optional[str] = "MCQ ASSESSMENT [ SSE CBT 2026 ]"
     controller_name: Optional[str] = "Prof. Dr. M. Shanmugam"
     controller_designation: Optional[str] = "Controller of Examinations"
-    test_venue_name: Optional[str] = "SSE Digital Assessment Hub, Main Academic Block, Chennai - 602105"
-    test_center_code: Optional[str] = "SSEC-CBT-01"
+    test_venue_name: Optional[str] = "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105"
+    test_center_code: Optional[str] = "SSEC-TN-042"
     default_lab_room: Optional[str] = "LAB-01 (Block-A)"
     terminal_prefix: Optional[str] = "T-A-"
+    admit_card: Optional[AdmitCardStructure] = None
+    scorecard: Optional[ScorecardStructure] = None
 
 
 class BulkAssignRequest(BaseModel):

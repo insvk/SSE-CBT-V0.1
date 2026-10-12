@@ -1086,12 +1086,12 @@
           <div>
             <div id="admit-cand-agency" style="font-size: 0.75rem; font-weight: 800; color: #1e40af; letter-spacing: 0.08em; text-transform: uppercase;">SSE CBT PLATFORM</div>
             <h2 id="admit-cand-exam" style="font-size: 1.15rem; font-weight: 800; color: var(--text-heading); margin-top: 0.25rem;">MCQ ASSESSMENT [ SSE CBT 2026 ]</h2>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">PROVISIONAL ADMIT CARD / HALL TICKET &bull; COMPUTER BASED TEST</div>
+            <div id="admit-cand-subtitle" style="font-size: 0.8rem; color: var(--text-muted);">PROVISIONAL ADMIT CARD / HALL TICKET &bull; COMPUTER BASED TEST</div>
           </div>
           <button type="button" id="btn-close-admit" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 130px; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div style="display: grid; grid-template-columns: 1fr 130px; gap: 1.5rem; margin-bottom: 1.5rem;" id="admit-cand-main-grid">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.85rem;">
             <div>
               <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Candidate Name:</span>
@@ -1101,27 +1101,27 @@
               <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Registration / Roll No:</span>
               <strong id="admit-reg" style="font-family: var(--font-mono); color: #2563eb;">--</strong>
             </div>
-            <div>
+            <div id="admit-cand-slot-block-1">
               <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Subject Examination Slot:</span>
               <strong id="admit-slot">Subject Slot A</strong>
             </div>
-            <div>
+            <div id="admit-cand-slot-block-2">
               <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Subject Slot Cohort:</span>
               <strong id="admit-reporting">Slot A Cohort (Subject Paper Slot A)</strong>
             </div>
-            <div style="grid-column: 1 / -1;">
+            <div id="admit-cand-venue-block-1" style="grid-column: 1 / -1;">
               <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Allocated Testing Centre:</span>
               <strong id="admit-cand-venue">SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105</strong>
             </div>
-            <div>
+            <div id="admit-cand-venue-block-2">
               <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Center Code &amp; Lab:</span>
               <strong id="admit-cand-center-lab">Center: SSEC-TN-042 | Room: LAB-01</strong>
             </div>
-            <div>
+            <div id="admit-cand-venue-block-3">
               <span style="color: var(--text-muted); display: block; font-size: 0.72rem;">Assigned Terminal:</span>
               <strong id="admit-cand-terminal" style="font-family: var(--font-mono); color: #2563eb;">T-A-0004</strong>
             </div>
-            <div style="grid-column: 1 / -1; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <div id="admit-cand-sig-block" style="grid-column: 1 / -1; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
               <div>
                 <span style="color: var(--text-muted); font-size: 0.72rem;">Controller of Examinations:</span>
                 <div id="admit-cand-controller" style="font-weight: 800; color: #1e3a8a;">Prof. Dr. M. Shanmugam</div>
@@ -1130,14 +1130,15 @@
             </div>
           </div>
 
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1.5px dashed var(--border-color); border-radius: 8px; padding: 0.5rem; background: var(--bg-body);">
+          <div id="admit-cand-barcode-block" style="display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1.5px dashed var(--border-color); border-radius: 8px; padding: 0.5rem; background: var(--bg-body);">
             <div style="font-family: monospace; font-size: 0.65rem; letter-spacing: 2px; writing-mode: vertical-rl; transform: rotate(180deg); color: var(--text-main);">||| | |||| || ||| |||||</div>
             <span style="font-size: 0.62rem; color: var(--text-muted); margin-top: 6px; font-family: monospace;">BARCODE AUTH</span>
           </div>
         </div>
 
-        <div style="background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.75rem; color: #1e40af; margin-bottom: 1.5rem;">
-          <strong>Candidate Instructions:</strong> Government photo ID card mandatory. Electronic devices and smartwatches strictly prohibited. Continuous webcam biometric tracking active during assessment.
+        <div id="admit-cand-instructions-block" style="background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.75rem; color: #1e40af; margin-bottom: 1.5rem;">
+          <strong style="display: block; margin-bottom: 4px;">Candidate Instructions &amp; Rules:</strong>
+          <span id="admit-cand-instructions-text" style="white-space: pre-line;">Government photo ID card mandatory. Electronic devices and smartwatches strictly prohibited. Continuous webcam biometric tracking active during assessment.</span>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">

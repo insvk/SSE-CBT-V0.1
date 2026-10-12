@@ -249,12 +249,65 @@ if (btnViewAdmit && modalAdmit) {
                 const elController = document.getElementById('admit-cand-controller');
                 const elTerminal = document.getElementById('admit-cand-terminal');
 
-                if (elAgency && s.institution_name) elAgency.textContent = s.institution_name;
-                if (elExam && s.examination_title) elExam.textContent = s.examination_title;
+                if (elAgency && (s.admit_card?.institution_name || s.institution_name)) {
+                    elAgency.textContent = s.admit_card?.institution_name || s.institution_name;
+                }
+                if (elExam && (s.admit_card?.examination_title || s.examination_title)) {
+                    elExam.textContent = s.admit_card?.examination_title || s.examination_title;
+                }
                 if (elVenue && s.test_venue_name) elVenue.textContent = s.test_venue_name;
                 if (elCenterLab) elCenterLab.textContent = `Center: ${s.test_center_code || 'SSEC-TN-042'} | Room: ${s.default_lab_room || 'LAB-01'}`;
                 if (elController && s.controller_name) elController.textContent = s.controller_name;
                 if (elTerminal) elTerminal.textContent = `${s.terminal_prefix || 'T-A-'}0004`;
+
+                const admitCard = s.admit_card || {};
+                const elSubtitle = document.getElementById('admit-cand-subtitle');
+                if (elSubtitle && admitCard.header_subtitle) {
+                    elSubtitle.textContent = admitCard.header_subtitle;
+                }
+
+                // Instructions
+                const elInstBlock = document.getElementById('admit-cand-instructions-block');
+                const elInstText = document.getElementById('admit-cand-instructions-text');
+                if (elInstBlock) {
+                    elInstBlock.style.display = admitCard.show_instructions !== false ? 'block' : 'none';
+                }
+                if (elInstText && admitCard.instructions_text) {
+                    elInstText.textContent = admitCard.instructions_text;
+                }
+
+                // Barcode block
+                const elBarcode = document.getElementById('admit-cand-barcode-block');
+                const elMainGrid = document.getElementById('admit-cand-main-grid');
+                if (elBarcode) {
+                    const showBarcode = admitCard.show_barcode !== false;
+                    elBarcode.style.display = showBarcode ? 'flex' : 'none';
+                    if (elMainGrid) {
+                        elMainGrid.style.gridTemplateColumns = showBarcode ? '1fr 130px' : '1fr';
+                    }
+                }
+
+                // Slots block
+                const elSlot1 = document.getElementById('admit-cand-slot-block-1');
+                const elSlot2 = document.getElementById('admit-cand-slot-block-2');
+                const showSlots = admitCard.show_slot_timings !== false;
+                if (elSlot1) elSlot1.style.display = showSlots ? 'block' : 'none';
+                if (elSlot2) elSlot2.style.display = showSlots ? 'block' : 'none';
+
+                // Venue block
+                const elVenue1 = document.getElementById('admit-cand-venue-block-1');
+                const elVenue2 = document.getElementById('admit-cand-venue-block-2');
+                const elVenue3 = document.getElementById('admit-cand-venue-block-3');
+                const showVenue = admitCard.show_venue_details !== false;
+                if (elVenue1) elVenue1.style.display = showVenue ? 'block' : 'none';
+                if (elVenue2) elVenue2.style.display = showVenue ? 'block' : 'none';
+                if (elVenue3) elVenue3.style.display = showVenue ? 'block' : 'none';
+
+                // Signature block
+                const elSig = document.getElementById('admit-cand-sig-block');
+                if (elSig) {
+                    elSig.style.display = admitCard.show_signature_block !== false ? 'flex' : 'none';
+                }
             }
         } catch (_) {}
 

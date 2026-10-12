@@ -830,6 +830,40 @@ async function openAdmitCard(id: string): Promise<void> {
         if (elCtrlDesig && (data as any).controller_designation) elCtrlDesig.textContent = (data as any).controller_designation;
         if (elCtrlInst && (data as any).institution_name) elCtrlInst.textContent = (data as any).institution_name;
 
+        // Custom Subtitle, Watermark & Instructions
+        const elSubtitle = document.getElementById('admit-subtitle');
+        if (elSubtitle && (data as any).header_subtitle) elSubtitle.textContent = (data as any).header_subtitle;
+        const elWatermark = document.getElementById('admit-watermark');
+        if (elWatermark && (data as any).watermark_text) elWatermark.textContent = (data as any).watermark_text;
+
+        const elInstBlock = document.getElementById('admit-instructions-block');
+        const elInstContent = document.getElementById('admit-instructions-content');
+        if (elInstBlock) {
+            elInstBlock.style.display = (data as any).show_instructions !== false ? 'block' : 'none';
+        }
+        if (elInstContent && (data as any).instructions_text) {
+            elInstContent.textContent = (data as any).instructions_text;
+        }
+
+        // Structural Section Visibility Toggles
+        const elPhotoBlock = document.getElementById('admit-photo-block');
+        const elDetailsGrid = document.getElementById('admit-cand-details-grid');
+        const showPhoto = (data as any).show_photo !== false;
+        if (elPhotoBlock) elPhotoBlock.style.display = showPhoto ? 'block' : 'none';
+        if (elDetailsGrid) elDetailsGrid.style.gridTemplateColumns = showPhoto ? '120px 1fr 1fr' : '1fr 1fr';
+
+        const elBarcodeBlock = document.getElementById('admit-barcode-block');
+        if (elBarcodeBlock) elBarcodeBlock.style.display = (data as any).show_barcode !== false ? 'flex' : 'none';
+
+        const elSlotsTable = document.getElementById('admit-slots-table');
+        if (elSlotsTable) elSlotsTable.style.display = (data as any).show_slot_timings !== false ? 'table' : 'none';
+
+        const elVenueBlock = document.getElementById('admit-venue-block');
+        if (elVenueBlock) elVenueBlock.style.display = (data as any).show_venue_details !== false ? 'block' : 'none';
+
+        const elSigBlock = document.getElementById('admit-signatures-block');
+        if (elSigBlock) elSigBlock.style.display = (data as any).show_signature_block !== false ? 'flex' : 'none';
+
         const btnPrint = document.getElementById('btn-print-admit');
         if (btnPrint) {
             btnPrint.onclick = () => {
@@ -3615,53 +3649,146 @@ if (toggleAiCamInput) {
     });
 }
 
-// --- EXAMINATION CENTER & CONTROLLER SETTINGS SUITE ---
+// --- DOCUMENT TEMPLATES & SYSTEM CONFIGURATION SUITE (LEGIT CLOUD PERSISTENT) ---
 const btnOpenSettingsModal = document.getElementById('btn-open-settings-modal');
+const sidebarDocSettings = document.getElementById('sidebar-doc-settings');
 const modalExamSettings = document.getElementById('modal-exam-settings');
 const btnCloseSettingsModal = document.getElementById('btn-close-settings-modal');
 const btnCancelSettings = document.getElementById('btn-cancel-settings');
 const formExamSettings = document.getElementById('form-exam-settings') as HTMLFormElement;
 
-const inputSettingInstName = document.getElementById('setting-institution-name') as HTMLInputElement;
-const inputSettingExamTitle = document.getElementById('setting-exam-title') as HTMLInputElement;
-const inputSettingCtrlName = document.getElementById('setting-controller-name') as HTMLInputElement;
-const inputSettingCtrlDesig = document.getElementById('setting-controller-desig') as HTMLInputElement;
-const inputSettingVenueName = document.getElementById('setting-venue-name') as HTMLTextAreaElement;
-const inputSettingCenterCode = document.getElementById('setting-center-code') as HTMLInputElement;
-const inputSettingLabRoom = document.getElementById('setting-lab-room') as HTMLInputElement;
-const inputSettingTermPrefix = document.getElementById('setting-terminal-prefix') as HTMLInputElement;
+// Tab Switching
+const tabBtnAdmit = document.getElementById('tab-btn-admit');
+const tabBtnScorecard = document.getElementById('tab-btn-scorecard');
+const tabBtnAuthority = document.getElementById('tab-btn-authority');
+const tabPaneAdmit = document.getElementById('tab-pane-admit');
+const tabPaneScorecard = document.getElementById('tab-pane-scorecard');
+const tabPaneAuthority = document.getElementById('tab-pane-authority');
+
+function switchSettingsTab(active: 'admit' | 'scorecard' | 'authority'): void {
+    const tabs = [
+        { btn: tabBtnAdmit, pane: tabPaneAdmit, id: 'admit' },
+        { btn: tabBtnScorecard, pane: tabPaneScorecard, id: 'scorecard' },
+        { btn: tabBtnAuthority, pane: tabPaneAuthority, id: 'authority' },
+    ];
+    tabs.forEach(t => {
+        if (t.pane) t.pane.style.display = t.id === active ? 'block' : 'none';
+        if (t.btn) {
+            if (t.id === active) {
+                t.btn.style.borderBottom = '2px solid #2563eb';
+                t.btn.style.fontWeight = '800';
+                t.btn.style.color = '#2563eb';
+            } else {
+                t.btn.style.borderBottom = 'none';
+                t.btn.style.fontWeight = '700';
+                t.btn.style.color = '#64748b';
+            }
+        }
+    });
+}
+
+if (tabBtnAdmit) tabBtnAdmit.onclick = () => switchSettingsTab('admit');
+if (tabBtnScorecard) tabBtnScorecard.onclick = () => switchSettingsTab('scorecard');
+if (tabBtnAuthority) tabBtnAuthority.onclick = () => switchSettingsTab('authority');
+
+// Admit Card Structure Controls
+const inputAdmitInst = document.getElementById('setting-admit-inst-name') as HTMLInputElement;
+const inputAdmitExam = document.getElementById('setting-admit-exam-title') as HTMLInputElement;
+const inputAdmitSubtitle = document.getElementById('setting-admit-subtitle') as HTMLInputElement;
+const inputAdmitWatermark = document.getElementById('setting-admit-watermark') as HTMLInputElement;
+const inputAdmitInstructions = document.getElementById('setting-admit-instructions') as HTMLTextAreaElement;
+const chkAdmitPhoto = document.getElementById('setting-admit-show-photo') as HTMLInputElement;
+const chkAdmitBarcode = document.getElementById('setting-admit-show-barcode') as HTMLInputElement;
+const chkAdmitSlots = document.getElementById('setting-admit-show-slots') as HTMLInputElement;
+const chkAdmitVenue = document.getElementById('setting-admit-show-venue') as HTMLInputElement;
+const chkAdmitInstructions = document.getElementById('setting-admit-show-instructions') as HTMLInputElement;
+const chkAdmitSignatures = document.getElementById('setting-admit-show-signatures') as HTMLInputElement;
+
+// Scorecard Structure Controls
+const inputScInst = document.getElementById('setting-sc-inst-name') as HTMLInputElement;
+const inputScTitle = document.getElementById('setting-sc-doc-title') as HTMLInputElement;
+const inputScSubhead = document.getElementById('setting-sc-subhead-status') as HTMLInputElement;
+const inputScFooter = document.getElementById('setting-sc-footer-disclaimer') as HTMLInputElement;
+const chkScBanner = document.getElementById('setting-sc-show-banner') as HTMLInputElement;
+const chkScMetrics = document.getElementById('setting-sc-show-metrics-grid') as HTMLInputElement;
+const chkScSubject = document.getElementById('setting-sc-show-subject-breakdown') as HTMLInputElement;
+const chkScReview = document.getElementById('setting-sc-show-question-review') as HTMLInputElement;
+const chkScSig = document.getElementById('setting-sc-show-signature') as HTMLInputElement;
+const chkScSeal = document.getElementById('setting-sc-show-seal') as HTMLInputElement;
+
+// Authority & Venue Controls
+const inputCtrlName = document.getElementById('setting-controller-name') as HTMLInputElement;
+const inputCtrlDesig = document.getElementById('setting-controller-desig') as HTMLInputElement;
+const inputVenueName = document.getElementById('setting-venue-name') as HTMLTextAreaElement;
+const inputCenterCode = document.getElementById('setting-center-code') as HTMLInputElement;
+const inputLabRoom = document.getElementById('setting-lab-room') as HTMLInputElement;
+const inputTermPrefix = document.getElementById('setting-terminal-prefix') as HTMLInputElement;
 
 async function loadExamSettings(): Promise<void> {
     try {
         const res = await fetch('/api/v1/exams/settings', { headers: getHeaders() });
         if (res.ok) {
             const s = await res.json();
-            if (inputSettingInstName && s.institution_name) inputSettingInstName.value = s.institution_name;
-            if (inputSettingExamTitle && s.examination_title) inputSettingExamTitle.value = s.examination_title;
-            if (inputSettingCtrlName && s.controller_name) inputSettingCtrlName.value = s.controller_name;
-            if (inputSettingCtrlDesig && s.controller_designation) inputSettingCtrlDesig.value = s.controller_designation;
-            if (inputSettingVenueName && s.test_venue_name) inputSettingVenueName.value = s.test_venue_name;
-            if (inputSettingCenterCode && s.test_center_code) inputSettingCenterCode.value = s.test_center_code;
-            if (inputSettingLabRoom && s.default_lab_room) inputSettingLabRoom.value = s.default_lab_room;
-            if (inputSettingTermPrefix && s.terminal_prefix) inputSettingTermPrefix.value = s.terminal_prefix;
+            const adm = s.admit_card || {};
+            const sc = s.scorecard || {};
 
+            // 1. Populate Admit Card Controls
+            if (inputAdmitInst) inputAdmitInst.value = adm.institution_name || s.institution_name || 'SSE CBT PLATFORM';
+            if (inputAdmitExam) inputAdmitExam.value = adm.examination_title || s.examination_title || 'MCQ ASSESSMENT [ SSE CBT 2026 ]';
+            if (inputAdmitSubtitle && adm.header_subtitle) inputAdmitSubtitle.value = adm.header_subtitle;
+            if (inputAdmitWatermark && adm.watermark_text) inputAdmitWatermark.value = adm.watermark_text;
+            if (inputAdmitInstructions && adm.instructions_text) inputAdmitInstructions.value = adm.instructions_text;
+            if (chkAdmitPhoto) chkAdmitPhoto.checked = adm.show_photo !== false;
+            if (chkAdmitBarcode) chkAdmitBarcode.checked = adm.show_barcode !== false;
+            if (chkAdmitSlots) chkAdmitSlots.checked = adm.show_slot_timings !== false;
+            if (chkAdmitVenue) chkAdmitVenue.checked = adm.show_venue_details !== false;
+            if (chkAdmitInstructions) chkAdmitInstructions.checked = adm.show_instructions !== false;
+            if (chkAdmitSignatures) chkAdmitSignatures.checked = adm.show_signature_block !== false;
+
+            // 2. Populate Scorecard Controls
+            if (inputScInst) inputScInst.value = sc.institution_name || s.institution_name || 'SSE CBT PLATFORM';
+            if (inputScTitle) inputScTitle.value = sc.document_title || (s.examination_title ? `${s.examination_title} : Official Score Card` : 'MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card');
+            if (inputScSubhead && sc.subhead_status_text) inputScSubhead.value = sc.subhead_status_text;
+            if (inputScFooter && sc.footer_disclaimer) inputScFooter.value = sc.footer_disclaimer;
+            if (chkScBanner) chkScBanner.checked = sc.show_score_banner !== false;
+            if (chkScMetrics) chkScMetrics.checked = sc.show_metrics_grid !== false;
+            if (chkScSubject) chkScSubject.checked = sc.show_subject_breakdown !== false;
+            if (chkScReview) chkScReview.checked = sc.show_question_review !== false;
+            if (chkScSig) chkScSig.checked = sc.show_signature_block !== false;
+            if (chkScSeal) chkScSeal.checked = sc.show_seal !== false;
+
+            // 3. Populate Authority & Venue Controls
+            if (inputCtrlName && s.controller_name) inputCtrlName.value = s.controller_name;
+            if (inputCtrlDesig && s.controller_designation) inputCtrlDesig.value = s.controller_designation;
+            if (inputVenueName && s.test_venue_name) inputVenueName.value = s.test_venue_name;
+            if (inputCenterCode && s.test_center_code) inputCenterCode.value = s.test_center_code;
+            if (inputLabRoom && s.default_lab_room) inputLabRoom.value = s.default_lab_room;
+            if (inputTermPrefix && s.terminal_prefix) inputTermPrefix.value = s.terminal_prefix;
+
+            // 4. Update preview elements if visible
             const admitInst = document.getElementById('admit-inst-name');
             const admitExam = document.getElementById('admit-exam-title');
             const admitCtrl = document.getElementById('admit-controller-name');
             const admitDesig = document.getElementById('admit-controller-desig');
-            if (admitInst && s.institution_name) admitInst.textContent = s.institution_name;
-            if (admitExam && s.examination_title) admitExam.textContent = s.examination_title;
+            if (admitInst && (adm.institution_name || s.institution_name)) admitInst.textContent = adm.institution_name || s.institution_name;
+            if (admitExam && (adm.examination_title || s.examination_title)) admitExam.textContent = adm.examination_title || s.examination_title;
             if (admitCtrl && s.controller_name) admitCtrl.textContent = s.controller_name;
             if (admitDesig && s.controller_designation) admitDesig.textContent = s.controller_designation;
         }
     } catch (_) {}
 }
 
-if (btnOpenSettingsModal && modalExamSettings) {
-    btnOpenSettingsModal.onclick = () => {
-        loadExamSettings();
-        modalExamSettings.style.display = 'flex';
-    };
+const openSettingsModalHandler = () => {
+    loadExamSettings();
+    switchSettingsTab('admit');
+    if (modalExamSettings) modalExamSettings.style.display = 'flex';
+};
+
+if (btnOpenSettingsModal) {
+    btnOpenSettingsModal.onclick = openSettingsModalHandler;
+}
+if (sidebarDocSettings) {
+    sidebarDocSettings.onclick = openSettingsModalHandler;
 }
 
 if (btnCloseSettingsModal && modalExamSettings) {
@@ -3680,20 +3807,45 @@ if (formExamSettings) {
     formExamSettings.onsubmit = async (e) => {
         e.preventDefault();
         const payload = {
-            institution_name: inputSettingInstName?.value.trim() || 'SSE CBT PLATFORM',
-            examination_title: inputSettingExamTitle?.value.trim() || 'MCQ ASSESSMENT [ SSE CBT 2026 ]',
-            controller_name: inputSettingCtrlName?.value.trim() || 'Prof. Dr. M. Shanmugam',
-            controller_designation: inputSettingCtrlDesig?.value.trim() || 'Controller of Examinations',
-            test_venue_name: inputSettingVenueName?.value.trim() || 'SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105',
-            test_center_code: inputSettingCenterCode?.value.trim() || 'SSEC-TN-042',
-            default_lab_room: inputSettingLabRoom?.value.trim() || 'LAB-01 (Block-A)',
-            terminal_prefix: inputSettingTermPrefix?.value.trim() || 'T-A-',
+            institution_name: inputAdmitInst?.value.trim() || 'SSE CBT PLATFORM',
+            examination_title: inputAdmitExam?.value.trim() || 'MCQ ASSESSMENT [ SSE CBT 2026 ]',
+            controller_name: inputCtrlName?.value.trim() || 'Prof. Dr. M. Shanmugam',
+            controller_designation: inputCtrlDesig?.value.trim() || 'Controller of Examinations',
+            test_venue_name: inputVenueName?.value.trim() || 'SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105',
+            test_center_code: inputCenterCode?.value.trim() || 'SSEC-TN-042',
+            default_lab_room: inputLabRoom?.value.trim() || 'LAB-01 (Block-A)',
+            terminal_prefix: inputTermPrefix?.value.trim() || 'T-A-',
+            admit_card: {
+                institution_name: inputAdmitInst?.value.trim() || 'SSE CBT PLATFORM',
+                examination_title: inputAdmitExam?.value.trim() || 'MCQ ASSESSMENT [ SSE CBT 2026 ]',
+                header_subtitle: inputAdmitSubtitle?.value.trim() || 'PROVISIONAL ADMIT CARD / HALL TICKET • COMPUTER BASED TEST (CBT)',
+                watermark_text: inputAdmitWatermark?.value.trim() || 'CONFIDENTIAL',
+                instructions_text: inputAdmitInstructions?.value.trim() || '',
+                show_photo: chkAdmitPhoto ? chkAdmitPhoto.checked : true,
+                show_barcode: chkAdmitBarcode ? chkAdmitBarcode.checked : true,
+                show_slot_timings: chkAdmitSlots ? chkAdmitSlots.checked : true,
+                show_venue_details: chkAdmitVenue ? chkAdmitVenue.checked : true,
+                show_instructions: chkAdmitInstructions ? chkAdmitInstructions.checked : true,
+                show_signature_block: chkAdmitSignatures ? chkAdmitSignatures.checked : true,
+            },
+            scorecard: {
+                institution_name: inputScInst?.value.trim() || 'SSE CBT PLATFORM',
+                document_title: inputScTitle?.value.trim() || 'MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card',
+                subhead_status_text: inputScSubhead?.value.trim() || 'Status: Authenticated & Cloud Verified',
+                footer_disclaimer: inputScFooter?.value.trim() || '',
+                show_score_banner: chkScBanner ? chkScBanner.checked : true,
+                show_metrics_grid: chkScMetrics ? chkScMetrics.checked : true,
+                show_subject_breakdown: chkScSubject ? chkScSubject.checked : true,
+                show_question_review: chkScReview ? chkScReview.checked : true,
+                show_signature_block: chkScSig ? chkScSig.checked : true,
+                show_seal: chkScSeal ? chkScSeal.checked : true,
+            }
         };
 
         const btnSave = document.getElementById('btn-save-settings') as HTMLButtonElement;
         if (btnSave) {
             btnSave.disabled = true;
-            btnSave.textContent = 'Saving Settings...';
+            btnSave.textContent = 'Persisting to Cloud DB...';
         }
 
         try {
@@ -3704,18 +3856,18 @@ if (formExamSettings) {
             });
             if (res.ok) {
                 const updated = await res.json();
-                showToast(`Settings saved! Controller of Examinations set to: ${updated.controller_name}`);
+                showToast(`Document templates & structures saved in Cloud DB! Signatory: ${updated.controller_name}`);
                 if (modalExamSettings) modalExamSettings.style.display = 'none';
                 loadExamSettings();
             } else {
-                showToast("Failed to save exam settings", true);
+                showToast("Failed to save exam settings to Cloud DB", true);
             }
         } catch (_) {
-            showToast("Network error saving settings", true);
+            showToast("Network error saving document templates", true);
         } finally {
             if (btnSave) {
                 btnSave.disabled = false;
-                btnSave.textContent = 'Save Examination Settings';
+                btnSave.textContent = '💾 Save to Cloud DB (Supabase)';
             }
         }
     };

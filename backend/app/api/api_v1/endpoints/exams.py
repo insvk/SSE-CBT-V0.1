@@ -45,6 +45,46 @@ router = APIRouter()
 
 DEFAULT_EXAM_UUID = "00000000-0000-0000-0000-000000000101"
 
+DEFAULT_ADMIT_CARD_TEMPLATE = {
+    "institution_name": "SSE CBT PLATFORM",
+    "examination_title": "MCQ ASSESSMENT [ SSE CBT 2026 ]",
+    "header_subtitle": "PROVISIONAL ADMIT CARD / HALL TICKET • COMPUTER BASED TEST (CBT)",
+    "watermark_text": "CONFIDENTIAL",
+    "test_venue_name": "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105",
+    "test_center_code": "SSEC-TN-042",
+    "default_lab_room": "LAB-01 (Block-A)",
+    "terminal_prefix": "T-A-",
+    "controller_name": "Prof. Dr. M. Shanmugam",
+    "controller_designation": "Controller of Examinations",
+    "instructions_text": "1. Government photo ID card mandatory for physical entrance.\n2. Electronic devices, smartwatches, and calculators strictly prohibited.\n3. Continuous webcam biometric tracking and screen proctoring active.\n4. Candidates must report at the allocated test center prior to gate closure.",
+    "show_barcode": True,
+    "show_photo": True,
+    "show_biometric_badge": True,
+    "show_slot_timings": True,
+    "show_venue_details": True,
+    "show_instructions": True,
+    "show_signature_block": True,
+}
+
+DEFAULT_SCORECARD_TEMPLATE = {
+    "institution_name": "SSE CBT PLATFORM",
+    "document_title": "MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card",
+    "subhead_status_text": "Status: Authenticated & Cloud Verified",
+    "controller_name": "Prof. Dr. M. Shanmugam",
+    "controller_designation": "Controller of Examinations",
+    "test_venue_name": "SSE Digital Assessment Hub Node 01",
+    "footer_disclaimer": "© 2026 Saveetha School of Engineering • CBT Examination Directorate. All rights reserved.",
+    "show_score_banner": True,
+    "show_percentage": True,
+    "show_accuracy": True,
+    "show_metrics_grid": True,
+    "show_subject_breakdown": True,
+    "show_question_review": True,
+    "show_time_analytics": True,
+    "show_signature_block": True,
+    "show_seal": True,
+}
+
 CURRENT_EXAM_SETTINGS: Dict[str, Any] = {
     "institution_name": "SSE CBT PLATFORM",
     "examination_title": "MCQ ASSESSMENT [ SSE CBT 2026 ]",
@@ -54,23 +94,70 @@ CURRENT_EXAM_SETTINGS: Dict[str, Any] = {
     "test_center_code": "SSEC-TN-042",
     "default_lab_room": "LAB-01 (Block-A)",
     "terminal_prefix": "T-A-",
+    "admit_card": DEFAULT_ADMIT_CARD_TEMPLATE.copy(),
+    "scorecard": DEFAULT_SCORECARD_TEMPLATE.copy(),
 }
 
 
+def load_templates_from_cloud_db(db: Any) -> None:
+    """Loads authoritative document templates and settings from Supabase Cloud DB."""
+    global CURRENT_EXAM_SETTINGS
+    try:
+        res = db.table("exams").select("id, config").order("created_at", desc=False).limit(1).execute()
+        if res.data:
+            cfg = res.data[0].get("config") or {}
+            tmpl = cfg.get("document_templates") or {}
+            if tmpl.get("center_settings"):
+                CURRENT_EXAM_SETTINGS.update(tmpl["center_settings"])
+            if tmpl.get("admit_card"):
+                CURRENT_EXAM_SETTINGS["admit_card"] = {**DEFAULT_ADMIT_CARD_TEMPLATE, **tmpl["admit_card"]}
+            if tmpl.get("scorecard"):
+                CURRENT_EXAM_SETTINGS["scorecard"] = {**DEFAULT_SCORECARD_TEMPLATE, **tmpl["scorecard"]}
+    except Exception as e:
+        logger.warning(f"Could not load templates from Cloud DB: {e}")
+
+
 @router.get("/settings", response_model=ExamCenterSettings)
-def get_exam_settings():
-    """Returns official Examination Center & Controller settings configured by Admin."""
+def get_exam_settings(db: Any = Depends(get_db)):
+    """Returns official Examination Center & Controller settings configured by Admin from Cloud DB."""
+    load_templates_from_cloud_db(db)
     return ExamCenterSettings(**CURRENT_EXAM_SETTINGS)
 
 
 @router.post("/settings", response_model=ExamCenterSettings)
-async def update_exam_settings(payload: ExamCenterSettings):
-    """Updates official Examination Center & Controller settings and broadcasts live."""
+async def update_exam_settings(payload: ExamCenterSettings, db: Any = Depends(get_db)):
+    """Updates official Examination Center, Controller & Document structures in Cloud DB and broadcasts live."""
     global CURRENT_EXAM_SETTINGS
     data = payload.model_dump()
     for k, v in data.items():
-        if v is not None and str(v).strip():
-            CURRENT_EXAM_SETTINGS[k] = str(v).strip()
+        if v is not None:
+            CURRENT_EXAM_SETTINGS[k] = v
+
+    # Legit Cloud DB Persistence: update exams table in Supabase
+    try:
+        exams_res = db.table("exams").select("id, config").execute()
+        rows = exams_res.data or []
+        for row in rows:
+            ex_id = row["id"]
+            cfg = row.get("config") or {}
+            cfg["document_templates"] = {
+                "center_settings": {
+                    "institution_name": CURRENT_EXAM_SETTINGS.get("institution_name"),
+                    "examination_title": CURRENT_EXAM_SETTINGS.get("examination_title"),
+                    "controller_name": CURRENT_EXAM_SETTINGS.get("controller_name"),
+                    "controller_designation": CURRENT_EXAM_SETTINGS.get("controller_designation"),
+                    "test_venue_name": CURRENT_EXAM_SETTINGS.get("test_venue_name"),
+                    "test_center_code": CURRENT_EXAM_SETTINGS.get("test_center_code"),
+                    "default_lab_room": CURRENT_EXAM_SETTINGS.get("default_lab_room"),
+                    "terminal_prefix": CURRENT_EXAM_SETTINGS.get("terminal_prefix"),
+                },
+                "admit_card": CURRENT_EXAM_SETTINGS.get("admit_card"),
+                "scorecard": CURRENT_EXAM_SETTINGS.get("scorecard"),
+            }
+            db.table("exams").update({"config": cfg}).eq("id", ex_id).execute()
+        logger.info(f"Persisted document templates in Cloud DB across {len(rows)} exams")
+    except Exception as e:
+        logger.error(f"Error persisting document templates to Cloud DB: {e}")
 
     await ws_manager.broadcast("admin_feed", {
         "type": "EXAM_SETTINGS_UPDATED",

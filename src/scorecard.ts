@@ -338,19 +338,55 @@ async function loadAuthoritativeScore(): Promise<void> {
         const sRes = await fetch('/api/v1/exams/settings', { headers: getHeaders() });
         if (sRes.ok) {
             const s = await sRes.json();
+            const sc = s.scorecard || {};
             const elAgency = document.getElementById('sc-agency');
             const elTitle = document.getElementById('sc-title');
             const elSubhead = document.getElementById('sc-subhead-exam');
+            const elSubheadStatus = document.getElementById('sc-subhead-status');
             const elCtrlName = document.getElementById('sc-controller-name');
             const elCtrlDesig = document.getElementById('sc-controller-desig');
             const elNode = document.getElementById('sc-center-node');
+            const elDisclaimer = document.getElementById('sc-footer-disclaimer');
 
-            if (elAgency && s.institution_name) elAgency.textContent = s.institution_name;
-            if (elTitle && s.examination_title) elTitle.textContent = `${s.examination_title} : Official Score Card`;
-            if (elSubhead && s.examination_title) elSubhead.textContent = s.examination_title;
+            if (elAgency) elAgency.textContent = sc.institution_name || s.institution_name || 'SSE CBT PLATFORM';
+            if (elTitle) elTitle.textContent = sc.document_title || (s.examination_title ? `${s.examination_title} : Official Score Card` : 'MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card');
+            if (elSubhead) elSubhead.textContent = s.examination_title || 'MCQ Assessment 2026';
+            if (elSubheadStatus && sc.subhead_status_text) elSubheadStatus.textContent = sc.subhead_status_text;
             if (elCtrlName && s.controller_name) elCtrlName.textContent = s.controller_name;
             if (elCtrlDesig && s.controller_designation) elCtrlDesig.textContent = s.controller_designation;
             if (elNode && s.test_venue_name) elNode.textContent = s.test_venue_name;
+            if (elDisclaimer && sc.footer_disclaimer) elDisclaimer.textContent = sc.footer_disclaimer;
+
+            // Structural section visibility toggles
+            const elBanner = document.getElementById('sc-score-banner');
+            if (elBanner) {
+                elBanner.style.display = sc.show_score_banner !== false ? 'flex' : 'none';
+            }
+
+            const elMetricsGrid = document.getElementById('sc-metrics-grid-container');
+            if (elMetricsGrid) {
+                elMetricsGrid.style.display = sc.show_metrics_grid !== false ? 'block' : 'none';
+            }
+
+            const elBreakdown = document.getElementById('sc-subject-breakdown-container');
+            if (elBreakdown) {
+                elBreakdown.style.display = sc.show_subject_breakdown !== false ? 'block' : 'none';
+            }
+
+            const elReview = document.getElementById('sc-question-review-container');
+            if (elReview) {
+                elReview.style.display = sc.show_question_review !== false ? 'block' : 'none';
+            }
+
+            const elSig = document.getElementById('sc-signature-container');
+            if (elSig) {
+                elSig.style.display = sc.show_signature_block !== false ? 'flex' : 'none';
+            }
+
+            const elSeal = document.getElementById('sc-seal');
+            if (elSeal) {
+                elSeal.style.display = sc.show_seal !== false ? 'flex' : 'none';
+            }
         }
     } catch (_) {}
 
