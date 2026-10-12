@@ -531,6 +531,11 @@ if (ui.formCreate) {
         const venue = (document.getElementById('c-venue') as HTMLInputElement)?.value.trim();
         const room = (document.getElementById('c-room') as HTMLInputElement)?.value.trim();
         const terminal = (document.getElementById('c-terminal') as HTMLInputElement)?.value.trim();
+        const category = (document.getElementById('c-category') as HTMLSelectElement)?.value || 'General';
+        const gender = (document.getElementById('c-gender') as HTMLSelectElement)?.value || 'Male';
+        const isPwd = (document.getElementById('c-ispwd') as HTMLInputElement)?.checked || false;
+        const hasScribe = (document.getElementById('c-hasscribe') as HTMLInputElement)?.checked || false;
+        const extraMins = parseInt((document.getElementById('c-extramins') as HTMLInputElement)?.value, 10) || (isPwd ? 60 : 0);
 
         const payload = {
             full_name: fullName,
@@ -541,7 +546,12 @@ if (ui.formCreate) {
             initial_password: pwd || "12345678",
             test_center_name: venue || undefined,
             room_number: room || undefined,
-            assigned_terminal: terminal || undefined
+            assigned_terminal: terminal || undefined,
+            category: category,
+            gender: gender,
+            is_pwd: isPwd,
+            has_scribe: hasScribe,
+            compensatory_minutes: extraMins,
         };
 
         try {

@@ -1646,7 +1646,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/admin-a2510383.js"></script>
+  <script type="module" crossorigin src="/assets/admin-0c210db3.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
 </head>
 
@@ -2463,6 +2463,42 @@
           <div>
             <label class="form-label">Assigned Terminal Node (Optional)</label>
             <input type="text" class="form-input-ctrl" id="c-terminal" placeholder="e.g. NODE-L4-C01 (auto if blank)" />
+          </div>
+
+          <div>
+            <label class="form-label">Category</label>
+            <select class="form-input-ctrl" id="c-category">
+              <option value="General">General (UR)</option>
+              <option value="OBC-NCL">OBC-NCL</option>
+              <option value="SC">Scheduled Caste (SC)</option>
+              <option value="ST">Scheduled Tribe (ST)</option>
+              <option value="EWS">Economically Weaker Section (EWS)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="form-label">Gender</label>
+            <select class="form-input-ctrl" id="c-gender">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group-full" style="background: rgba(79, 70, 229, 0.04); border: 1px dashed var(--border-color); border-radius: 6px; padding: 0.75rem;">
+            <div style="font-weight: 700; font-size: 0.8rem; margin-bottom: 0.5rem; color: var(--brand-blue);">PwD &amp; Examination Accommodations</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: center;">
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; cursor: pointer;">
+                <input type="checkbox" id="c-ispwd"> Persons with Disability (PwD)
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; cursor: pointer;">
+                <input type="checkbox" id="c-hasscribe"> Scribe Required
+              </label>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Extra Time (mins):</span>
+                <input type="number" id="c-extramins" class="form-input-ctrl" style="width: 70px; padding: 2px 6px;" value="0" min="0" max="120">
+              </div>
+            </div>
           </div>
 
           <div class="form-group-full">
