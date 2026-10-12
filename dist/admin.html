@@ -1558,7 +1558,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/admin-5f2de22a.js"></script>
+  <script type="module" crossorigin src="/assets/admin-e0207a37.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
 </head>
 
@@ -3620,7 +3620,7 @@
                 <th>Candidate Name</th>
                 <th>Raw Score</th>
                 <th>Accuracy</th>
-                <th>Percentile</th>
+                <th>Percentage</th>
               </tr>
             </thead>
             <tbody id="sum-leaderboard-body">
@@ -3634,18 +3634,21 @@
         </div>
       </div>
 
-      <!-- ACTION FOOTER: DOWNLOAD EXCEL -->
+      <!-- ACTION FOOTER: DOWNLOAD EXCEL / CSV / RESPONSES -->
       <div
         style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
         <div style="font-size: 0.75rem; color: var(--text-muted);">
-          Includes full 24-column marks analysis with subject scores and proctoring telemetry.
+          Authoritative database exports with formula-injection protection and itemized candidate response logs.
         </div>
-        <div style="display: flex; gap: 0.5rem;">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-download-responses-modal">
+            Download Itemized Responses (CSV)
+          </button>
           <button type="button" class="btn btn-outline btn-sm" id="btn-download-csv-modal">
-            Download CSV
+            Download Results (CSV)
           </button>
           <button type="button" class="btn btn-success btn-sm" id="btn-download-xls-modal" style="font-weight: 700;">
-            Download Full Marks Analysis (XLS)
+            Download Marks (XLS)
           </button>
         </div>
       </div>

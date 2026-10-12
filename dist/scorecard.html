@@ -235,7 +235,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/scorecard-fae615c6.js"></script>
+  <script type="module" crossorigin src="/assets/scorecard-4c371c9c.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
   <link rel="stylesheet" href="/assets/style-e946e59c.css">
 </head>
@@ -280,6 +280,10 @@
           <div class="field-label">Roll / Registration Number</div>
           <div class="field-value" id="sc-reg" style="font-family: var(--font-mono); color: #1e3a8a;">Loading...</div>
         </div>
+        <div class="field-group">
+          <div class="field-label">Attempt Status</div>
+          <div class="field-value" id="sc-status" style="font-size: 0.95rem; color: #16a34a;">Submitted &amp; Evaluated</div>
+        </div>
       </div>
 
       <div>
@@ -295,6 +299,12 @@
           <div class="field-label">Submission Reference</div>
           <div class="field-value" id="sc-ref" style="font-family: var(--font-mono); color: #0284c7;">--</div>
         </div>
+        <div class="field-group">
+          <div class="field-label">Time Taken &bull; Submitted At</div>
+          <div class="field-value" style="font-size: 0.88rem; color: #475569;">
+            <span id="sc-time-taken">-- min</span> &bull; <span id="sc-submitted-at">--</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -308,41 +318,126 @@
       </p>
     </div>
 
-    <!-- OVERALL SCORE BANNER -->
-    <div class="overall-score-banner" id="sc-score-banner">
+    <!-- OVERALL SCORE BANNER (PERCENTILE REMOVED, PERCENTAGE & ACCURACY ELEVATED) -->
+    <div class="overall-score-banner" id="sc-score-banner" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
       <div>
         <div class="field-label">Authoritative Total Score</div>
         <div class="score-big" id="sc-score">--</div>
-        <div style="font-size: 0.85rem; color: #1e40af; font-weight: 600; margin-top: 0.25rem;">
-          Calculated by SSE Scoring Engine (+4.0 / -1.0)
+        <div style="font-size: 0.82rem; color: #1e40af; font-weight: 600; margin-top: 0.35rem;" id="sc-score-subtext">
+          Derived from Cloud Responses &bull; Marking Policy Applied
         </div>
       </div>
+
+      <div style="text-align: center; border-left: 1px solid #bfdbfe; border-right: 1px solid #bfdbfe; padding: 0 1.5rem;">
+        <div class="field-label" style="margin-bottom: 0.25rem;">Percentage</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: #0369a1; font-family: var(--font-mono);" id="sc-percentage">--%</div>
+        <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">(Score / Max Marks) &times; 100</div>
+      </div>
+
       <div style="text-align: right;">
-        <div class="field-label" style="margin-bottom: 0.5rem;">Percentile Score</div>
-        <div class="percentile-badge" id="sc-percentile">-- PR</div>
+        <div class="field-label" style="margin-bottom: 0.25rem;">Candidate Accuracy</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: #15803d; font-family: var(--font-mono);" id="sc-accuracy">--%</div>
+        <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;" id="sc-accuracy-subtext">Correct / Attempted</div>
+      </div>
+    </div>
+
+    <!-- PERFORMANCE SUMMARY METRICS GRID -->
+    <div style="margin: 0 2.5rem 1.5rem 2.5rem;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.75rem; text-align: center;">
+          <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b;">Total Questions</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-top: 0.25rem;" id="sc-stat-total">--</div>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.75rem; text-align: center;">
+          <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b;">Attempted</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #0284c7; margin-top: 0.25rem;" id="sc-stat-attempted">--</div>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.75rem; text-align: center;">
+          <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #15803d;">Correct</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #15803d; margin-top: 0.25rem;" id="sc-stat-correct">--</div>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.75rem; text-align: center;">
+          <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #b91c1c;">Incorrect</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #b91c1c; margin-top: 0.25rem;" id="sc-stat-incorrect">--</div>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.75rem; text-align: center;">
+          <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b;">Unanswered</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #64748b; margin-top: 0.25rem;" id="sc-stat-unanswered">--</div>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.75rem; text-align: center;">
+          <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #d97706;">Review Flagged</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #d97706; margin-top: 0.25rem;" id="sc-stat-review">--</div>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.75rem; text-align: center;">
+          <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #15803d;">Positive Marks</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #15803d; margin-top: 0.25rem;" id="sc-stat-positive">--</div>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 0.75rem; text-align: center;">
+          <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #b91c1c;">Penalty Deducted</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #b91c1c; margin-top: 0.25rem;" id="sc-stat-penalty">--</div>
+        </div>
       </div>
     </div>
 
     <!-- SECTION SCORES -->
+    <div style="margin: 0 2.5rem 0.5rem 2.5rem; font-size: 0.95rem; font-weight: 700; color: #1e3a8a;">
+      Subject &amp; Section Performance Dossier
+    </div>
     <table class="score-table">
       <thead>
         <tr>
           <th>Subject / Section</th>
           <th>Total Questions</th>
+          <th>Attempted</th>
           <th>Correct</th>
           <th>Incorrect</th>
           <th>Marks Awarded</th>
-          <th>Score (Percentile Rank)</th>
+          <th>Accuracy (%)</th>
         </tr>
       </thead>
       <tbody id="sc-table-body">
         <tr>
-          <td colspan="6" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+          <td colspan="7" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
             Loading authoritative scores and subject dossier from Cloud Database...
           </td>
         </tr>
       </tbody>
     </table>
+
+    <!-- DETAILED QUESTION REVIEW TABLE -->
+    <div style="margin: 2rem 2.5rem 0.5rem 2.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.5rem;">
+        <div>
+          <div style="font-size: 1.05rem; font-weight: 800; color: #1e3a8a;">Authoritative Itemized Question Review</div>
+          <div style="font-size: 0.8rem; color: #64748b;">Complete question-by-question breakdown, candidate selected responses, answer keys, and marks distribution.</div>
+        </div>
+        <span style="font-size: 0.75rem; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 0.25rem 0.5rem; border-radius: 4px;">
+          Cloud Verified Responses
+        </span>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="score-table" style="margin: 0 0 2rem 0; width: 100%;">
+          <thead>
+            <tr>
+              <th style="width: 45px;">Q#</th>
+              <th style="width: 110px;">Subject</th>
+              <th>Question Statement</th>
+              <th>Candidate's Answer</th>
+              <th>Correct Key</th>
+              <th style="width: 95px;">Status</th>
+              <th style="width: 70px;">Marks</th>
+            </tr>
+          </thead>
+          <tbody id="sc-question-review-body">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+                Loading itemized question review...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
     <!-- CONTROLLER OF EXAMINATIONS SIGNATURE SECTION -->
     <div style="padding: 1.5rem 2.5rem; display: flex; justify-content: flex-end; align-items: flex-end; border-top: 1px solid var(--border-color); background: white;">

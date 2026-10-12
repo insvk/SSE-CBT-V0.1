@@ -119,6 +119,24 @@ async def exam_websocket_endpoint(websocket: WebSocket, exam_id: str):
                         "timestamp": time.time()
                     })
 
+                elif msg_type == "ACTIVE_QUESTION_CHANGED":
+                    q_idx = data.get("current_question_index", 1)
+                    q_id = str(data.get("current_question_id", ""))
+                    cand_id = data.get("candidate_id")
+                    reg_no = data.get("reg_no") or ""
+                    cand_name = data.get("candidate_name") or "Candidate"
+
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "ACTIVE_QUESTION_CHANGED",
+                        "exam_id": exam_id,
+                        "candidate_id": cand_id,
+                        "candidate_name": cand_name,
+                        "reg_no": reg_no,
+                        "current_question_index": q_idx,
+                        "current_question_id": q_id,
+                        "timestamp": time.time()
+                    })
+
                 elif msg_type == "SUBMIT_EXAM":
                     cand_id = data.get("candidate_id")
                     reg_no = data.get("reg_no")

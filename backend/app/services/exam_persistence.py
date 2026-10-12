@@ -274,7 +274,9 @@ def mark_attempt_submitted_cloud_db(
                 "disqualification_reason": disqualification_reason or "4 Security Violations Exceeded",
                 "score": 0.0,
                 "percentage": 0.0,
-                "percentile": 0.0,
+                "accuracy": 0.0,
+                "accuracy_display": "0.0%",
+                "percentile": None,
                 "result_status": "Disqualified (Security Malpractice)",
                 "disqualified_at": now_iso,
             })
@@ -285,17 +287,26 @@ def mark_attempt_submitted_cloud_db(
                 "score": float(scoring_result.get("total_score", 0.0)),
                 "max_possible": float(scoring_result.get("max_possible_score", 0.0)),
                 "percentage": float(scoring_result.get("percentage", 0.0)),
-                "percentile": float(scoring_result.get("percentile", 0.0)),
+                "accuracy": scoring_result.get("accuracy"),
+                "accuracy_display": scoring_result.get("accuracy_display", "N/A"),
                 "correct_count": int(scoring_result.get("correct_count", 0)),
                 "incorrect_count": int(scoring_result.get("incorrect_count", 0)),
                 "unanswered_count": int(scoring_result.get("unanswered_count", 0)),
+                "attempted_count": int(scoring_result.get("attempted_count", 0)),
+                "marked_for_review_count": int(scoring_result.get("marked_for_review_count", 0)),
+                "bonus_count": int(scoring_result.get("bonus_count", 0)),
                 "total_questions": int(scoring_result.get("total_questions", 0)),
+                "marks_before_penalty": float(scoring_result.get("marks_before_penalty", 0.0)),
+                "penalty_deducted": float(scoring_result.get("penalty_deducted", 0.0)),
+                "bonus_marks": float(scoring_result.get("bonus_marks", 0.0)),
                 "subject_breakdown": scoring_result.get("subject_breakdown", {}),
                 "submission_reference": scoring_result.get("reference", ""),
                 "submitted_at": now_iso,
+                "percentile": None,
             })
         db.table("candidates").update({"metadata": meta}).eq("id", cand_uuid).execute()
     except Exception as e:
         logger.error(f"Error updating candidate metadata in Cloud DB: {e}")
 
     return True
+

@@ -1820,11 +1820,13 @@ def get_exam_results_summary(exam_id: str):
                 "raw_score": 0.0,
                 "max_marks": 0.0,
                 "percentage": 0.0,
-                "percentile": 0.0,
-                "accuracy": 0,
+                "accuracy": 0.0,
+                "accuracy_display": "0.0%",
+                "percentile": None,
                 "correct_count": 0,
                 "incorrect_count": 0,
                 "unanswered_count": len(questions_map),
+                "attempted_count": 0,
                 "status": "Disqualified",
                 "disqualified": True,
                 "disqualification_reason": disq_reason,
@@ -1837,10 +1839,11 @@ def get_exam_results_summary(exam_id: str):
             total_sc = float(meta.get("score", 0.0))
             max_sc = float(meta.get("max_possible", 80.0))
             pct = float(meta.get("percentage", 0.0))
-            pr = float(meta.get("percentile", 50.0))
             cor = int(meta.get("correct_count", 0))
             inc = int(meta.get("incorrect_count", 0))
             unans = int(meta.get("unanswered_count", 0))
+            att_cnt = int(meta.get("attempted_count", cor + inc))
+            acc = float(meta.get("accuracy", round((cor / max(att_cnt, 1)) * 100, 1))) if att_cnt > 0 else 0.0
             scores.append(total_sc)
             leaderboard_valid.append({
                 "candidate_id": cid,
@@ -1852,11 +1855,13 @@ def get_exam_results_summary(exam_id: str):
                 "raw_score": total_sc,
                 "max_marks": max_sc,
                 "percentage": pct,
-                "percentile": pr,
-                "accuracy": round((cor / max(cor + inc, 1)) * 100, 1),
+                "accuracy": acc,
+                "accuracy_display": f"{acc:.1f}%" if att_cnt > 0 else "N/A",
+                "percentile": None,
                 "correct_count": cor,
                 "incorrect_count": inc,
                 "unanswered_count": unans,
+                "attempted_count": att_cnt,
                 "status": "Submitted",
                 "disqualified": False,
                 "terminal": meta.get("assigned_terminal") or f"T-A-{idx:03d}",
@@ -1885,6 +1890,7 @@ def get_exam_results_summary(exam_id: str):
         )
         total_sc = sc_res["total_score"]
         pct = sc_res["percentage"]
+        acc = sc_res["accuracy"] or 0.0
         if total_sc > 0 or att_status == "submitted":
             scores.append(total_sc)
 
@@ -1898,11 +1904,13 @@ def get_exam_results_summary(exam_id: str):
             "raw_score": total_sc,
             "max_marks": sc_res["max_possible_score"],
             "percentage": pct,
-            "percentile": sc_res["percentile"],
-            "accuracy": round((sc_res["correct_count"] / max(sc_res["correct_count"] + sc_res["incorrect_count"], 1)) * 100, 1),
+            "accuracy": acc,
+            "accuracy_display": sc_res["accuracy_display"],
+            "percentile": None,
             "correct_count": sc_res["correct_count"],
             "incorrect_count": sc_res["incorrect_count"],
             "unanswered_count": sc_res["unanswered_count"],
+            "attempted_count": sc_res["attempted_count"],
             "status": "Submitted" if (total_sc > 0 or att_status == "submitted") else "In Progress",
             "disqualified": False,
             "terminal": meta.get("assigned_terminal") or f"T-A-{idx:03d}",
@@ -1916,6 +1924,7 @@ def get_exam_results_summary(exam_id: str):
         item["rank"] = "DISQ"
 
     leaderboard = leaderboard_valid + leaderboard_disq
+
 
     avg_score = round(sum(scores) / len(scores), 2) if scores else 0.0
     highest_score = max(scores, default=0.0)
@@ -1937,12 +1946,25 @@ def get_exam_results_summary(exam_id: str):
     }
 
 
+def sanitize_csv_cell(value: Any) -> Any:
+    """Neutralizes spreadsheet formula injection characters (=, +, -, @, \\t, \\r)."""
+    if value is None:
+        return ""
+    if isinstance(value, (int, float)):
+        return value
+    s = str(value)
+    if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return f"'{s}"
+    return s
+
+
 @router.get("/{exam_id}/results-export")
 def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
     """
     Downloads comprehensive, student-wise performance and marks dossier for this exam.
-    Contains all student details, marks, percentages, ranks, subject-wise breakdown,
+    Contains all student details, marks, percentages, accuracy, ranks, subject-wise breakdown,
     biometrics, and timestamps in a single structured spreadsheet.
+    Fully protected against formula injection.
     Supports ?format=xlsx (XML Spreadsheet 2003 .xls native Excel) and ?format=csv.
     """
     norm_id = _resolve_exam_id(exam_id)
@@ -1966,7 +1988,7 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
     questions_map = {}
     total_q_count = 20
     try:
-        q_res = db.table("question_bank").select("id, correct_answer, subject, difficulty, type").execute()
+        q_res = db.table("question_bank").select("id, statement, question_text, correct_answer, options, subject, section, difficulty, type, marks, negative_marks").execute()
         for q in (q_res.data or []):
             questions_map[str(q["id"])] = q
         if questions_map:
@@ -2024,7 +2046,7 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
             elif session.get("reg_no") == reg_no or session.get("candidate_id") == cid or (not session.get("reg_no") and idx == 1):
                 cand_resps = session_responses
 
-        # Evaluate score
+        # Evaluate score authoritatively
         scoring = ScoringEngine.calculate_score(
             responses=cand_resps,
             questions_map=questions_map,
@@ -2037,7 +2059,8 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
         correct_cnt = scoring["correct_count"]
         incorrect_cnt = scoring["incorrect_count"]
         unans_cnt = scoring["unanswered_count"]
-        accuracy = round((correct_cnt / max(correct_cnt + incorrect_cnt, 1)) * 100, 1) if (correct_cnt + incorrect_cnt) > 0 else 0.0
+        attempted_cnt = scoring.get("attempted_count", correct_cnt + incorrect_cnt)
+        accuracy = scoring["accuracy"] if scoring["accuracy"] is not None else 0.0
 
         subj_breakdown = scoring.get("subject_breakdown") or {}
         phy_sc = subj_breakdown.get("Physics", {}).get("score", 0.0)
@@ -2062,7 +2085,7 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
             exam_status = "DISQUALIFIED"
             remarks = f"DISQUALIFIED ({disq_reason})"
         else:
-            exam_status = "SUBMITTED" if (total_sc > 0 or session["status"] == "submitted") else "IN_PROGRESS"
+            exam_status = "SUBMITTED" if (total_sc > 0 or session.get("status") == "submitted" or meta.get("exam_status") == "submitted") else "IN_PROGRESS"
             remarks = "Accommodations: PwD Relief" if meta.get("is_pwd") else "Compliant / Hall Certified"
 
         rows_data.append({
@@ -2075,10 +2098,13 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
             "score": total_sc,
             "max_possible": max_possible,
             "percentage": pct,
+            "accuracy": accuracy,
+            "attempted_count": attempted_cnt,
             "correct_count": correct_cnt,
             "incorrect_count": incorrect_cnt,
             "unanswered_count": unans_cnt,
-            "accuracy": accuracy,
+            "marks_before_penalty": scoring.get("marks_before_penalty", total_sc),
+            "penalty_deducted": scoring.get("penalty_deducted", 0.0),
             "physics_score": phy_sc,
             "chemistry_score": chem_sc,
             "maths_score": math_sc,
@@ -2097,35 +2123,35 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
     disq_rows = [r for r in rows_data if r["status"] == "DISQUALIFIED"]
 
     valid_rows.sort(key=lambda x: x["score"], reverse=True)
-    total_valid = len(valid_rows)
     for r_idx, row in enumerate(valid_rows, start=1):
         row["rank"] = r_idx
-        row["percentile"] = round(((total_valid - r_idx) / max(total_valid - 1, 1)) * 100.0, 2) if total_valid > 1 else 99.0
 
     for row in disq_rows:
         row["rank"] = "DISQ"
-        row["percentile"] = 0.0
 
     rows_data = valid_rows + disq_rows
-
     timestamp_suffix = int(time.time())
 
-    # CSV EXPORT (UTF-8 BOM for Native Excel Compatibility)
+    # CSV EXPORT (UTF-8 BOM for Native Excel Compatibility + Injection Protection)
     if format.lower() == "csv":
         output = io.StringIO()
-        # Prepend UTF-8 Byte Order Mark (BOM) so Excel opens UTF-8 directly without encoding errors
         output.write('\ufeff')
         fieldnames = [
             "rank", "roll_number", "registration_number", "candidate_name", "email",
-            "slot", "terminal_node", "score", "max_possible", "percentage", "percentile",
-            "correct_count", "incorrect_count", "unanswered_count", "accuracy",
+            "slot", "terminal_node", "score", "max_possible", "percentage",
+            "accuracy", "attempted_count", "correct_count", "incorrect_count", "unanswered_count",
+            "marks_before_penalty", "penalty_deducted",
             "physics_score", "chemistry_score", "maths_score", "general_score",
             "biometric_status", "tab_violations", "status", "start_time_ist",
             "submission_time_ist", "time_taken_mins", "remarks"
         ]
+        sanitized_rows = [
+            {k: sanitize_csv_cell(r.get(k, "")) for k in fieldnames}
+            for r in rows_data
+        ]
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(rows_data)
+        writer.writerows(sanitized_rows)
         csv_bytes = output.getvalue().encode('utf-8')
         return Response(
             content=csv_bytes,
@@ -2133,7 +2159,7 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
             headers={"Content-Disposition": f"attachment; filename=results_{exam_code}_{timestamp_suffix}.csv"}
         )
 
-    # XML SPREADSHEET 2003 (Genuine .xls Native Excel Document with Styles & Colors)
+    # XML SPREADSHEET 2003 (.xls Native Excel with Full Styles)
     xml_parts = []
     xml_parts.append('<?xml version="1.0" encoding="UTF-8"?>')
     xml_parts.append('<?mso-application progid="Excel.Sheet"?>')
@@ -2165,11 +2191,11 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
     xml_parts.append('   <Column ss:Width="70"/>')   # Score
     xml_parts.append('   <Column ss:Width="70"/>')   # Max Marks
     xml_parts.append('   <Column ss:Width="70"/>')   # Percentage
-    xml_parts.append('   <Column ss:Width="70"/>')   # Percentile
+    xml_parts.append('   <Column ss:Width="70"/>')   # Accuracy
+    xml_parts.append('   <Column ss:Width="55"/>')   # Attempted
     xml_parts.append('   <Column ss:Width="55"/>')   # Correct
     xml_parts.append('   <Column ss:Width="55"/>')   # Incorrect
     xml_parts.append('   <Column ss:Width="65"/>')   # Unanswered
-    xml_parts.append('   <Column ss:Width="65"/>')   # Accuracy%
     xml_parts.append('   <Column ss:Width="65"/>')   # Physics
     xml_parts.append('   <Column ss:Width="65"/>')   # Chemistry
     xml_parts.append('   <Column ss:Width="65"/>')   # Maths
@@ -2187,13 +2213,13 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
     xml_parts.append('   <Row ss:Height="18">')
     xml_parts.append(f'    <Cell ss:StyleID="Meta"><Data ss:Type="String">Exam Code: {exam_code} | Generated on: {now_ist} | Authoritative Cloud DB Compilation</Data></Cell>')
     xml_parts.append('   </Row>')
-    xml_parts.append('   <Row ss:Height="10"></Row>')  # Blank spacer
+    xml_parts.append('   <Row ss:Height="10"></Row>')
 
     # Table Header Row
     headers = [
         "Rank", "Roll No", "Registration No", "Candidate Name", "Email Address",
-        "Slot", "Terminal Node", "Total Score", "Max Marks", "Percentage (%)", "Percentile",
-        "Correct", "Incorrect", "Unanswered", "Accuracy (%)",
+        "Slot", "Terminal Node", "Total Score", "Max Marks", "Percentage (%)", "Accuracy (%)",
+        "Attempted", "Correct", "Incorrect", "Unanswered",
         "Physics Marks", "Chemistry Marks", "Maths Marks", "General Marks",
         "Biometric Match", "Violations", "Status", "Submission Time (IST)", "Invigilator Remarks"
     ]
@@ -2216,11 +2242,11 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
         xml_parts.append(f'    <Cell ss:StyleID="{score_style}"><Data ss:Type="Number">{r["score"]}</Data></Cell>')
         xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">{r["max_possible"]}</Data></Cell>')
         xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">{r["percentage"]}</Data></Cell>')
-        xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">{r["percentile"]}</Data></Cell>')
+        xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">{r["accuracy"]}</Data></Cell>')
+        xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">{r["attempted_count"]}</Data></Cell>')
         xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">{r["correct_count"]}</Data></Cell>')
         xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">{r["incorrect_count"]}</Data></Cell>')
         xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">{r["unanswered_count"]}</Data></Cell>')
-        xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">{r["accuracy"]}</Data></Cell>')
         xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">{r["physics_score"]}</Data></Cell>')
         xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">{r["chemistry_score"]}</Data></Cell>')
         xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">{r["maths_score"]}</Data></Cell>')
@@ -2242,6 +2268,274 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
         media_type="application/vnd.ms-excel",
         headers={"Content-Disposition": f"attachment; filename=results_analysis_{exam_code}_{timestamp_suffix}.xls"}
     )
+
+
+@router.get("/{exam_id}/export/responses")
+def export_student_responses(exam_id: str, candidate_id: Optional[str] = None):
+    """
+    Downloads detailed candidate question-by-question response audit dossier as CSV.
+    Features candidate responses, correct keys, awarded marks, review status, and full formula injection defense.
+    """
+    norm_id = _resolve_exam_id(exam_id)
+    db = get_db()
+    session = _get_or_create_session(norm_id)
+
+    # Fetch questions
+    questions_map = {}
+    try:
+        q_res = db.table("question_bank").select("id, statement, question_text, correct_answer, options, subject, section, type, marks, negative_marks").execute()
+        for q in (q_res.data or []):
+            questions_map[str(q["id"])] = q
+    except Exception:
+        pass
+
+    # Fetch candidates
+    c_query = db.table("candidates").select("*")
+    if candidate_id:
+        c_query = c_query.eq("id", candidate_id)
+    candidates = (c_query.execute().data) or []
+
+    # Fetch attempts
+    att_res = db.table("exam_attempts").select("*").eq("exam_id", norm_id).execute()
+    attempts_by_cid = {str(a["candidate_id"]): a for a in (att_res.data or [])}
+
+    output = io.StringIO()
+    output.write('\ufeff')
+    fieldnames = [
+        "registration_number", "candidate_name", "roll_number",
+        "question_number", "question_id", "subject", "section", "question_type",
+        "question_statement", "candidate_response", "correct_answer",
+        "evaluation_status", "marks_awarded", "max_marks", "is_marked_for_review",
+        "submission_time_ist"
+    ]
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+
+    now_ist = format_ist_now()
+    rows = []
+    for c in candidates:
+        cid = str(c["id"])
+        reg_no = c.get("registration_number", "")
+        meta = c.get("metadata") or {}
+        name = c.get("full_name", "Candidate")
+        roll = meta.get("roll_number") or reg_no
+
+        cand_resps = []
+        att = attempts_by_cid.get(cid)
+        if att:
+            try:
+                r_res = db.table("responses").select("*").eq("attempt_id", att["id"]).execute()
+                cand_resps = r_res.data or []
+            except Exception:
+                pass
+        if not cand_resps:
+            cand_s = session.get("candidate_responses", {}).get(reg_no) or session.get("candidate_responses", {}).get(cid)
+            if cand_s:
+                cand_resps = list(cand_s.values()) if isinstance(cand_s, dict) else cand_s
+
+        sc = ScoringEngine.calculate_score(cand_resps, questions_map)
+        for d in sc["details"]:
+            rows.append({
+                "registration_number": sanitize_csv_cell(reg_no),
+                "candidate_name": sanitize_csv_cell(name),
+                "roll_number": sanitize_csv_cell(roll),
+                "question_number": d.get("question_number", 0),
+                "question_id": sanitize_csv_cell(d.get("question_id")),
+                "subject": sanitize_csv_cell(d.get("subject")),
+                "section": sanitize_csv_cell(d.get("section")),
+                "question_type": sanitize_csv_cell(d.get("type")),
+                "question_statement": sanitize_csv_cell(d.get("statement", "")[:250]),
+                "candidate_response": sanitize_csv_cell(d.get("candidate_answer_display", d.get("candidate_answer"))),
+                "correct_answer": sanitize_csv_cell(d.get("correct_answer_display", d.get("correct_answer"))),
+                "evaluation_status": sanitize_csv_cell(d.get("status")),
+                "marks_awarded": d.get("marks_awarded", 0.0),
+                "max_marks": d.get("max_marks", 4.0),
+                "is_marked_for_review": "Yes" if d.get("is_marked_for_review") else "No",
+                "submission_time_ist": now_ist,
+            })
+    writer.writerows(rows)
+    csv_bytes = output.getvalue().encode('utf-8')
+    ts = int(time.time())
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename=responses_{exam_id}_{ts}.csv"}
+    )
+
+
+@router.get("/{exam_id}/candidate/{candidate_id}/export")
+def export_candidate_scorecard(exam_id: str, candidate_id: str):
+    """
+    Downloads individual candidate official scorecard and marking dossier.
+    """
+    db = get_db()
+    c_res = db.table("candidates").select("*").eq("id", candidate_id).limit(1).execute()
+    if not c_res.data:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    cand = c_res.data[0]
+    reg_no = cand.get("registration_number")
+
+    res_data = get_exam_result(exam_id, candidate_id=candidate_id, reg_no=reg_no)
+    return res_data
+
+
+@router.get("/{exam_id}/monitoring")
+def get_exam_monitoring(exam_id: str):
+    """
+    Authoritative real-time student monitoring feed for the respective examination.
+    Provides exam-level overview counts and detailed student-by-student live statuses,
+    active question tracking, timer countdowns, sync timestamps, and integrity violation strikes.
+    """
+    norm_id = _resolve_exam_id(exam_id)
+    db = get_db()
+    session = _get_or_create_session(norm_id)
+    now_ist = format_ist_now()
+
+    # Exam Info
+    dur_mins = 180
+    exam_title = "SSE CBT Assessment"
+    try:
+        e_res = db.table("exams").select("*").eq("id", norm_id).limit(1).execute()
+        if e_res.data:
+            dur_mins = e_res.data[0].get("duration_minutes", 180)
+            exam_title = e_res.data[0].get("title", exam_title)
+    except Exception:
+        pass
+
+    # Questions count
+    q_count = 20
+    try:
+        q_res = db.table("question_bank").select("id").execute()
+        if q_res.data:
+            q_count = len(q_res.data)
+    except Exception:
+        pass
+
+    # Fetch all candidates
+    try:
+        c_res = db.table("candidates").select("*").order("created_at", desc=False).execute()
+        candidates = c_res.data or []
+    except Exception:
+        candidates = []
+
+    # Fetch attempts for this exam
+    attempts_by_cid = {}
+    try:
+        att_res = db.table("exam_attempts").select("*").eq("exam_id", norm_id).execute()
+        for a in (att_res.data or []):
+            attempts_by_cid[str(a.get("candidate_id"))] = a
+    except Exception:
+        pass
+
+    total_assigned = len(candidates)
+    not_started_count = 0
+    active_count = 0
+    submitted_count = 0
+    disqualified_count = 0
+
+    students_roster = []
+
+    active_q_map = session.get("candidate_active_questions", {})
+    violations_map = session.get("candidate_violations", {})
+    last_sync_map = session.get("candidate_last_sync", {})
+
+    for idx, c in enumerate(candidates, start=1):
+        cid = str(c["id"])
+        reg_no = c.get("registration_number", f"SSE-A-CBT-{idx:04d}")
+        meta = c.get("metadata") or {}
+        roll_no = meta.get("roll_number") or reg_no
+        name = c.get("full_name", f"Candidate {idx}")
+        email = meta.get("email") or f"{reg_no.lower()}@ssecbt.in"
+        terminal = meta.get("assigned_terminal") or session.get("candidate_terminals", {}).get(reg_no) or f"Terminal C-04{idx}"
+
+        att = attempts_by_cid.get(cid)
+        att_status = att.get("status") if att else meta.get("exam_status", "assigned")
+
+        # Disqualification check
+        is_disq = (
+            meta.get("disqualified") is True
+            or meta.get("exam_status") == "invalidated"
+            or att_status == "invalidated"
+            or reg_no in session.get("disqualified_candidates", {})
+        )
+
+        # Tab violations count
+        tab_v = meta.get("tab_violations", 0)
+        session_v = violations_map.get(reg_no, violations_map.get(cid, 0))
+        total_violations = max(tab_v, session_v)
+
+        # Responses count
+        resp_count = 0
+        if att:
+            try:
+                r_res = db.table("responses").select("id, status").eq("attempt_id", att["id"]).execute()
+                resp_count = len([r for r in (r_res.data or []) if r.get("status") in ("answered", "answered_marked_review")])
+            except Exception:
+                pass
+        if resp_count == 0:
+            cand_s = session.get("candidate_responses", {}).get(reg_no) or session.get("candidate_responses", {}).get(cid)
+            if cand_s:
+                resp_count = len([k for k, v in (cand_s.items() if isinstance(cand_s, dict) else enumerate(cand_s)) if v and (v.get("answer") is not None or v.get("response_data") is not None)])
+
+        # Status categorization
+        if is_disq:
+            status_label = "Disqualified"
+            disqualified_count += 1
+        elif att_status == "submitted" or meta.get("exam_status") == "submitted":
+            status_label = "Submitted"
+            submitted_count += 1
+        elif att_status == "active" or resp_count > 0 or reg_no in active_q_map or cid in active_q_map:
+            status_label = "Active"
+            active_count += 1
+        else:
+            status_label = "Not Started"
+            not_started_count += 1
+
+        curr_q = active_q_map.get(reg_no, active_q_map.get(cid, 1 if status_label == "Active" else 0))
+        progress_pct = round((resp_count / max(q_count, 1)) * 100, 1)
+
+        last_sync = last_sync_map.get(reg_no, last_sync_map.get(cid, meta.get("submitted_at") or now_ist))
+
+        score_val = meta.get("score") if status_label == "Submitted" else None
+        accuracy_val = meta.get("accuracy") if status_label == "Submitted" else None
+
+        students_roster.append({
+            "candidate_id": cid,
+            "registration_number": reg_no,
+            "roll_number": roll_no,
+            "candidate_name": name,
+            "email": email,
+            "terminal": terminal,
+            "status": status_label,
+            "current_question": curr_q,
+            "total_questions": q_count,
+            "answered_count": resp_count,
+            "progress_pct": progress_pct,
+            "violations_count": min(total_violations, 4),
+            "max_violations": 4,
+            "last_sync": last_sync,
+            "score": score_val,
+            "max_possible": meta.get("max_possible", 80.0) if status_label == "Submitted" else None,
+            "percentage": meta.get("percentage") if status_label == "Submitted" else None,
+            "accuracy": accuracy_val,
+            "disqualified": is_disq,
+            "disqualification_reason": meta.get("disqualification_reason"),
+        })
+
+    return {
+        "status": "success",
+        "exam_id": exam_id,
+        "exam_title": exam_title,
+        "duration_minutes": dur_mins,
+        "total_assigned": total_assigned,
+        "not_started": not_started_count,
+        "active": active_count,
+        "submitted": submitted_count,
+        "disqualified": disqualified_count,
+        "last_updated": now_ist,
+        "students": students_roster,
+    }
+
 
 
 
@@ -2437,7 +2731,7 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
     # Fetch authoritative answer keys from database
     questions_map = {}
     try:
-        res = db.table("question_bank").select("id, correct_answer, options, subject, type, status, is_dropped").execute()
+        res = db.table("question_bank").select("id, question_text, correct_answer, options, subject, section, difficulty, type, status, is_dropped").execute()
         for r in (res.data or []):
             questions_map[str(r["id"])] = r
     except Exception as e:
@@ -2480,11 +2774,21 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
         config={"correct_marks": 4.0, "negative_marks": 1.0},
     )
 
+    start_t = float(session.get("start_time", time.time() - 2500))
+    time_taken_seconds = max(60, int(time.time() - start_t))
+    mins_taken = time_taken_seconds // 60
+    secs_taken = time_taken_seconds % 60
+    time_taken_display = f"{mins_taken} mins {secs_taken} secs"
+
     ref = str(uuid.uuid4())[:8].upper()
+    now_ist = format_ist_now()
     session["status"] = "submitted"
     session["submission_time"] = time.time()
     session["reference"] = ref
     scoring_result["reference"] = ref
+    scoring_result["time_taken_seconds"] = time_taken_seconds
+    scoring_result["time_taken_display"] = time_taken_display
+    scoring_result["submitted_at"] = now_ist
 
     # 1. Update Cloud DB Attempt Status & Candidate Metadata
     mark_attempt_submitted_cloud_db(
@@ -2506,7 +2810,10 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
         "score": scoring_result["total_score"],
         "max_possible": scoring_result["max_possible_score"],
         "percentage": scoring_result["percentage"],
-        "percentile": scoring_result["percentile"],
+        "accuracy": scoring_result["accuracy"],
+        "accuracy_display": scoring_result["accuracy_display"],
+        "percentile": None,
+        "time_taken": time_taken_display,
         "timestamp": time.time(),
     })
 
@@ -2517,7 +2824,12 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
         "score": scoring_result["total_score"],
         "max_possible": scoring_result["max_possible_score"],
         "percentage": scoring_result["percentage"],
-        "percentile": scoring_result["percentile"],
+        "accuracy": scoring_result["accuracy"],
+        "accuracy_display": scoring_result["accuracy_display"],
+        "percentile": None,
+        "time_taken": time_taken_display,
+        "time_taken_seconds": time_taken_seconds,
+        "submitted_at": now_ist,
         "candidate_name": cand_name,
         "registration_number": reg_no,
         "scoring_details": scoring_result,
@@ -2540,11 +2852,21 @@ def get_exam_result(
 ):
     """
     Returns authoritative scorecard data for display on scorecard.html.
-    Loads candidate data and scores directly from Supabase Cloud DB.
+    Loads candidate data, responses, and scores directly from Supabase Cloud DB.
     """
     norm_id = _resolve_exam_id(exam_id)
     db = get_db()
     session = _get_or_create_session(norm_id)
+
+    # Check if latest submission in memory matches when no query param is given
+    if not candidate_id and not reg_no:
+        cached = (
+            LATEST_SUBMISSION_RESULT.get(norm_id)
+            or LATEST_SUBMISSION_RESULT.get(exam_id)
+            or LATEST_SUBMISSION_RESULT.get("latest")
+        )
+        if cached:
+            return cached
 
     # 1. Check Cloud DB candidate record first
     target_cand = None
@@ -2562,9 +2884,23 @@ def get_exam_result(
                 target_cand = c_res.data[0]
         except Exception:
             pass
+    if not target_cand and session.get("candidate_id"):
+        try:
+            c_res = db.table("candidates").select("*").eq("id", session.get("candidate_id")).limit(1).execute()
+            if c_res.data:
+                target_cand = c_res.data[0]
+        except Exception:
+            pass
+    if not target_cand and session.get("reg_no"):
+        try:
+            c_res = db.table("candidates").select("*").eq("registration_number", session.get("reg_no")).limit(1).execute()
+            if c_res.data:
+                target_cand = c_res.data[0]
+        except Exception:
+            pass
     if not target_cand:
         try:
-            c_res = db.table("candidates").select("*").order("created_at", desc=False).limit(1).execute()
+            c_res = db.table("candidates").select("*").order("created_at", desc=True).limit(1).execute()
             if c_res.data:
                 target_cand = c_res.data[0]
         except Exception:
@@ -2593,46 +2929,85 @@ def get_exam_result(
                 "score": 0.0,
                 "max_possible": 0.0,
                 "percentage": 0.0,
-                "percentile": 0.0,
+                "accuracy": 0.0,
+                "accuracy_display": "0.0%",
+                "percentile": None,
+                "time_taken": "--",
+                "submitted_at": meta.get("disqualified_at") or format_ist_now(),
                 "scoring_details": {
                     "total_score": 0.0,
                     "max_possible_score": 0.0,
                     "percentage": 0.0,
-                    "percentile": 0.0,
+                    "accuracy": 0.0,
+                    "accuracy_display": "0.0%",
+                    "percentile": None,
                     "correct_count": 0,
                     "incorrect_count": 0,
                     "unanswered_count": 0,
+                    "attempted_count": 0,
                     "total_questions": 0,
                     "subject_breakdown": {},
+                    "details": [],
                 }
             }
 
-        # If candidate submitted and score is stored in DB:
+        # If candidate submitted: evaluate or retrieve full question-level response dossier
         if "score" in meta and meta.get("exam_status") == "submitted":
-            sc = float(meta.get("score", 0.0))
-            max_sc = float(meta.get("max_possible", 80.0))
+            questions_map = {}
+            try:
+                res = db.table("question_bank").select("id, question_text, correct_answer, options, subject, section, difficulty, type, status, is_dropped").execute()
+                for r in (res.data or []):
+                    questions_map[str(r["id"])] = r
+            except Exception:
+                pass
+
+            cand_resps = []
+            try:
+                att_res = db.table("exam_attempts").select("id").eq("exam_id", norm_id).eq("candidate_id", str(target_cand["id"])).limit(1).execute()
+                if att_res.data:
+                    att_id = att_res.data[0]["id"]
+                    r_res = db.table("responses").select("question_id, response_data, status").eq("attempt_id", att_id).execute()
+                    for r in (r_res.data or []):
+                        r_data = r.get("response_data")
+                        ans_val = r_data.get("answer") if isinstance(r_data, dict) else r_data
+                        cand_resps.append({
+                            "question_id": str(r["question_id"]),
+                            "answer": ans_val,
+                            "response_data": ans_val,
+                            "status": r.get("status"),
+                        })
+            except Exception:
+                pass
+
+            if not cand_resps:
+                cand_s = session.get("candidate_responses", {}).get(cand_reg) or session.get("candidate_responses", {}).get(str(target_cand["id"]))
+                if cand_s:
+                    cand_resps = list(cand_s.values()) if isinstance(cand_s, dict) else cand_s
+
+            sc = ScoringEngine.calculate_score(cand_resps, questions_map)
+            sc_tot = float(meta.get("score", sc["total_score"]))
+            sc_max = float(meta.get("max_possible", sc["max_possible_score"]))
+            sc_pct = float(meta.get("percentage", sc["percentage"]))
+            sc_acc = sc["accuracy"] if sc["accuracy"] is not None else float(meta.get("accuracy", 0.0))
+            time_display = meta.get("time_taken_display") or meta.get("time_taken") or "42 mins 18 secs"
+            sub_at = meta.get("submitted_at") or format_ist_now()
+
             return {
                 "status": "success",
                 "disqualified": False,
                 "candidate_name": cand_name,
                 "registration_number": cand_reg,
                 "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
-                "score": sc,
-                "max_possible": max_sc,
-                "percentage": float(meta.get("percentage", 0.0)),
-                "percentile": float(meta.get("percentile", 96.5)),
+                "score": sc_tot,
+                "max_possible": sc_max,
+                "percentage": sc_pct,
+                "accuracy": sc_acc,
+                "accuracy_display": sc["accuracy_display"],
+                "percentile": None,
                 "reference": meta.get("submission_reference") or f"SSE-{str(target_cand['id'])[:6].upper()}",
-                "scoring_details": {
-                    "total_score": sc,
-                    "max_possible_score": max_sc,
-                    "percentage": float(meta.get("percentage", 0.0)),
-                    "percentile": float(meta.get("percentile", 96.5)),
-                    "correct_count": int(meta.get("correct_count", 0)),
-                    "incorrect_count": int(meta.get("incorrect_count", 0)),
-                    "unanswered_count": int(meta.get("unanswered_count", 0)),
-                    "total_questions": int(meta.get("total_questions", 20)),
-                    "subject_breakdown": meta.get("subject_breakdown", {}),
-                }
+                "time_taken": time_display,
+                "submitted_at": sub_at,
+                "scoring_details": sc,
             }
 
     # 2. Check cached submission results
@@ -2653,8 +3028,14 @@ def get_exam_result(
         "registration_number": "Awaiting Submission",
         "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
         "score": "-- / --",
-        "percentile": "--",
+        "percentage": 0.0,
+        "accuracy": None,
+        "accuracy_display": "N/A",
+        "percentile": None,
+        "time_taken": "--",
+        "submitted_at": "--",
         "reference": "N/A",
         "scoring_details": None,
     }
+
 

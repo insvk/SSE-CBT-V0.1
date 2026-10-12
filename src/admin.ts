@@ -1657,6 +1657,25 @@ function initAdminWebSocket(): void {
                         termStatus.textContent = `Strike #${terminalViolations[reg]}`;
                     }
 
+                    if (msg.exam_id && msg.reg_no) {
+                        const strikeEl = document.getElementById(`mon-strikes-${msg.exam_id}-${msg.reg_no}`);
+                        if (strikeEl) {
+                            strikeEl.innerHTML = `<span style="background: #fee2e2; color: #b91c1c; font-weight: 800; padding: 2px 6px; border-radius: 4px; border: 1px solid #fca5a5;">Strike #${terminalViolations[msg.reg_no]} / 4</span>`;
+                        }
+                    }
+
+                } else if (msg.type === 'ACTIVE_QUESTION_CHANGED') {
+                    const examId = msg.exam_id;
+                    const reg = msg.reg_no;
+                    const qIdx = msg.current_question_index;
+                    if (examId && reg) {
+                        const progEl = document.getElementById(`mon-prog-${examId}-${reg}`);
+                        if (progEl) {
+                            const badge = progEl.querySelector('span');
+                            if (badge) badge.textContent = `Q${qIdx} Active`;
+                        }
+                    }
+
                 } else if (msg.type === 'DIRECTIVE_ACKNOWLEDGED') {
                     showToast(`Compliance Confirmed: Candidate ${msg.candidate_name || msg.reg_no} acknowledged directive!`);
                     appendIncidentLog(`Candidate ${msg.candidate_name || msg.reg_no} confirmed compliance with Proctor directive.`);
@@ -1714,12 +1733,29 @@ function initAdminWebSocket(): void {
                     if (termProgress) {
                         termProgress.textContent = `Q${msg.question_id} Answered`;
                     }
+                    if (msg.exam_id && msg.reg_no) {
+                        const syncEl = document.getElementById(`mon-sync-${msg.exam_id}-${msg.reg_no}`);
+                        if (syncEl) {
+                            syncEl.innerHTML = `
+                                <span style="display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 700; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;">
+                                    Cloud Synced
+                                </span>
+                                <div style="font-size: 0.68rem; color: #64748b; margin-top: 2px;">Just now</div>
+                            `;
+                        }
+                    }
 
                 } else if (msg.type === 'CANDIDATE_SUBMITTED') {
                     showToast(`Candidate submitted: Score ${msg.score}/${msg.max_possible}`);
                     appendIncidentLog(`Candidate ${msg.candidate_name || msg.reg_no} completed and submitted examination.`);
                     loadCandidates();
                     loadDashboardSummary();
+                    if (msg.exam_id) {
+                        const subRow = document.getElementById(`exam-monitoring-row-${msg.exam_id}`);
+                        if (subRow && subRow.style.display !== 'none') {
+                            loadExamMonitoring(msg.exam_id);
+                        }
+                    }
 
                 } else if (msg.type === 'CANDIDATE_CREATED') {
                     showToast(`Candidate created: ${msg.candidate?.full_name || ''}`);
@@ -2445,12 +2481,21 @@ function renderExamsTable(): void {
                         </div>
                         
                         <!-- BUTTONS LOCATED DIRECTLY NEAR THE EXAM NAME -->
-                        <div class="exam-action-btns-near-name">
+                        <div class="exam-action-btns-near-name" style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px;">
+                            <button type="button" class="btn btn-primary btn-sm btn-toggle-monitoring" data-id="${examId}" title="Toggle live student examination monitoring drawer">
+                                Live Monitor
+                            </button>
                             <button type="button" class="btn btn-success btn-sm btn-export-xls" data-id="${examId}" title="Download complete student-wise performance analysis spreadsheet (.xls)">
-                                Download Marks (XLS)
+                                Marks (XLS)
+                            </button>
+                            <button type="button" class="btn btn-outline btn-sm btn-export-csv" data-id="${examId}" title="Download results CSV">
+                                CSV
+                            </button>
+                            <button type="button" class="btn btn-outline btn-sm btn-export-responses" data-id="${examId}" title="Download candidate itemized responses CSV">
+                                Responses CSV
                             </button>
                             <button type="button" class="btn btn-purple btn-sm btn-copy-test-link" data-id="${examId}" data-link="${shareTestLink}" title="Copy candidate examination access link">
-                                Share Test Link
+                                Share Link
                             </button>
                         </div>
                     </div>
@@ -2510,6 +2555,9 @@ function renderExamsTable(): void {
                 <!-- Administration Operations -->
                 <td style="text-align: right; white-space: nowrap;">
                     <div style="display: inline-flex; gap: 4px;">
+                        <button type="button" class="btn btn-primary btn-sm btn-toggle-monitoring" data-id="${examId}" title="Toggle live student examination monitoring drawer">
+                            Live Monitor
+                        </button>
                         <button type="button" class="btn btn-outline btn-sm btn-open-summary" data-id="${examId}" title="View class performance leaderboard and statistics">
                             Digest
                         </button>
@@ -2522,12 +2570,49 @@ function renderExamsTable(): void {
                     </div>
                 </td>
             </tr>
+
+            <!-- EXPANDABLE REAL-TIME STUDENT MONITORING SUBROW -->
+            <tr id="exam-monitoring-row-${examId}" class="exam-monitoring-subrow" style="display: none; background: #f8fafc;">
+                <td colspan="7" style="padding: 1.25rem 1.5rem; border-top: 1px dashed #bfdbfe; border-bottom: 3px solid #2563eb;">
+                    <div id="exam-monitoring-content-${examId}">
+                        <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                            Connecting to real-time student monitoring feed...
+                        </div>
+                    </div>
+                </td>
+            </tr>
         `;
     }
 
     tbody.innerHTML = html;
 
     // Attach row event listeners
+    tbody.querySelectorAll('.btn-toggle-monitoring').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+            if (!id) return;
+            const row = document.getElementById(`exam-monitoring-row-${id}`);
+            if (!row) return;
+            const isHidden = (row.style.display === 'none' || !row.style.display);
+            if (isHidden) {
+                row.style.display = 'table-row';
+                tbody.querySelectorAll(`.btn-toggle-monitoring[data-id="${id}"]`).forEach(b => {
+                    b.textContent = 'Hide Monitor';
+                    b.classList.remove('btn-primary');
+                    b.classList.add('btn-secondary');
+                });
+                await loadExamMonitoring(id);
+            } else {
+                row.style.display = 'none';
+                tbody.querySelectorAll(`.btn-toggle-monitoring[data-id="${id}"]`).forEach(b => {
+                    b.textContent = 'Live Monitor';
+                    b.classList.remove('btn-secondary');
+                    b.classList.add('btn-primary');
+                });
+            }
+        });
+    });
+
     tbody.querySelectorAll('.btn-quick-toggle-cam').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
@@ -2539,6 +2624,20 @@ function renderExamsTable(): void {
         btn.addEventListener('click', (e) => {
             const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
             if (id) downloadExamXLS(id);
+        });
+    });
+
+    tbody.querySelectorAll('.btn-export-csv').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+            if (id) downloadExamCSV(id);
+        });
+    });
+
+    tbody.querySelectorAll('.btn-export-responses').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+            if (id) downloadExamResponsesCSV(id);
         });
     });
 
@@ -2577,7 +2676,7 @@ function renderExamsTable(): void {
     });
 }
 
-// 3. One-Click Marks Spreadsheet Download (XLS)
+// 3. One-Click Marks Spreadsheet & Itemized Responses Download
 function downloadExamXLS(examId: string): void {
     showToast('Generating student-wise Excel analysis...');
     const url = `/api/v1/exams/${encodeURIComponent(examId)}/results-export?format=xlsx`;
@@ -2588,6 +2687,275 @@ function downloadExamCSV(examId: string): void {
     showToast('Downloading CSV results roster...');
     const url = `/api/v1/exams/${encodeURIComponent(examId)}/results-export?format=csv`;
     window.open(url, '_blank');
+}
+
+function downloadExamResponsesCSV(examId: string): void {
+    showToast('Downloading question-by-question candidate responses CSV...');
+    const url = `/api/v1/exams/${encodeURIComponent(examId)}/export/responses`;
+    window.open(url, '_blank');
+}
+
+// 3b. Authoritative Real-Time Examination Student Monitoring
+async function loadExamMonitoring(examId: string): Promise<void> {
+    const container = document.getElementById(`exam-monitoring-content-${examId}`);
+    if (!container) return;
+
+    try {
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/monitoring`, { headers: getHeaders() });
+        if (!res.ok) {
+            container.innerHTML = `<div style="padding: 1.5rem; text-align: center; color: #dc2626;">Error retrieving monitoring feed from Cloud DB. Status: ${res.status}</div>`;
+            return;
+        }
+
+        const data = await res.json();
+        const overview = data.overview || {};
+        const students: any[] = data.students || [];
+
+        let html = `
+            <div style="background: white; border: 1px solid #cbd5e1; border-radius: var(--radius-lg, 8px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden;">
+                <!-- MONITORING BANNER -->
+                <div style="background: linear-gradient(135deg, #1e3a8a, #1e40af); color: white; padding: 1.25rem 1.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 1.15rem; font-weight: 800; letter-spacing: 0.02em;">REAL-TIME EXAMINATION MONITOR &bull; ${escapeHtml(data.exam_title || examId)}</span>
+                            <span class="badge-pill" style="background: #10b981; color: white; font-weight: 800; font-size: 0.75rem; padding: 2px 8px;">LIVE FEED ACTIVE</span>
+                        </div>
+                        <div style="font-size: 0.8rem; opacity: 0.85; margin-top: 4px;">
+                            Exam ID: <span style="font-family: var(--font-mono); font-weight: 700;">${escapeHtml(examId)}</span> &bull; 
+                            Duration: <strong>${data.duration_minutes || 60}m</strong> &bull; 
+                            Total Questions: <strong>${data.total_questions || 20}</strong> &bull; 
+                            Marking: <strong style="color: #a7f3d0;">+${data.marking?.correct ?? 4.0}</strong> / <strong style="color: #fca5a5;">-${data.marking?.negative ?? 1.0}</strong> &bull; 
+                            Max Score: <strong>${data.marking?.max_possible_score ?? 80}</strong>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.75rem; background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 4px; font-weight: 600;">
+                            Synced: ${escapeHtml(overview.last_updated || 'Just now')}
+                        </span>
+                        <button type="button" class="btn btn-outline btn-sm btn-refresh-monitor" data-id="${examId}" style="color: white; border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.1);" title="Refresh live roster from Cloud DB">
+                            ↻ Refresh
+                        </button>
+                        <button type="button" class="btn btn-sm btn-close-monitor" data-id="${examId}" style="background: rgba(239, 68, 68, 0.2); color: #fecaca; border: 1px solid rgba(239, 68, 68, 0.4);" title="Close live monitor drawer">
+                            ✕ Close
+                        </button>
+                    </div>
+                </div>
+
+                <!-- OVERVIEW METRICS GRID -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; padding: 1.25rem 1.75rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.75rem; text-align: center;">
+                        <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #64748b;">Total Assigned</div>
+                        <div style="font-size: 1.35rem; font-weight: 900; color: #0f172a; margin-top: 2px;">${overview.total_assigned ?? 0}</div>
+                    </div>
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.75rem; text-align: center;">
+                        <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #64748b;">Not Started</div>
+                        <div style="font-size: 1.35rem; font-weight: 900; color: #64748b; margin-top: 2px;">${overview.not_started ?? 0}</div>
+                    </div>
+                    <div style="background: white; border: 1px solid #bfdbfe; border-radius: 6px; padding: 0.75rem; text-align: center;">
+                        <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #0284c7;">Active In-Session</div>
+                        <div style="font-size: 1.35rem; font-weight: 900; color: #0284c7; margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #0284c7;"></span>
+                            ${overview.active ?? 0}
+                        </div>
+                    </div>
+                    <div style="background: white; border: 1px solid #bbf7d0; border-radius: 6px; padding: 0.75rem; text-align: center;">
+                        <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #15803d;">Submitted</div>
+                        <div style="font-size: 1.35rem; font-weight: 900; color: #15803d; margin-top: 2px;">${overview.submitted ?? 0}</div>
+                    </div>
+                    <div style="background: white; border: 1px solid #fecaca; border-radius: 6px; padding: 0.75rem; text-align: center;">
+                        <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #b91c1c;">Disqualified</div>
+                        <div style="font-size: 1.35rem; font-weight: 900; color: #b91c1c; margin-top: 2px;">${overview.disqualified ?? 0}</div>
+                    </div>
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.75rem; text-align: center;">
+                        <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #64748b;">Sync Issues</div>
+                        <div style="font-size: 1.35rem; font-weight: 900; color: #10b981; margin-top: 2px;">0</div>
+                    </div>
+                </div>
+
+                <!-- EXPORT ACTIONS BAR -->
+                <div style="padding: 0.75rem 1.75rem; background: white; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                    <div style="font-size: 0.85rem; font-weight: 700; color: #1e3a8a;">
+                        Live Candidate Roster &amp; Progression Telemetry
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline btn-sm btn-monitor-export-xls" data-id="${examId}" style="font-weight: 700;">
+                            📥 Export Results (XLS)
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm btn-monitor-export-csv" data-id="${examId}">
+                            📥 Export Results (CSV)
+                        </button>
+                        <button type="button" class="btn btn-success btn-sm btn-monitor-export-responses" data-id="${examId}" style="font-weight: 700;">
+                            📥 Export All Candidate Responses (CSV)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STUDENT ROSTER TABLE -->
+                <div style="overflow-x: auto; max-height: 480px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.825rem;">
+                        <thead style="position: sticky; top: 0; background: #f1f5f9; z-index: 2;">
+                            <tr style="border-bottom: 2px solid #cbd5e1;">
+                                <th style="padding: 8px 12px; text-align: left;">Candidate Identity</th>
+                                <th style="padding: 8px 12px; text-align: left;">Attempt Status</th>
+                                <th style="padding: 8px 12px; text-align: left;">Current Question &amp; Progress</th>
+                                <th style="padding: 8px 12px; text-align: left;">Timer Remaining</th>
+                                <th style="padding: 8px 12px; text-align: left;">Sync &amp; Save State</th>
+                                <th style="padding: 8px 12px; text-align: left;">Integrity / Strikes</th>
+                                <th style="padding: 8px 12px; text-align: left;">Score &amp; Accuracy</th>
+                                <th style="padding: 8px 12px; text-align: right;">Operations</th>
+                            </tr>
+                        </thead>
+                        <tbody id="exam-monitor-tbody-${examId}">
+        `;
+
+        if (students.length === 0) {
+            html += `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        No registered candidates found for this examination in Cloud DB.
+                    </td>
+                </tr>
+            `;
+        } else {
+            students.forEach((s: any) => {
+                const reg = escapeHtml(s.registration_number || '--');
+                const name = escapeHtml(s.candidate_name || 'Candidate');
+                const node = escapeHtml(s.terminal || 'Node-01');
+                const isSub = s.is_submitted === true;
+                const isDisq = s.is_disqualified === true;
+                const isActive = s.is_active === true;
+                const strikes = s.violations_count || terminalViolations[s.registration_number] || 0;
+
+                let statusBadge = '<span class="status-pill" style="background: #f1f5f9; color: #64748b; font-weight: 700;">Not Started</span>';
+                if (isDisq) {
+                    statusBadge = `<span class="status-pill" style="background: #fee2e2; color: #b91c1c; font-weight: 800;" title="${escapeHtml(s.disqualification_reason || 'Security violation')}">DISQUALIFIED</span>`;
+                } else if (isSub) {
+                    statusBadge = '<span class="status-pill" style="background: #dcfce7; color: #15803d; font-weight: 800;">Submitted</span>';
+                } else if (isActive) {
+                    statusBadge = '<span class="status-pill" style="background: #e0f2fe; color: #0284c7; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #0284c7;"></span>Active</span>';
+                }
+
+                // Progress display
+                const curQ = s.current_question_index || 1;
+                const totQ = s.total_questions || data.total_questions || 20;
+                const attCount = s.attempted_count || 0;
+                const revCount = s.marked_for_review_count || 0;
+                const progPct = s.progress_percent || Math.round((attCount / totQ) * 100);
+
+                // Score display
+                let scoreText = '--';
+                if (isDisq) {
+                    scoreText = '<span style="color: #b91c1c; font-weight: 800;">ANNULLED</span>';
+                } else if (s.score !== '--' && s.score != null) {
+                    const accText = s.accuracy || 'N/A';
+                    scoreText = `<strong style="color: #1e40af;">${s.score}</strong> <span style="font-size: 0.72rem; color: #15803d; font-weight: 700;">(${accText})</span>`;
+                } else if (isSub) {
+                    scoreText = '<span style="color: #15803d; font-weight: 700;">Evaluated</span>';
+                }
+
+                // Strikes display
+                let strikeBadge = `<span style="color: #15803d; font-weight: 700;">0 / 4 Strikes</span>`;
+                if (strikes > 0) {
+                    strikeBadge = `<span style="background: #fee2e2; color: #b91c1c; font-weight: 800; padding: 2px 6px; border-radius: 4px; border: 1px solid #fca5a5;">Strike #${strikes} / 4</span>`;
+                }
+
+                html += `
+                    <tr id="monitor-row-${examId}-${s.registration_number}" style="border-bottom: 1px solid #e2e8f0; ${isDisq ? 'background: #fff5f5;' : ''}">
+                        <td style="padding: 8px 12px;">
+                            <div style="font-weight: 800; color: #0f172a;">${name}</div>
+                            <div style="font-family: var(--font-mono); font-size: 0.75rem; color: #0284c7; font-weight: 700;">${reg}</div>
+                            <div style="font-size: 0.7rem; color: #64748b;">${node}</div>
+                        </td>
+                        <td style="padding: 8px 12px;" id="mon-status-${examId}-${s.registration_number}">
+                            ${statusBadge}
+                        </td>
+                        <td style="padding: 8px 12px;" id="mon-prog-${examId}-${s.registration_number}">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-weight: 800; color: #1e40af; font-size: 0.8rem;">Q${curQ}/${totQ}</span>
+                                <span style="font-size: 0.72rem; color: #64748b;">(${progPct}%)</span>
+                            </div>
+                            <div style="width: 100px; height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin: 3px 0;">
+                                <div style="width: ${progPct}%; height: 100%; background: #0284c7;"></div>
+                            </div>
+                            <div style="font-size: 0.7rem; color: #64748b;">
+                                Attempted: <strong style="color: #0284c7;">${attCount}</strong> &bull; Review: <strong style="color: #d97706;">${revCount}</strong>
+                            </div>
+                        </td>
+                        <td style="padding: 8px 12px; font-family: var(--font-mono); font-weight: 700; color: #475569;" id="mon-timer-${examId}-${s.registration_number}">
+                            ${escapeHtml(s.remaining_display || (isSub ? 'Submitted' : '60m 00s'))}
+                        </td>
+                        <td style="padding: 8px 12px;" id="mon-sync-${examId}-${s.registration_number}">
+                            <span style="display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 700; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;">
+                                Cloud Synced
+                            </span>
+                            <div style="font-size: 0.68rem; color: #64748b; margin-top: 2px;">
+                                ${escapeHtml(s.last_sync_time || 'Just now')}
+                            </div>
+                        </td>
+                        <td style="padding: 8px 12px;" id="mon-strikes-${examId}-${s.registration_number}">
+                            ${strikeBadge}
+                        </td>
+                        <td style="padding: 8px 12px;" id="mon-score-${examId}-${s.registration_number}">
+                            ${scoreText}
+                        </td>
+                        <td style="padding: 8px 12px; text-align: right; white-space: nowrap;">
+                            <div style="display: inline-flex; gap: 4px;">
+                                <a href="/scorecard.html?reg_no=${encodeURIComponent(s.registration_number)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 2px 6px; font-size: 0.72rem;" title="View candidate authoritative scorecard">
+                                    Scorecard
+                                </a>
+                                <button type="button" class="btn btn-outline btn-sm btn-mon-time" data-exam="${examId}" data-reg="${s.registration_number}" style="padding: 2px 6px; font-size: 0.72rem;" title="Add 15m extra time">
+                                    +15m
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        html += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        // Attach event listeners inside the monitoring content
+        container.querySelector('.btn-refresh-monitor')?.addEventListener('click', () => loadExamMonitoring(examId));
+        container.querySelector('.btn-close-monitor')?.addEventListener('click', () => {
+            const row = document.getElementById(`exam-monitoring-row-${examId}`);
+            if (row) row.style.display = 'none';
+            document.querySelectorAll(`.btn-toggle-monitoring[data-id="${examId}"]`).forEach((b: Element) => {
+                b.textContent = 'Live Monitor';
+                b.classList.remove('btn-secondary');
+                b.classList.add('btn-primary');
+            });
+        });
+
+        container.querySelector('.btn-monitor-export-xls')?.addEventListener('click', () => downloadExamXLS(examId));
+        container.querySelector('.btn-monitor-export-csv')?.addEventListener('click', () => downloadExamCSV(examId));
+        container.querySelector('.btn-monitor-export-responses')?.addEventListener('click', () => downloadExamResponsesCSV(examId));
+
+        container.querySelectorAll('.btn-mon-time').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const reg = (e.currentTarget as HTMLElement).getAttribute('data-reg');
+                if (reg && adminSocket && adminSocket.readyState === WebSocket.OPEN) {
+                    adminSocket.send(JSON.stringify({
+                        type: "INDIVIDUAL_TIME_EXTENDED",
+                        reg_no: reg,
+                        extra_minutes: 15,
+                        reason: "Invigilator Live Grant"
+                    }));
+                    showToast(`Granted +15m compensatory time to ${reg}`);
+                }
+            });
+        });
+
+    } catch (err) {
+        container.innerHTML = `<div style="padding: 1.5rem; text-align: center; color: #dc2626;">Failed to load live monitoring feed: ${err}</div>`;
+    }
 }
 
 // 4. Load Question Bank from Cloud DB for Test Creation
@@ -3063,7 +3431,7 @@ async function openExamSummaryModal(examId: string): Promise<void> {
                     const accDisplay = isDisq ? '0%' : `${c.accuracy}%`;
                     const pillDisplay = isDisq
                         ? `<span class="badge-pill" style="background: #fee2e2; color: #b91c1c; font-weight: 800;" title="${escapeHtml(c.disqualification_reason || 'Security Malpractice')}">DISQUALIFIED</span>`
-                        : `<span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">${c.percentile} PR</span>`;
+                        : `<span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">${c.percentage != null ? `${c.percentage}%` : 'N/A'}</span>`;
 
                     html += `
                         <tr style="${isDisq ? 'background: #fff5f5;' : ''}">
@@ -3096,6 +3464,13 @@ const btnDownloadCsvModal = document.getElementById('btn-download-csv-modal');
 if (btnDownloadCsvModal) {
     btnDownloadCsvModal.addEventListener('click', () => {
         if (currentSummaryExamId) downloadExamCSV(currentSummaryExamId);
+    });
+}
+
+const btnDownloadRespModal = document.getElementById('btn-download-responses-modal');
+if (btnDownloadRespModal) {
+    btnDownloadRespModal.addEventListener('click', () => {
+        if (currentSummaryExamId) downloadExamResponsesCSV(currentSummaryExamId);
     });
 }
 

@@ -206,7 +206,7 @@ async function loadPortalData(): Promise<void> {
                             <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot A</span></td>
                             <td>
                                 <span class="status-pill status-active" style="background: #ecfdf5; color: #047857;">
-                                    Score: ${resultData.score} (${resultData.percentile} PR)
+                                    Score: ${resultData.score} ${resultData.percentage != null ? `(${resultData.percentage}%)` : ''}
                                 </span>
                             </td>
                             <td style="text-align: right; white-space: nowrap;">

@@ -215,6 +215,24 @@ function loadQuestion(index: number): void {
     currentQuestionIndex = index;
     const q = allQuestions[index];
 
+    // Notify Admin Proctoring stream of candidate's active question transition
+    if (examSocket && examSocket.readyState === WebSocket.OPEN) {
+        try {
+            const candId = localStorage.getItem('candidate_id') || '';
+            const regNo = localStorage.getItem('reg_no') || '';
+            const candName = localStorage.getItem('candidate_name') || 'Candidate';
+            examSocket.send(JSON.stringify({
+                type: "ACTIVE_QUESTION_CHANGED",
+                exam_id: EXAM_ID,
+                candidate_id: candId,
+                reg_no: regNo,
+                candidate_name: candName,
+                current_question_index: index + 1,
+                current_question_id: q?.id || ""
+            }));
+        } catch (_) {}
+    }
+
     // Mark as visited (Not Answered) if previously not visited
     if (questionState[index] === 0) {
         questionState[index] = 4;
@@ -410,7 +428,8 @@ async function handleViolationTermination(reason: string): Promise<void> {
             status: 'disqualified',
             score: 'DISQUALIFIED',
             max_possible: 0,
-            percentile: 'N/A',
+            percentage: 0.0,
+            accuracy: '0.0%',
             disqualified: true,
             reason: reason,
             reference: data?.reference || `DISQ-${Date.now().toString(36).toUpperCase()}`
@@ -424,7 +443,8 @@ async function handleViolationTermination(reason: string): Promise<void> {
             status: 'disqualified',
             score: 'DISQUALIFIED',
             max_possible: 0,
-            percentile: 'N/A',
+            percentage: 0.0,
+            accuracy: '0.0%',
             disqualified: true,
             reason: reason,
             reference: `DISQ-${Date.now().toString(36).toUpperCase()}`
