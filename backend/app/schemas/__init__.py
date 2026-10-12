@@ -67,6 +67,9 @@ class CandidateResponse(BaseModel):
     slot_timing_ist: Optional[str] = None
     created_at_ist: Optional[str] = None
     photo_url: Optional[str] = None
+    score: Optional[float] = None
+    percentage: Optional[float] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class SlotReallocateRequest(BaseModel):

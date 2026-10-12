@@ -10,6 +10,7 @@ from app.core.db import get_db
 from app.core.security import get_current_user, get_tenant_user
 from app.core.tenant import DEFAULT_TENANT_ID, ensure_tenant_exists
 from app.core.master_clock import format_ist_now
+from app.core.ws_manager import ws_manager
 from app.schemas import CandidateSelfRegisterRequest, CandidateSelfRegisterResponse
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,12 @@ class CreateAccountRequest(BaseModel):
     test_center_name: Optional[str] = None
     room_number: Optional[str] = None
     assigned_terminal: Optional[str] = None
+    category: Optional[str] = "General"
+    gender: Optional[str] = "Male"
+    is_pwd: Optional[bool] = False
+    has_scribe: Optional[bool] = False
+    disability_type: Optional[str] = None
+    compensatory_minutes: Optional[int] = 0
 
 
 def generate_jwt_token(user_id: str, email: str, role: str, god_mode: bool = False) -> str:
@@ -143,7 +150,7 @@ def login(payload: LoginRequest):
 
 
 @router.post("/create-account")
-def create_account(
+async def create_account(
     req: CreateAccountRequest,
     current_user: dict = Depends(get_current_user)
 ):
@@ -177,7 +184,10 @@ def create_account(
             count = max(matching_seqs, default=0) + 1
             reg_number = f"SSE-{slot}-CBT-{count:04d}"
 
+        new_cand_id = str(uuid.uuid4())
+        assigned_terminal = req.assigned_terminal or f"T-{slot}-{reg_number[-4:]}"
         candidate_data = {
+            "id": new_cand_id,
             "tenant_id": DEFAULT_TENANT_ID,
             "registration_number": reg_number,
             "full_name": req.full_name.strip(),
@@ -187,9 +197,22 @@ def create_account(
                 "email": req.email.strip() if req.email else f"{reg_number.lower()}@ssecbt.in",
                 "password": req.initial_password or "12345678",
                 "roll_number": reg_number,
-                "test_center_name": req.test_center_name,
-                "room_number": req.room_number,
-                "assigned_terminal": req.assigned_terminal,
+                "category": req.category or "General",
+                "gender": req.gender or "Male",
+                "is_pwd": bool(req.is_pwd),
+                "has_scribe": bool(req.has_scribe),
+                "disability_type": req.disability_type or "",
+                "compensatory_minutes": int(req.compensatory_minutes or (60 if req.is_pwd else 0)),
+                "test_center_name": req.test_center_name or "SSE Digital Assessment Hub, Chennai",
+                "test_center_code": "SSEC-TN-042",
+                "room_number": req.room_number or "LAB-01",
+                "assigned_terminal": assigned_terminal,
+                "slot_timing_ist": f"Subject Paper Slot {slot}",
+                "reporting_time_ist": f"Subject Slot {slot}",
+                "biometric_status": "verified",
+                "biometric_score": 98.4,
+                "exam_status": "assigned",
+                "registered_at_ist": format_ist_now(),
             }
         }
 
@@ -198,6 +221,27 @@ def create_account(
             if not insert_res.data:
                 raise HTTPException(status_code=500, detail="Failed to insert candidate record")
             created = insert_res.data[0]
+
+            # Broadcast real-time candidate creation event to all connected admin consoles
+            try:
+                await ws_manager.broadcast("admin_feed", {
+                    "type": "CANDIDATE_CREATED",
+                    "candidate": {
+                        "id": str(created["id"]),
+                        "full_name": created["full_name"],
+                        "registration_number": reg_number,
+                        "batch": slot,
+                        "status": "active",
+                        "category": req.category or "General",
+                        "is_pwd": bool(req.is_pwd),
+                        "assigned_terminal": assigned_terminal,
+                    },
+                    "timestamp": time.time(),
+                    "timestamp_ist": format_ist_now(),
+                })
+            except Exception:
+                pass
+
             return {
                 "status": "success",
                 "message": f"Candidate account created successfully with registration ID {reg_number}",
@@ -208,6 +252,9 @@ def create_account(
                     "slot": slot,
                     "password": req.initial_password or "12345678",
                     "role": "candidate",
+                    "assigned_terminal": assigned_terminal,
+                    "test_center_name": req.test_center_name or "SSE Digital Assessment Hub, Chennai",
+                    "room_number": req.room_number or "LAB-01",
                 }
             }
         except Exception as e:

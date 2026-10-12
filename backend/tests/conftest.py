@@ -49,13 +49,9 @@ def setup_test_exam_environment():
 
     yield
 
-    # 2. Teardown: Clean up test attempts and responses so DB remains pristine
+    # 2. Teardown: Clean up test fixtures created specifically for test run
     try:
-        db.table("responses").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
-    except Exception:
-        pass
-    try:
-        db.table("exam_attempts").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+        db.table("exam_attempts").delete().eq("exam_id", TEST_EXAM_ID).execute()
     except Exception:
         pass
     try:
@@ -63,10 +59,9 @@ def setup_test_exam_environment():
     except Exception:
         pass
     try:
-        db.table("candidates").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+        db.table("candidates").delete().like("full_name", "TEST%").execute()
+        db.table("candidates").delete().like("full_name", "Candidate%").execute()
+        db.table("candidates").delete().eq("full_name", "Scorecard Test Candidate").execute()
     except Exception:
         pass
-    try:
-        db.table("question_bank").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
-    except Exception:
-        pass
+

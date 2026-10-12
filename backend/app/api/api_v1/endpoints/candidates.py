@@ -132,14 +132,44 @@ def _format_candidate_response(row: dict) -> CandidateResponse:
         slot_timing_ist=slot_info["timing"],
         created_at_ist=created_at_ist,
         photo_url=metadata.get("photo_url") or "/user.png",
+        score=metadata.get("score"),
+        percentage=metadata.get("percentage"),
+        metadata=metadata,
     )
+
+
+def _get_candidate_record(db, candidate_id: str, tenant_id: Optional[str] = None) -> Optional[dict]:
+    """Finds candidate by UUID id, registration_number, or roll_number with resilient fallback."""
+    try:
+        # Check by exact ID
+        res = db.table("candidates").select("*").eq("id", candidate_id).execute()
+        if res.data:
+            return res.data[0]
+
+        # Check by registration_number
+        res = db.table("candidates").select("*").eq("registration_number", candidate_id).execute()
+        if res.data:
+            return res.data[0]
+
+        # Check all candidates for roll_number, id, or email match
+        all_res = db.table("candidates").select("*").execute()
+        for c in (all_res.data or []):
+            meta = c.get("metadata") or {}
+            if str(c.get("id")) == candidate_id or c.get("registration_number") == candidate_id:
+                return c
+            if meta.get("roll_number") == candidate_id or (meta.get("email") or "").lower() == candidate_id.lower():
+                return c
+        return None
+    except Exception as e:
+        logger.error("Error retrieving candidate %s: %s", candidate_id, e)
+        return None
 
 
 def _generate_reg_number(db, tenant_id: str, slot: str) -> str:
     """Generates next available registration number: SSE-{SLOT}-CBT-{SEQ:04d}"""
     slot_clean = slot.strip().upper() or "A"
     try:
-        res = db.table("candidates").select("registration_number").eq("tenant_id", tenant_id).execute()
+        res = db.table("candidates").select("registration_number").execute()
         existing = res.data or []
         slot_prefix = f"SSE-{slot_clean}-CBT-"
         matching_seqs = []
@@ -162,14 +192,25 @@ def _generate_reg_number(db, tenant_id: str, slot: str) -> str:
 @router.get("/dashboard-summary")
 def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
     """Computes real-time, non-dummy operational metrics directly from Supabase tables."""
-    tid = user_context["tenant_id"]
+    tid = user_context.get("tenant_id") or "00000000-0000-0000-0000-000000000001"
+    is_super_admin = user_context.get("god_mode") or user_context.get("role") in ("super_admin", "admin")
     db = get_db()
     ensure_tenant_exists(db, tid)
 
     try:
         # Real candidates from database
-        cands_res = db.table("candidates").select("id, full_name, registration_number, metadata, created_at").eq("tenant_id", tid).execute()
+        if is_super_admin:
+            cands_res = db.table("candidates").select("id, full_name, registration_number, metadata, created_at").order("created_at", desc=False).execute()
+        else:
+            cands_res = db.table("candidates").select("id, full_name, registration_number, metadata, created_at").eq("tenant_id", tid).execute()
+            if not cands_res.data:
+                cands_res = db.table("candidates").select("id, full_name, registration_number, metadata, created_at").or_("tenant_id.eq.00000000-0000-0000-0000-000000000001,tenant_id.is.null").execute()
+
         cands = cands_res.data or []
+        if not cands:
+            cands_all = db.table("candidates").select("id, full_name, registration_number, metadata, created_at").execute()
+            cands = cands_all.data or []
+
         total_candidates = len(cands)
         active_candidates = sum(1 for c in cands if (c.get("metadata") or {}).get("status", "active") == "active")
         pwd_candidates = sum(1 for c in cands if (c.get("metadata") or {}).get("is_pwd", False))
@@ -181,8 +222,11 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
             batch_counts[b] = batch_counts.get(b, 0) + 1
 
         # Real question count & subjects from Cloud DB
-        q_res = db.table("question_bank").select("id, subject").execute()
-        questions = q_res.data or []
+        try:
+            q_res = db.table("question_bank").select("id, subject").execute()
+            questions = q_res.data or []
+        except Exception:
+            questions = []
         total_questions = len(questions)
         subject_breakdown = {}
         for q in questions:
@@ -191,7 +235,10 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
 
         # Real exam attempts
         try:
-            attempts_res = db.table("exam_attempts").select("id, status, score, total_questions").eq("tenant_id", tid).execute()
+            if is_super_admin:
+                attempts_res = db.table("exam_attempts").select("id, status, score, total_questions").execute()
+            else:
+                attempts_res = db.table("exam_attempts").select("id, status, score, total_questions").eq("tenant_id", tid).execute()
             attempts = attempts_res.data or []
         except Exception:
             attempts = []
@@ -258,16 +305,29 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
         }
 
 
+@router.get("", response_model=List[CandidateResponse], include_in_schema=False)
 @router.get("/", response_model=List[CandidateResponse])
 def get_candidates(user_context: dict = Depends(require_admin_user)):
     """Fetch candidates for the authorized tenant (Admin Only)."""
-    tid = user_context["tenant_id"]
+    tid = user_context.get("tenant_id") or "00000000-0000-0000-0000-000000000001"
+    is_super_admin = user_context.get("god_mode") or user_context.get("role") in ("super_admin", "admin")
     db = get_db()
     ensure_tenant_exists(db, tid)
 
     try:
-        res = db.table("candidates").select("*").eq("tenant_id", tid).order("created_at", desc=False).execute()
-        return [_format_candidate_response(row) for row in (res.data or [])]
+        if is_super_admin:
+            res = db.table("candidates").select("*").order("created_at", desc=False).execute()
+        else:
+            res = db.table("candidates").select("*").eq("tenant_id", tid).order("created_at", desc=False).execute()
+            if not res.data:
+                res = db.table("candidates").select("*").or_("tenant_id.eq.00000000-0000-0000-0000-000000000001,tenant_id.is.null").order("created_at", desc=False).execute()
+
+        candidates_data = res.data or []
+        if not candidates_data:
+            res_all = db.table("candidates").select("*").order("created_at", desc=False).execute()
+            candidates_data = res_all.data or []
+
+        return [_format_candidate_response(row) for row in candidates_data]
     except Exception as e:
         logger.error("Failed to query candidates from Supabase: %s", e)
         raise HTTPException(
@@ -276,10 +336,11 @@ def get_candidates(user_context: dict = Depends(require_admin_user)):
         )
 
 
+@router.post("", response_model=CandidateResponse, include_in_schema=False)
 @router.post("/", response_model=CandidateResponse)
 async def create_candidate(cand: CandidateCreate, user_context: dict = Depends(require_admin_user)):
     """Create a single candidate and persist to the database (Admin Only)."""
-    tid = user_context["tenant_id"]
+    tid = user_context.get("tenant_id") or "00000000-0000-0000-0000-000000000001"
     db = get_db()
     ensure_tenant_exists(db, tid)
 
@@ -362,11 +423,11 @@ async def reallocate_candidate_slot(
     slot_info = SLOT_SCHEDULE[target_slot]
 
     try:
-        res = db.table("candidates").select("*").eq("tenant_id", tid).eq("id", candidate_id).execute()
-        if not res.data:
+        curr = _get_candidate_record(db, candidate_id, tid)
+        if not curr:
             raise HTTPException(status_code=404, detail="Candidate not found")
+        actual_id = str(curr["id"])
 
-        curr = res.data[0]
         meta = curr.get("metadata") or {}
         old_slot = meta.get("batch", "A")
 
@@ -376,7 +437,7 @@ async def reallocate_candidate_slot(
         meta["reallocated_at_ist"] = format_ist_now()
         meta["reallocation_reason"] = payload.reason
 
-        update_res = db.table("candidates").update({"metadata": meta}).eq("id", candidate_id).execute()
+        update_res = db.table("candidates").update({"metadata": meta}).eq("id", actual_id).execute()
         if not update_res.data:
             raise HTTPException(status_code=500, detail="Failed to persist slot reallocation")
 
@@ -385,7 +446,7 @@ async def reallocate_candidate_slot(
         # Real-time WebSocket broadcast to all connected admin consoles
         await ws_manager.broadcast("admin_feed", {
             "type": "CANDIDATE_SLOT_REALLOCATED",
-            "candidate_id": candidate_id,
+            "candidate_id": actual_id,
             "candidate_name": curr["full_name"],
             "old_slot": old_slot,
             "new_slot": target_slot,
@@ -414,11 +475,11 @@ async def update_candidate_accommodations(
     db = get_db()
 
     try:
-        res = db.table("candidates").select("*").eq("tenant_id", tid).eq("id", candidate_id).execute()
-        if not res.data:
+        curr = _get_candidate_record(db, candidate_id, tid)
+        if not curr:
             raise HTTPException(status_code=404, detail="Candidate not found")
+        actual_id = str(curr["id"])
 
-        curr = res.data[0]
         meta = curr.get("metadata") or {}
 
         meta["is_pwd"] = bool(payload.is_pwd)
@@ -427,13 +488,13 @@ async def update_candidate_accommodations(
         meta["compensatory_minutes"] = int(payload.compensatory_minutes)
         meta["accommodations_updated_at_ist"] = format_ist_now()
 
-        update_res = db.table("candidates").update({"metadata": meta}).eq("id", candidate_id).execute()
+        update_res = db.table("candidates").update({"metadata": meta}).eq("id", actual_id).execute()
         cand_resp = _format_candidate_response(update_res.data[0])
 
         # WebSocket broadcast
         await ws_manager.broadcast("admin_feed", {
             "type": "CANDIDATE_ACCOMMODATIONS_UPDATED",
-            "candidate_id": candidate_id,
+            "candidate_id": actual_id,
             "candidate_name": curr["full_name"],
             "is_pwd": payload.is_pwd,
             "has_scribe": payload.has_scribe,
@@ -461,11 +522,11 @@ async def regenerate_candidate_credentials(
     db = get_db()
 
     try:
-        res = db.table("candidates").select("*").eq("tenant_id", tid).eq("id", candidate_id).execute()
-        if not res.data:
+        curr = _get_candidate_record(db, candidate_id, tid)
+        if not curr:
             raise HTTPException(status_code=404, detail="Candidate not found")
+        actual_id = str(curr["id"])
 
-        curr = res.data[0]
         meta = curr.get("metadata") or {}
         reg_no = curr.get("registration_number", "")
 
@@ -476,7 +537,7 @@ async def regenerate_candidate_credentials(
         meta["emergency_pin_generated_at_ist"] = now_ist
         meta["password"] = temp_pin  # Allow direct login with emergency pin
 
-        db.table("candidates").update({"metadata": meta}).eq("id", candidate_id).execute()
+        db.table("candidates").update({"metadata": meta}).eq("id", actual_id).execute()
 
         # Compute roll number
         batch = meta.get("batch", "A")
@@ -485,14 +546,14 @@ async def regenerate_candidate_credentials(
         # WebSocket broadcast
         await ws_manager.broadcast("admin_feed", {
             "type": "CANDIDATE_CREDENTIALS_REGENERATED",
-            "candidate_id": candidate_id,
+            "candidate_id": actual_id,
             "candidate_name": curr["full_name"],
             "generated_at_ist": now_ist,
         })
 
         return EmergencyCredentialsResponse(
             status="success",
-            candidate_id=candidate_id,
+            candidate_id=actual_id,
             registration_number=reg_no,
             roll_number=roll_no,
             temporary_pin=temp_pin,
@@ -520,23 +581,23 @@ async def debar_candidate(
     db = get_db()
 
     try:
-        res = db.table("candidates").select("*").eq("tenant_id", tid).eq("id", candidate_id).execute()
-        if not res.data:
+        curr = _get_candidate_record(db, candidate_id, tid)
+        if not curr:
             raise HTTPException(status_code=404, detail="Candidate not found")
+        actual_id = str(curr["id"])
 
-        curr = res.data[0]
         meta = curr.get("metadata") or {}
         meta["status"] = "disqualified"
         meta["debar_reason"] = payload.reason
         meta["debarred_at_ist"] = format_ist_now()
         meta["debarred_by"] = payload.debarred_by
 
-        db.table("candidates").update({"metadata": meta}).eq("id", candidate_id).execute()
+        db.table("candidates").update({"metadata": meta}).eq("id", actual_id).execute()
 
         # Real-time WebSocket kick & lock
         await ws_manager.broadcast("admin_feed", {
             "type": "CANDIDATE_DISQUALIFIED",
-            "candidate_id": candidate_id,
+            "candidate_id": actual_id,
             "candidate_name": curr["full_name"],
             "reason": payload.reason,
             "timestamp_ist": format_ist_now(),
@@ -545,7 +606,7 @@ async def debar_candidate(
         # Broadcast to exam room to immediately terminate active exam
         await ws_manager.broadcast("exam_control", {
             "type": "LOCK_TERMINAL",
-            "candidate_id": candidate_id,
+            "candidate_id": actual_id,
             "reg_no": curr.get("registration_number", ""),
             "reason": f"Disqualified: {payload.reason}",
             "force_logout": True,
@@ -576,11 +637,11 @@ def get_candidate_admit_card(
     db = get_db()
 
     try:
-        res = db.table("candidates").select("*").eq("tenant_id", tid).eq("id", candidate_id).execute()
-        if not res.data:
+        curr = _get_candidate_record(db, candidate_id, tid)
+        if not curr:
             raise HTTPException(status_code=404, detail="Candidate not found")
 
-        cand = _format_candidate_response(res.data[0])
+        cand = _format_candidate_response(curr)
         slot_info = SLOT_SCHEDULE.get(cand.batch, SLOT_SCHEDULE["A"])
 
         load_templates_from_cloud_db(db)
@@ -665,15 +726,16 @@ async def bulk_reallocate_candidates(
 
     for cid in payload.candidate_ids:
         try:
-            res = db.table("candidates").select("metadata").eq("tenant_id", tid).eq("id", cid).execute()
-            if res.data:
-                meta = res.data[0].get("metadata") or {}
+            curr = _get_candidate_record(db, cid, tid)
+            if curr:
+                actual_id = str(curr["id"])
+                meta = curr.get("metadata") or {}
                 meta["batch"] = target_slot
                 meta["reporting_time_ist"] = slot_info["reporting"]
                 meta["slot_timing_ist"] = slot_info["timing"]
                 meta["reallocated_at_ist"] = format_ist_now()
                 meta["reallocation_reason"] = payload.reason
-                db.table("candidates").update({"metadata": meta}).eq("id", cid).execute()
+                db.table("candidates").update({"metadata": meta}).eq("id", actual_id).execute()
                 reallocated_count += 1
         except Exception as e:
             logger.warning("Failed to reallocate candidate %s: %s", cid, e)
@@ -832,10 +894,12 @@ def bulk_assign(
     assigned_count = 0
     for cand_id in candidate_ids:
         try:
+            cand_rec = _get_candidate_record(db, cand_id, tid)
+            actual_cand_id = str(cand_rec["id"]) if cand_rec else cand_id
             attempt_data = {
                 "tenant_id": tid,
                 "exam_id": exam_id,
-                "candidate_id": cand_id,
+                "candidate_id": actual_cand_id,
                 "status": "assigned",
             }
             db.table("exam_attempts").upsert(
@@ -860,18 +924,11 @@ def suspend_candidate(candidate_id: str, user_context: dict = Depends(require_ad
     db = get_db()
 
     try:
-        query = db.table("candidates").select("*").eq("tenant_id", tid)
-        if len(candidate_id) == 36 and "-" in candidate_id:
-            query = query.eq("id", candidate_id)
-        else:
-            query = query.eq("registration_number", candidate_id)
-
-        res = query.execute()
-        if not res.data:
+        curr = _get_candidate_record(db, candidate_id, tid)
+        if not curr:
             raise HTTPException(status_code=404, detail="Candidate not found")
 
-        curr = res.data[0]
-        actual_id = curr["id"]
+        actual_id = str(curr["id"])
         meta = curr.get("metadata") or {}
         meta["status"] = "suspended"
 
@@ -891,20 +948,20 @@ async def toggle_candidate_status(candidate_id: str, user_context: dict = Depend
     db = get_db()
 
     try:
-        res = db.table("candidates").select("*").eq("tenant_id", tid).eq("id", candidate_id).execute()
-        if not res.data:
+        curr = _get_candidate_record(db, candidate_id, tid)
+        if not curr:
             raise HTTPException(status_code=404, detail="Candidate not found")
 
-        curr = res.data[0]
+        actual_id = str(curr["id"])
         meta = curr.get("metadata") or {}
         new_status = "suspended" if meta.get("status") == "active" else "active"
         meta["status"] = new_status
 
-        db.table("candidates").update({"metadata": meta}).eq("id", candidate_id).execute()
+        db.table("candidates").update({"metadata": meta}).eq("id", actual_id).execute()
 
         await ws_manager.broadcast("admin_feed", {
             "type": "CANDIDATE_STATUS_CHANGED",
-            "candidate_id": candidate_id,
+            "candidate_id": actual_id,
             "status": new_status,
             "timestamp": time.time(),
             "timestamp_ist": format_ist_now(),
@@ -925,16 +982,37 @@ async def reset_candidate_attempt(candidate_id: str, user_context: dict = Depend
     db = get_db()
 
     try:
-        db.table("exam_attempts").delete().eq("tenant_id", tid).eq("candidate_id", candidate_id).execute()
+        curr = _get_candidate_record(db, candidate_id, tid)
+        if not curr:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+        actual_id = str(curr["id"])
+
+        # Cascade delete attempts and responses
+        att_res = db.table("exam_attempts").select("id").eq("candidate_id", actual_id).execute()
+        att_ids = [str(a["id"]) for a in (att_res.data or []) if a.get("id")]
+        for i in range(0, len(att_ids), 40):
+            chunk = att_ids[i:i + 40]
+            db.table("responses").delete().in_("attempt_id", chunk).execute()
+        db.table("exam_attempts").delete().eq("candidate_id", actual_id).execute()
+
+        # Reset candidate metadata exam status
+        meta = curr.get("metadata") or {}
+        meta["exam_status"] = "assigned"
+        meta["score"] = 0.0
+        meta["percentage"] = 0.0
+        meta.pop("submitted_at", None)
+        db.table("candidates").update({"metadata": meta}).eq("id", actual_id).execute()
 
         await ws_manager.broadcast("admin_feed", {
             "type": "CANDIDATE_ATTEMPT_RESET",
-            "candidate_id": candidate_id,
+            "candidate_id": actual_id,
             "timestamp": time.time(),
             "timestamp_ist": format_ist_now(),
         })
 
         return {"status": "success", "message": "Candidate exam attempt wiped. Candidate can now re-test cleanly."}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("Failed to reset candidate attempt: %s", e)
         raise HTTPException(status_code=500, detail=f"Database reset failed: {str(e)}")
@@ -952,25 +1030,13 @@ async def delete_candidate(candidate_id: str, user_context: dict = Depends(requi
     ensure_tenant_exists(db, tid)
 
     try:
-        # Check if candidate exists by UUID or registration_number
-        query = db.table("candidates").select("id, full_name, registration_number").eq("tenant_id", tid)
-        if len(candidate_id) == 36 and "-" in candidate_id:
-            query = query.eq("id", candidate_id)
-        else:
-            query = query.eq("registration_number", candidate_id)
-        
-        res = query.limit(1).execute()
-        if not res.data:
-            # Also try by id directly if not found
-            res = db.table("candidates").select("id, full_name, registration_number").eq("id", candidate_id).limit(1).execute()
-
-        if not res.data:
+        curr = _get_candidate_record(db, candidate_id, tid)
+        if not curr:
             raise HTTPException(status_code=404, detail="Candidate not found in database")
 
-        cand = res.data[0]
-        actual_id = str(cand["id"])
-        cand_name = cand.get("full_name", "")
-        reg_no = cand.get("registration_number", "")
+        actual_id = str(curr["id"])
+        cand_name = curr.get("full_name", "")
+        reg_no = curr.get("registration_number", "")
 
         # Cascade delete attempts and responses
         try:

@@ -473,12 +473,23 @@ function renderCandidateTable(): void {
 // --- LOAD CANDIDATES LIST ---
 async function loadCandidates(): Promise<void> {
     try {
-        const res = await fetch(API_BASE, { headers: getHeaders() });
+        const res = await fetch(`${API_BASE}/`, { headers: getHeaders() });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            console.error("[Candidate Suite] Failed to load candidates:", res.status, err);
+            if (res.status === 401) {
+                showToast("Session expired or unauthorized. Please re-authenticate.", true);
+            } else {
+                showToast(err.detail || "Database query failed while fetching candidates.", true);
+            }
+            return;
+        }
         let data = await res.json();
         if (!Array.isArray(data)) data = [];
         cachedCandidates = data;
         renderCandidateTable();
     } catch (err) {
+        console.error("[Candidate Suite] Network error loading candidates:", err);
         showToast("Failed to load candidates from Supabase", true);
     }
 }
@@ -1835,8 +1846,29 @@ function initAdminWebSocket(): void {
                         }
                     }
 
-                } else if (msg.type === 'CANDIDATE_CREATED') {
-                    showToast(`Candidate created: ${msg.candidate?.full_name || ''}`);
+                } else if (msg.type === 'CANDIDATE_CREATED' || msg.type === 'CANDIDATE_SELF_REGISTERED') {
+                    const cName = msg.candidate?.full_name || msg.full_name || '';
+                    showToast(`Candidate registered in DB: ${cName}`);
+                    loadCandidates();
+                    loadDashboardSummary();
+
+                } else if (msg.type === 'CANDIDATE_DELETED') {
+                    showToast(`Candidate deregistered from Cloud DB: ${msg.candidate_name || msg.registration_number || ''}`);
+                    loadCandidates();
+                    loadDashboardSummary();
+
+                } else if (msg.type === 'CANDIDATES_BULK_IMPORTED') {
+                    showToast(`Bulk Import: ${msg.count || 0} candidates synced with Cloud DB`);
+                    loadCandidates();
+                    loadDashboardSummary();
+
+                } else if (msg.type === 'BULK_CANDIDATES_REALLOCATED') {
+                    showToast(`Bulk Reallocation: ${msg.count || 0} candidates migrated to Slot ${msg.target_slot}`);
+                    loadCandidates();
+                    loadDashboardSummary();
+
+                } else if (msg.type === 'CANDIDATE_ATTEMPT_RESET') {
+                    showToast('Candidate exam attempt wiped cleanly.');
                     loadCandidates();
                     loadDashboardSummary();
 

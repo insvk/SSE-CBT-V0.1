@@ -2933,6 +2933,23 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
     actual_cand_id = cand_id
     if not actual_cand_id or len(str(actual_cand_id)) < 10:
         actual_cand_id = get_or_create_candidate_id(db, reg_no, cand_name)
+    else:
+        try:
+            chk = db.table("candidates").select("id").eq("id", str(actual_cand_id)).execute()
+            if not chk.data:
+                db.table("candidates").upsert({
+                    "id": str(actual_cand_id),
+                    "tenant_id": DEFAULT_TENANT_ID,
+                    "registration_number": reg_no,
+                    "full_name": cand_name,
+                    "metadata": {
+                        "batch": "A",
+                        "roll_number": reg_no,
+                        "status": "active",
+                    }
+                }).execute()
+        except Exception:
+            pass
 
     # Fetch authoritative answer keys from database
     questions_map = _get_authoritative_exam_questions(db, exam_id)
@@ -3090,6 +3107,12 @@ def get_exam_result(
     db = get_db()
     session = _get_or_create_session(norm_id)
 
+    # Check if submission is cached in memory for specific candidate or reg_no
+    if reg_no and reg_no in LATEST_SUBMISSION_RESULT:
+        return LATEST_SUBMISSION_RESULT[reg_no]
+    if candidate_id and candidate_id in LATEST_SUBMISSION_RESULT:
+        return LATEST_SUBMISSION_RESULT[candidate_id]
+
     # Check if latest submission in memory matches when no query param is given
     if not candidate_id and not reg_no:
         cached = (
@@ -3130,7 +3153,7 @@ def get_exam_result(
                 target_cand = c_res.data[0]
         except Exception:
             pass
-    if not target_cand:
+    if not target_cand and not candidate_id and not reg_no:
         try:
             c_res = db.table("candidates").select("*").order("created_at", desc=True).limit(1).execute()
             if c_res.data:
@@ -3211,10 +3234,15 @@ def get_exam_result(
                     cand_resps = list(cand_s.values()) if isinstance(cand_s, dict) else cand_s
 
             sc = ScoringEngine.calculate_score(cand_resps, questions_map)
-            sc_tot = float(meta.get("score", sc["total_score"]))
-            sc_max = float(meta.get("max_possible", sc["max_possible_score"]))
-            sc_pct = float(meta.get("percentage", sc["percentage"]))
-            sc_acc = sc["accuracy"] if sc["accuracy"] is not None else float(meta.get("accuracy", 0.0))
+            meta_score = meta.get("score")
+            meta_max = meta.get("max_possible")
+            meta_pct = meta.get("percentage")
+            meta_acc = meta.get("accuracy")
+
+            sc_tot = float(meta_score) if meta_score is not None else float(sc["total_score"])
+            sc_max = float(meta_max) if meta_max is not None else float(sc["max_possible_score"])
+            sc_pct = float(meta_pct) if meta_pct is not None else float(sc["percentage"])
+            sc_acc = sc["accuracy"] if sc["accuracy"] is not None else (float(meta_acc) if meta_acc is not None else 0.0)
             time_display = meta.get("time_taken_display") or meta.get("time_taken") or "42 mins 18 secs"
             sub_at = meta.get("submitted_at") or format_ist_now()
 
