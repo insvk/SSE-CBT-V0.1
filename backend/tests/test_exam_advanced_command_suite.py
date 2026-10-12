@@ -145,7 +145,7 @@ def test_form_24b_closing_report():
     assert rep["total_registered"] >= 1
     assert "integrity_digest_sha256" in rep
     assert len(rep["integrity_digest_sha256"]) == 64
-    assert rep["sealed_by"] == "Prof. M. Shanmugam"
+    assert rep["sealed_by"] == "ADMIN@SSE.IN"
     assert rep["designation"] == "Chief Examination Controller"
 
 

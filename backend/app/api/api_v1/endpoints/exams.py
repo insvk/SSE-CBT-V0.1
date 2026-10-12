@@ -56,7 +56,7 @@ DEFAULT_ADMIT_CARD_TEMPLATE = {
     "test_center_code": "SSEC-TN-042",
     "default_lab_room": "LAB-01 (Block-A)",
     "terminal_prefix": "T-A-",
-    "controller_name": "Prof. Dr. M. Shanmugam",
+    "controller_name": "ADMIN@SSE.IN",
     "controller_designation": "Controller of Examinations",
     "instructions_text": "1. Government photo ID card mandatory for physical entrance.\n2. Electronic devices, smartwatches, and calculators strictly prohibited.\n3. Continuous webcam biometric tracking and screen proctoring active.\n4. Candidates must report at the allocated test center prior to gate closure.",
     "show_barcode": True,
@@ -72,7 +72,7 @@ DEFAULT_SCORECARD_TEMPLATE = {
     "institution_name": "SSE CBT PLATFORM",
     "document_title": "MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card",
     "subhead_status_text": "Status: Authenticated & Cloud Verified",
-    "controller_name": "Prof. Dr. M. Shanmugam",
+    "controller_name": "ADMIN@SSE.IN",
     "controller_designation": "Controller of Examinations",
     "test_venue_name": "SSE Digital Assessment Hub Node 01",
     "footer_disclaimer": "© 2026 Saveetha School of Engineering • CBT Examination Directorate. All rights reserved.",
@@ -90,7 +90,7 @@ DEFAULT_SCORECARD_TEMPLATE = {
 CURRENT_EXAM_SETTINGS: Dict[str, Any] = {
     "institution_name": "SSE CBT PLATFORM",
     "examination_title": "MCQ ASSESSMENT [ SSE CBT 2026 ]",
-    "controller_name": "Prof. Dr. M. Shanmugam",
+    "controller_name": "ADMIN@SSE.IN",
     "controller_designation": "Controller of Examinations",
     "test_venue_name": "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105",
     "test_center_code": "SSEC-TN-042",
@@ -1364,7 +1364,7 @@ def get_center_closing_report(exam_id: str):
         compensatory_minutes_granted=compensatory_mins,
         average_score=avg_score,
         integrity_digest_sha256=sha256_digest,
-        sealed_by="Prof. M. Shanmugam",
+        sealed_by="ADMIN@SSE.IN",
         designation="Chief Examination Controller",
     )
 

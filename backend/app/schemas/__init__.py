@@ -111,7 +111,7 @@ class AdmitCardStructure(BaseModel):
     test_center_code: Optional[str] = "SSEC-TN-042"
     default_lab_room: Optional[str] = "LAB-01 (Block-A)"
     terminal_prefix: Optional[str] = "T-A-"
-    controller_name: Optional[str] = "Prof. Dr. M. Shanmugam"
+    controller_name: Optional[str] = "ADMIN@SSE.IN"
     controller_designation: Optional[str] = "Controller of Examinations"
     instructions_text: Optional[str] = "1. Government photo ID card mandatory for physical entrance.\n2. Electronic devices, smartwatches, and calculators strictly prohibited.\n3. Continuous webcam biometric tracking and screen proctoring active.\n4. Candidates must report at the allocated test center prior to gate closure."
     show_barcode: Optional[bool] = True
@@ -127,7 +127,7 @@ class ScorecardStructure(BaseModel):
     institution_name: Optional[str] = "SSE CBT PLATFORM"
     document_title: Optional[str] = "MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card"
     subhead_status_text: Optional[str] = "Status: Authenticated & Cloud Verified"
-    controller_name: Optional[str] = "Prof. Dr. M. Shanmugam"
+    controller_name: Optional[str] = "ADMIN@SSE.IN"
     controller_designation: Optional[str] = "Controller of Examinations"
     test_venue_name: Optional[str] = "SSE Digital Assessment Hub Node 01"
     footer_disclaimer: Optional[str] = "© 2026 Saveetha School of Engineering • CBT Examination Directorate. All rights reserved."
@@ -163,7 +163,7 @@ class AdmitCardResponse(BaseModel):
     has_scribe: bool
     compensatory_minutes: int
     authorized_signature_title: str
-    controller_name: Optional[str] = "Prof. Dr. M. Shanmugam"
+    controller_name: Optional[str] = "ADMIN@SSE.IN"
     controller_designation: Optional[str] = "Controller of Examinations"
     institution_name: Optional[str] = "SSE CBT PLATFORM"
     examination_title: Optional[str] = "MCQ ASSESSMENT [ SSE CBT 2026 ]"
@@ -184,7 +184,7 @@ class AdmitCardResponse(BaseModel):
 class ExamCenterSettings(BaseModel):
     institution_name: Optional[str] = "SSE CBT PLATFORM"
     examination_title: Optional[str] = "MCQ ASSESSMENT [ SSE CBT 2026 ]"
-    controller_name: Optional[str] = "Prof. Dr. M. Shanmugam"
+    controller_name: Optional[str] = "ADMIN@SSE.IN"
     controller_designation: Optional[str] = "Controller of Examinations"
     test_venue_name: Optional[str] = "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105"
     test_center_code: Optional[str] = "SSEC-TN-042"
@@ -296,7 +296,7 @@ class CandidateInterventionRequest(BaseModel):
 
 class ExamPhaseAdvanceRequest(BaseModel):
     target_phase: str  # "staged", "admissions_open", "paper_decrypted", "active_concurrency", "concluded", "tabulated_sealed"
-    authorizing_controller: Optional[str] = "Prof. M. Shanmugam (Chief Examination Controller)"
+    authorizing_controller: Optional[str] = "ADMIN@SSE.IN (Chief Examination Controller)"
     notes: Optional[str] = "Phase transition authorized under National CBT Standard Operating Procedures."
 
 
@@ -354,7 +354,7 @@ class ClosingReportResponse(BaseModel):
     compensatory_minutes_granted: int
     average_score: float
     integrity_digest_sha256: str
-    sealed_by: str = "Prof. M. Shanmugam"
+    sealed_by: str = "ADMIN@SSE.IN"
     designation: str = "Chief Examination Controller"
 
 

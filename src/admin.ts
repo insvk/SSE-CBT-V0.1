@@ -3909,7 +3909,7 @@ if (formExamSettings) {
         const payload = {
             institution_name: inputAdmitInst?.value.trim() || 'SSE CBT PLATFORM',
             examination_title: inputAdmitExam?.value.trim() || 'MCQ ASSESSMENT [ SSE CBT 2026 ]',
-            controller_name: inputCtrlName?.value.trim() || 'Prof. Dr. M. Shanmugam',
+            controller_name: inputCtrlName?.value.trim() || 'ADMIN@SSE.IN',
             controller_designation: inputCtrlDesig?.value.trim() || 'Controller of Examinations',
             test_venue_name: inputVenueName?.value.trim() || 'SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105',
             test_center_code: inputCenterCode?.value.trim() || 'SSEC-TN-042',
