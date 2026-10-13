@@ -105,44 +105,60 @@ const ui = {
     editSubj: document.getElementById('edit-q-subj') as HTMLSelectElement,
 };
 
+async function fetchQuestionsFromUrl(targetUrl: string): Promise<any[]> {
+    let res = await fetch(targetUrl, { headers: getAuthHeaders() });
+    if (!res.ok) {
+        if (res.status === 401 && localStorage.getItem('access_token')) {
+            console.warn('[Question Bank] Auth rejected; clearing expired token from localStorage and retrying...');
+            localStorage.removeItem('access_token');
+            res = await fetch(targetUrl, { headers: getAuthHeaders() });
+        }
+    }
+    if (!res.ok) {
+        let errorDetail = '';
+        try {
+            const errJson = await res.json();
+            errorDetail = errJson.detail || errJson.message || JSON.stringify(errJson);
+        } catch (_) {
+            try {
+                const errText = await res.text();
+                if (errText && errText.length < 200) {
+                    errorDetail = errText;
+                }
+            } catch (_) {}
+        }
+        throw new Error(errorDetail || `Server returned HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+}
+
 // 1. Fetch & Render Questions strictly from Supabase Cloud DB
 async function loadQuestions() {
     try {
         const subject = ui.filterSubject ? ui.filterSubject.value : 'All';
         const statusVal = ui.filterStatus ? ui.filterStatus.value : 'All';
 
-        let url = `${API_BASE}/`;
         const params = new URLSearchParams();
         if (subject && subject !== 'All') params.append('subject', subject);
         if (statusVal && statusVal !== 'All') params.append('status', statusVal);
-        if (params.toString()) url += `?${params.toString()}`;
+        const queryStr = params.toString() ? `?${params.toString()}` : '';
 
-        let res = await fetch(url, { headers: getAuthHeaders() });
-        if (!res.ok) {
-            if (res.status === 401 && localStorage.getItem('access_token')) {
-                console.warn('[Question Bank] Auth rejected; clearing expired token from localStorage and retrying...');
-                localStorage.removeItem('access_token');
-                res = await fetch(url, { headers: getAuthHeaders() });
+        let questions: any[] = [];
+        try {
+            questions = await fetchQuestionsFromUrl(`${API_BASE}/${queryStr}`);
+        } catch (firstErr: any) {
+            // If running on localhost and relative fetch failed, try direct connection to port 8000
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            if (isLocal && window.location.port !== '8000') {
+                console.info('[Question Bank] Relative fetch failed, attempting direct connection to http://127.0.0.1:8000...');
+                questions = await fetchQuestionsFromUrl(`http://127.0.0.1:8000${API_BASE}/${queryStr}`);
+            } else {
+                throw firstErr;
             }
         }
-        if (!res.ok) {
-            let errorDetail = '';
-            try {
-                const errJson = await res.json();
-                errorDetail = errJson.detail || errJson.message || JSON.stringify(errJson);
-            } catch (_) {
-                try {
-                    const errText = await res.text();
-                    if (errText && errText.length < 200) {
-                        errorDetail = errText;
-                    }
-                } catch (_) {}
-            }
-            throw new Error(errorDetail || `Server returned HTTP ${res.status}`);
-        }
 
-        const data = await res.json();
-        loadedQuestions = Array.isArray(data) ? data : [];
+        loadedQuestions = questions;
         renderFilteredQuestions();
     } catch (err: any) {
         const errorMsg = err?.message || "Failed to fetch questions from Cloud DB";

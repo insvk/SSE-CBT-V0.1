@@ -17,15 +17,15 @@ class Settings(BaseSettings):
 
     # Supabase configuration
     SUPABASE_URL: str = Field(
-        default="https://placeholder.supabase.co",
+        default="https://xqiycolwfclfgamkiibt.supabase.co",
         alias="SUPABASE_URL",
     )
     SUPABASE_SERVICE_ROLE_KEY: str = Field(
-        default="placeholder",
+        default="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxaXljb2x3ZmNsZmdhbWtpaWJ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTUyODQ1OSwiZXhwIjoyMTA3MTA0NDU5fQ.AF9W9IUnBKVFwnEYAKjbW5Tc5Wy-batUj5am1Jx6FII",
         alias="SUPABASE_SERVICE_ROLE_KEY",
     )
     SUPABASE_JWT_SECRET: str = Field(
-        default="",
+        default="rzU3+YDu9rWQwG5ynQ4pdHg/hgB6IB0Rdq9vnfE/7xjCpK2kEIIxCQy4v+3OM1+U3NZsWvr4FiFKo+uliSN6VQ==",
         alias="SUPABASE_JWT_SECRET",
     )
 
