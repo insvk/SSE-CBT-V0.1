@@ -19,7 +19,21 @@ export default defineConfig({
   plugins: [rootRedirectPlugin()],
   server: {
     port: 5173,
-    open: false
+    open: false,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://localhost:8000',
+        ws: true,
+      },
+      '/health': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     rollupOptions: {

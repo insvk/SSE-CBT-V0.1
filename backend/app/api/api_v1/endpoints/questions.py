@@ -241,6 +241,7 @@ def parse_raw_question_text(
 
 
 @router.get("/")
+@router.get("")
 def get_question_bank(
     subject: Optional[str] = Query(None),
     status_filter: Optional[str] = Query(None, alias="status"),
@@ -266,6 +267,7 @@ def get_question_bank(
 
 
 @router.post("/", status_code=201)
+@router.post("", status_code=201)
 def create_question(question: QuestionCreate, user_context: dict = Depends(require_admin_user)):
     """Creates a single user-inputted question and persists it to Cloud DB (Admin Only)."""
     tid = user_context["tenant_id"]

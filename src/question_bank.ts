@@ -117,18 +117,32 @@ async function loadQuestions() {
         if (statusVal && statusVal !== 'All') params.append('status', statusVal);
         if (params.toString()) url += `?${params.toString()}`;
 
-        const res = await fetch(url, { headers: getAuthHeaders() });
-        if (!res.ok) throw new Error("Failed to load questions from Cloud DB");
+        let res = await fetch(url, { headers: getAuthHeaders() });
+        if (!res.ok) {
+            if (res.status === 401 && localStorage.getItem('access_token')) {
+                console.warn('[Question Bank] Auth rejected; clearing expired token from localStorage and retrying...');
+                localStorage.removeItem('access_token');
+                res = await fetch(url, { headers: getAuthHeaders() });
+            }
+        }
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || `Server returned HTTP ${res.status}`);
+        }
 
         const data = await res.json();
         loadedQuestions = Array.isArray(data) ? data : [];
         renderFilteredQuestions();
-    } catch (err) {
-        showToast("Error connecting to Cloud Database question bank", true);
+    } catch (err: any) {
+        const errorMsg = err?.message || "Failed to fetch questions from Cloud DB";
+        showToast(errorMsg, true);
         if (ui.list) {
             ui.list.innerHTML = `
                 <div class="q-item" style="text-align: center; color: var(--danger, #ef4444); padding: 3rem;">
-                    Failed to fetch questions from Cloud DB. Please ensure your backend and Supabase connection are active.
+                    Failed to fetch questions from Cloud DB (${errorMsg}).<br />
+                    <span style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; display: block;">
+                        Please ensure your backend server is running (<code style="background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 4px;">uvicorn main:app --reload --port 8000</code>) and connected to Supabase.
+                    </span>
                 </div>
             `;
         }
