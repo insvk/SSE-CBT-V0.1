@@ -1,13 +1,21 @@
-"""
-Vercel serverless entrypoint for SSE CBT Platform API.
-Delegates directly to the authoritative backend application in backend/main.py.
-Eliminates duplicate mock routes (Defect C-06).
-"""
 import os
 import sys
 
-backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend")
-if backend_dir not in sys.path:
-    sys.path.insert(0, backend_dir)
+root_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.join(root_dir, "backend")
 
-from main import app  # noqa: E402
+candidate_paths = [
+    backend_dir,
+    os.path.join(os.getcwd(), "backend"),
+    os.path.join("/var/task", "backend"),
+    os.path.abspath("backend"),
+]
+
+for p in candidate_paths:
+    if os.path.exists(p) and p not in sys.path:
+        sys.path.insert(0, p)
+
+try:
+    from main import app  # noqa: F401, E402
+except ImportError:
+    from backend.main import app  # noqa: F401, E402

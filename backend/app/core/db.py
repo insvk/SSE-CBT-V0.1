@@ -39,12 +39,16 @@ _supabase_client = _init_client()
 def get_db() -> Client:
     """
     Returns the Supabase client.
-    Raises RuntimeError if the client is not available.
+    Raises HTTPException 500 if the client is not available.
     """
+    global _supabase_client
     if _supabase_client is None:
-        raise RuntimeError(
-            "Supabase client is not initialized. "
-            "Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables."
+        _supabase_client = _init_client()
+    if _supabase_client is None:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=500,
+            detail="Supabase client is not initialized. Please verify SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your environment variables."
         )
     return _supabase_client
 

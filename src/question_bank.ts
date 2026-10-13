@@ -126,8 +126,19 @@ async function loadQuestions() {
             }
         }
         if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.detail || `Server returned HTTP ${res.status}`);
+            let errorDetail = '';
+            try {
+                const errJson = await res.json();
+                errorDetail = errJson.detail || errJson.message || JSON.stringify(errJson);
+            } catch (_) {
+                try {
+                    const errText = await res.text();
+                    if (errText && errText.length < 200) {
+                        errorDetail = errText;
+                    }
+                } catch (_) {}
+            }
+            throw new Error(errorDetail || `Server returned HTTP ${res.status}`);
         }
 
         const data = await res.json();
