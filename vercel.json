@@ -1,6 +1,7 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "trailingSlash": false,
   "builds": [
     {
       "src": "api_app.py",
@@ -15,6 +16,10 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/api",
+      "destination": "/api_app.py"
+    },
     {
       "source": "/api/(.*)",
       "destination": "/api_app.py"
