@@ -839,7 +839,7 @@ async def update_question(
     payload: Dict[str, Any],
     user_context: dict = Depends(get_tenant_user),
 ):
-    """Examination Controller Tool: Updates question content, statement, options, or answer key and broadcasts live."""
+    """Examination Directorate Tool: Updates question content, statement, options, or answer key and broadcasts live."""
     tid = user_context["tenant_id"]
     db = get_db()
     ensure_tenant_exists(db, tid)
@@ -890,7 +890,7 @@ async def adjudicate_question(
     user_context: dict = Depends(require_admin_user),
 ):
     """
-    Chief Examination Controller Post-Exam Adjudication Tool (Authoritative CBT Standard):
+    Examination Directorate Post-Exam Adjudication Tool (Authoritative CBT Standard):
     - action='drop_bonus': Flags question as dropped due to ambiguity/error and awards +4 bonus marks to all test-takers.
     - action='correct_key': Overrides authoritative answer key across all candidate evaluations.
     Broadcasts live to all connected consoles and updates database.
@@ -900,7 +900,7 @@ async def adjudicate_question(
     ensure_tenant_exists(db, tid)
 
     action = payload.get("action", "drop_bonus").lower()
-    reason = payload.get("reason", "Authoritative Adjudication by Chief Examination Controller")
+    reason = payload.get("reason", "Authoritative Adjudication by Examination Directorate")
 
     update_data = {}
     if action == "drop_bonus":

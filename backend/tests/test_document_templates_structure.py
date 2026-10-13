@@ -72,7 +72,7 @@ def test_update_document_templates_settings():
         "institution_name": "SAVEETHA DIGITAL TESTING AUTHORITY",
         "examination_title": "NATIONAL CBT MERIT TEST 2026",
         "controller_name": "Dr. S. K. Narayanan",
-        "controller_designation": "Chief Controller of Examinations",
+        "controller_designation": "Examination Directorate",
         "test_venue_name": "SSE High-Tech Supercomputing Lab, Block-B, Chennai",
         "test_center_code": "SSEC-TEST-999",
         "default_lab_room": "LAB-09",

@@ -59,7 +59,7 @@ DEFAULT_ADMIT_CARD_TEMPLATE = {
     "default_lab_room": "LAB-01 (Block-A)",
     "terminal_prefix": "T-A-",
     "controller_name": "ADMIN@SSE.IN",
-    "controller_designation": "Controller of Examinations",
+    "controller_designation": "Examination Directorate",
     "instructions_text": "1. Government photo ID card mandatory for physical entrance.\n2. Electronic devices, smartwatches, and calculators strictly prohibited.\n3. Continuous webcam biometric tracking and screen proctoring active.\n4. Candidates must report at the allocated test center prior to gate closure.",
     "show_barcode": True,
     "show_photo": True,
@@ -75,8 +75,8 @@ DEFAULT_SCORECARD_TEMPLATE = {
     "document_title": "MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card",
     "subhead_status_text": "Status: Authenticated & Cloud Verified",
     "controller_name": "ADMIN@SSE.IN",
-    "controller_designation": "Controller of Examinations",
-    "test_venue_name": "SSE Digital Assessment Hub Node 01",
+    "controller_designation": "Examination Directorate",
+    "test_venue_name": "SSE Digital Assessment HUB",
     "footer_disclaimer": "© 2026 Saveetha School of Engineering • CBT Examination Directorate. All rights reserved.",
     "show_score_banner": True,
     "show_percentage": True,
@@ -93,10 +93,10 @@ CURRENT_EXAM_SETTINGS: Dict[str, Any] = {
     "institution_name": "SSE CBT PLATFORM",
     "examination_title": "MCQ ASSESSMENT [ SSE CBT 2026 ]",
     "controller_name": "ADMIN@SSE.IN",
-    "controller_designation": "Controller of Examinations",
+    "controller_designation": "Examination Directorate",
     "test_venue_name": "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105",
-    "test_center_code": "SSEC-TN-042",
-    "default_lab_room": "LAB-01 (Block-A)",
+    "test_center_code": "SSE-CBT",
+    "default_lab_room": "RESPECTIVE CLASSROOM",
     "terminal_prefix": "T-A-",
     "admit_card": DEFAULT_ADMIT_CARD_TEMPLATE.copy(),
     "scorecard": DEFAULT_SCORECARD_TEMPLATE.copy(),
@@ -210,7 +210,7 @@ async def update_exam_settings(payload: ExamCenterSettings, db: Any = Depends(ge
 LIFECYCLE_PHASES = [
     {"phase": "staged", "stage_num": 1, "title": "Staged & Pre-Flight Audit", "desc": "Pre-flight infrastructure diagnostics, LAN node ping audit, and Google NTP synchronization."},
     {"phase": "admissions_open", "stage_num": 2, "title": "Biometric Admissions Open", "desc": "Center entry gate open, candidate frisking, fingerprint/face match, and terminal node issuance."},
-    {"phase": "paper_decrypted", "stage_num": 3, "title": "256-Bit Paper Decrypted", "desc": "Chief Examination Controller has supplied the Master Custody Decryption Key, unlocking question bank."},
+    {"phase": "paper_decrypted", "stage_num": 3, "title": "256-Bit Paper Decrypted", "desc": "Examination Directorate has supplied the Master Custody Decryption Key, unlocking question bank."},
     {"phase": "active_concurrency", "stage_num": 4, "title": "Active Concurrency", "desc": "Live examination shift underway. Millisecond cloud response synchronization and active proctoring."},
     {"phase": "concluded", "stage_num": 5, "title": "Shift Concluded", "desc": "Terminal countdowns expired or authoritative submit dispatched. Candidate consoles locked."},
     {"phase": "tabulated_sealed", "stage_num": 6, "title": "Tabulated & Sealed", "desc": "Form 24-B generated with SHA-256 integrity seal. Results frozen for national compilation."},
@@ -345,6 +345,11 @@ def _format_exam_item(e: dict, total_candidates: int = 1) -> dict:
     else:
         ai_cam_enabled = bool(ai_cam_enabled)
 
+    cor_m = float(cfg.get("correct_marks", 4.0))
+    neg_en = bool(cfg.get("negative_marking_enabled", True))
+    neg_m = 0.0 if not neg_en else float(cfg.get("negative_marks", 1.0))
+    tot_m = float(cfg.get("total_marks") if cfg.get("total_marks") is not None else (question_count * cor_m))
+
     return {
         "id": exam_id_str,
         "code": code,
@@ -359,6 +364,10 @@ def _format_exam_item(e: dict, total_candidates: int = 1) -> dict:
         "start_time_ist": st_ist,
         "end_time_ist": et_ist,
         "config": cfg,
+        "correct_marks": cor_m,
+        "negative_marks": neg_m,
+        "negative_marking_enabled": neg_en,
+        "total_marks": tot_m,
         "test_venue_name": cfg.get("test_venue_name") or CURRENT_EXAM_SETTINGS.get("test_venue_name") or "SSE Digital Assessment Hub",
         "test_center_code": cfg.get("test_center_code") or CURRENT_EXAM_SETTINGS.get("test_center_code") or "SSEC-TN-042",
         "default_lab_room": cfg.get("default_lab_room") or CURRENT_EXAM_SETTINGS.get("default_lab_room") or "LAB-01 (Block-A)",
@@ -407,6 +416,7 @@ def _get_or_create_session(exam_id: str, duration_minutes: int = 180) -> Dict[st
     return ACTIVE_EXAM_SESSIONS[exam_id]
 
 
+@router.get("", include_in_schema=False)
 @router.get("/")
 def get_exams():
     """Lists available exams from Cloud Database with schedules and link sharing."""
@@ -428,6 +438,7 @@ def get_exams():
         return []
 
 
+@router.post("", include_in_schema=False)
 @router.post("/")
 async def create_exam(payload: ExamCreateAdvanced):
     """
@@ -443,7 +454,14 @@ async def create_exam(payload: ExamCreateAdvanced):
     code = (payload.exam_code or cfg_in.get("exam_code") or f"EX-{new_id[:4].upper()}").strip()
     q_ids = payload.question_ids or cfg_in.get("question_ids") or []
     correct_m = float(payload.correct_marks if payload.correct_marks is not None else cfg_in.get("correct_marks", 4.0))
-    negative_m = float(payload.negative_marks if payload.negative_marks is not None else cfg_in.get("negative_marks", 1.0))
+
+    neg_enabled = payload.negative_marking_enabled if payload.negative_marking_enabled is not None else cfg_in.get("negative_marking_enabled", True)
+    if not neg_enabled:
+        negative_m = 0.0
+    else:
+        negative_m = float(payload.negative_marks if payload.negative_marks is not None else cfg_in.get("negative_marks", 1.0))
+
+    total_m = float(payload.total_marks if payload.total_marks is not None else (len(q_ids) * correct_m))
 
     st_val = payload.start_time or payload.start_time_ist
     et_val = payload.end_time or payload.end_time_ist
@@ -488,6 +506,8 @@ async def create_exam(payload: ExamCreateAdvanced):
         "question_ids": q_ids,
         "correct_marks": correct_m,
         "negative_marks": negative_m,
+        "negative_marking_enabled": bool(neg_enabled),
+        "total_marks": total_m,
         "ai_camera_enabled": bool(ai_cam),
         "sections": normalized_sections,
         "assigned_batches": payload.assigned_batches or cfg_in.get("assigned_batches", ["A", "B", "C", "D"]),
@@ -623,6 +643,21 @@ async def update_exam(exam_id: str, payload: ExamUpdateAdvanced):
         cfg["correct_marks"] = float(payload.correct_marks if payload.correct_marks is not None else cfg_in["correct_marks"])
     if payload.negative_marks is not None or "negative_marks" in cfg_in:
         cfg["negative_marks"] = float(payload.negative_marks if payload.negative_marks is not None else cfg_in["negative_marks"])
+    if payload.negative_marking_enabled is not None or "negative_marking_enabled" in cfg_in:
+        neg_en = payload.negative_marking_enabled if payload.negative_marking_enabled is not None else cfg_in["negative_marking_enabled"]
+        cfg["negative_marking_enabled"] = bool(neg_en)
+        if not bool(neg_en):
+            cfg["negative_marks"] = 0.0
+
+    current_qids = cfg.get("question_ids") or []
+    current_correct = float(cfg.get("correct_marks", 4.0))
+    if payload.total_marks is not None:
+        cfg["total_marks"] = float(payload.total_marks)
+    elif "total_marks" in cfg_in:
+        cfg["total_marks"] = float(cfg_in["total_marks"])
+    else:
+        cfg["total_marks"] = float(len(current_qids) * current_correct)
+
     if payload.ai_camera_enabled is not None:
         cfg["ai_camera_enabled"] = bool(payload.ai_camera_enabled)
     elif "ai_camera_enabled" in cfg_in:
@@ -1009,7 +1044,7 @@ async def reset_exam_session(exam_id: str, duration_minutes: int = 180):
 
 @router.post("/{exam_id}/extend-time")
 async def extend_exam_time(exam_id: str, extra_minutes: int = 15):
-    """Examination Controller Tool: Dynamically extends the active exam deadline and notifies candidate screens live."""
+    """Examination Directorate Tool: Dynamically extends the active exam deadline and notifies candidate screens live."""
     norm_id = _resolve_exam_id(exam_id)
     session = _get_or_create_session(norm_id)
     session["duration_seconds"] += extra_minutes * 60
@@ -1037,7 +1072,7 @@ async def extend_exam_time(exam_id: str, extra_minutes: int = 15):
 
 @router.post("/{exam_id}/unlock-sessions")
 def unlock_exam_sessions(exam_id: str):
-    """Examination Controller Tool: Clears active tab/lockout conflicts across exam sessions."""
+    """Examination Directorate Tool: Clears active tab/lockout conflicts across exam sessions."""
     norm_id = _resolve_exam_id(exam_id)
     session = _get_or_create_session(norm_id)
     session.pop("active_tab_id", None)
@@ -1082,7 +1117,7 @@ def get_exam_phase(exam_id: str):
 @router.post("/{exam_id}/phase/advance")
 async def advance_exam_phase(exam_id: str, payload: ExamPhaseAdvanceRequest):
     """
-    Advances examination lifecycle stage (Chief Examination Controller AEC Module).
+    Advances examination lifecycle stage (Examination Directorate Module).
     Broadcasts stage advancement in real time and updates Cloud DB.
     """
     norm_id = _resolve_exam_id(exam_id)
@@ -1167,14 +1202,14 @@ async def decrypt_question_paper(exam_id: str, payload: PaperDecryptionRequest):
     await ws_manager.broadcast_all({
         "type": "PAPER_DECRYPTED",
         "exam_id": exam_id,
-        "decrypted_by": payload.controller_id or "Chief Examination Controller",
+        "decrypted_by": payload.controller_id or "Examination Directorate",
         "timestamp_ist": now_ist,
-        "message": "Question Paper decrypted and released by Examination Controller. Terminals unlocked."
+        "message": "Question Paper decrypted and released by Examination Directorate. Terminals unlocked."
     })
     await ws_manager.broadcast("admin_feed", {
         "type": "PAPER_DECRYPTED",
         "exam_id": exam_id,
-        "decrypted_by": payload.controller_id or "Chief Examination Controller",
+        "decrypted_by": payload.controller_id or "Examination Directorate",
         "timestamp_ist": now_ist,
     })
 
@@ -1403,7 +1438,7 @@ def get_center_closing_report(exam_id: str):
         average_score=avg_score,
         integrity_digest_sha256=sha256_digest,
         sealed_by="ADMIN@SSE.IN",
-        designation="Chief Examination Controller",
+        designation="Examination Directorate",
     )
 
 
@@ -1453,7 +1488,7 @@ async def candidate_intervention(
     payload: CandidateInterventionRequest,
 ):
     """
-    Enterprise Examination Controller Intervention Suite:
+    Enterprise Examination Directorate Intervention Suite:
     Executes live interventions:
       - 'extend_time': Grants compensatory minutes (PwD / Glitch Relief).
       - 'pause_session': Freezes countdown timer for individual candidate or entire hall.
@@ -2097,6 +2132,557 @@ def get_exam_results_summary(exam_id: str):
         "lowest_score": lowest_score,
         "pass_rate_pct": round((pass_count / max(len(scores), 1)) * 100, 1),
         "leaderboard": leaderboard,
+    }
+
+
+@router.get("/{exam_id}/results")
+def get_exam_results(
+    exam_id: str,
+    view_mode: Optional[str] = "normal",
+    search: Optional[str] = None,
+    filter_status: Optional[str] = None,
+):
+    """
+    High-End Exam-Wise Result Management System.
+    Fetches verified candidate performances from Supabase Cloud DB.
+    Supports ?view_mode=normal (executive summary) and ?view_mode=advanced (forensic itemized breakdown).
+    """
+    norm_id = _resolve_exam_id(exam_id)
+    db = get_db()
+
+    # 1. Fetch Exam Details & Dynamic Marking Scheme
+    exam_title = "SSE CBT Examination"
+    exam_code = "EX-1001"
+    dur_mins = 180
+    exam_cfg = {}
+    try:
+        ex_res = db.table("exams").select("*").eq("id", norm_id).limit(1).execute()
+        if ex_res.data:
+            e = ex_res.data[0]
+            exam_title = e.get("title", exam_title)
+            dur_mins = e.get("duration_minutes", dur_mins)
+            exam_cfg = e.get("config") or {}
+            exam_code = exam_cfg.get("exam_code", exam_code)
+    except Exception:
+        pass
+
+    questions_map = _get_authoritative_exam_questions(db, exam_id)
+    total_q_count = len(questions_map)
+    correct_m = float(exam_cfg.get("correct_marks", 4.0))
+    neg_en = bool(exam_cfg.get("negative_marking_enabled", True))
+    neg_m = 0.0 if not neg_en else float(exam_cfg.get("negative_marks", 1.0))
+    total_marks = float(exam_cfg.get("total_marks") if exam_cfg.get("total_marks") is not None else (total_q_count * correct_m))
+
+    scoring_cfg = {
+        "correct_marks": correct_m,
+        "negative_marks": neg_m,
+        "negative_marking_enabled": neg_en,
+    }
+
+    # 2. Fetch Candidates & Exam Attempts
+    try:
+        c_res = db.table("candidates").select("*").order("created_at", desc=False).execute()
+        candidates = c_res.data or []
+    except Exception:
+        candidates = []
+
+    try:
+        a_res = db.table("exam_attempts").select("*").eq("exam_id", norm_id).execute()
+        attempts = a_res.data or []
+    except Exception:
+        attempts = []
+
+    attempts_by_cid = {str(a.get("candidate_id")): a for a in attempts}
+    session = _get_or_create_session(norm_id)
+    active_responses = list(session.get("responses", {}).values())
+
+    results_valid = []
+    results_disq = []
+    scores = []
+
+    search_term = (search or "").strip().lower()
+    status_filter_val = (filter_status or "ALL").strip().upper()
+
+    for idx, c in enumerate(candidates, start=1):
+        cid = str(c["id"])
+        reg = c.get("registration_number", f"SSE-A-CBT-{idx:04d}")
+        meta = c.get("metadata") or {}
+        name = c.get("full_name", "Registered Candidate")
+        email = c.get("email") or meta.get("email") or ""
+        category = c.get("category") or meta.get("category") or "General"
+        gender = c.get("gender") or meta.get("gender") or "Male"
+        roll = meta.get("roll_number") or reg
+        terminal = meta.get("assigned_terminal") or f"T-A-{idx:03d}"
+        att = attempts_by_cid.get(cid)
+        att_status = att.get("status") if att else None
+
+        # Search filter
+        if search_term:
+            match = (
+                search_term in name.lower()
+                or search_term in reg.lower()
+                or search_term in roll.lower()
+                or search_term in email.lower()
+                or search_term in terminal.lower()
+            )
+            if not match:
+                continue
+
+        # Disqualification check
+        is_disq = (
+            meta.get("disqualified") is True
+            or meta.get("exam_status") == "invalidated"
+            or att_status == "invalidated"
+            or reg in session.get("disqualified_candidates", {})
+        )
+
+        if is_disq:
+            if status_filter_val not in ("ALL", "DISQUALIFIED", "INVALIDATED"):
+                continue
+            disq_reason = (
+                meta.get("disqualification_reason")
+                or (session.get("disqualified_candidates", {}).get(reg, {}).get("reason")
+                    if isinstance(session.get("disqualified_candidates", {}).get(reg), dict) else None)
+                or "Security Malpractice"
+            )
+            record = {
+                "candidate_id": cid,
+                "attempt_id": att.get("id") if att else None,
+                "registration_number": reg,
+                "roll_number": roll,
+                "full_name": name,
+                "email": email,
+                "category": category,
+                "gender": gender,
+                "terminal": terminal,
+                "score": 0.0,
+                "raw_score": 0.0,
+                "max_marks": total_marks,
+                "percentage": 0.0,
+                "accuracy": 0.0,
+                "accuracy_display": "0.0%",
+                "correct_count": 0,
+                "incorrect_count": 0,
+                "unanswered_count": total_q_count,
+                "attempted_count": 0,
+                "marked_for_review_count": 0,
+                "bonus_count": 0,
+                "marks_before_penalty": 0.0,
+                "penalty_deducted": 0.0,
+                "bonus_marks": 0.0,
+                "time_taken_seconds": 0,
+                "time_taken_display": "0 mins",
+                "submitted_at_ist": meta.get("disqualified_at") or format_ist_now(),
+                "status": "Disqualified",
+                "disqualified": True,
+                "disqualification_reason": disq_reason,
+                "remarks": meta.get("remarks") or disq_reason,
+                "subject_breakdown": {},
+            }
+            results_disq.append(record)
+            continue
+
+        # Score calculation & gathering
+        cand_score = None
+        cand_res = None
+        if "score" in meta and meta.get("exam_status") == "submitted":
+            cand_score = float(meta.get("score", 0.0))
+            cand_res = {
+                "total_score": cand_score,
+                "max_possible_score": float(meta.get("max_possible", total_marks)),
+                "percentage": float(meta.get("percentage", 0.0)),
+                "accuracy": meta.get("accuracy"),
+                "accuracy_display": meta.get("accuracy_display", "N/A"),
+                "correct_count": int(meta.get("correct_count", 0)),
+                "incorrect_count": int(meta.get("incorrect_count", 0)),
+                "unanswered_count": int(meta.get("unanswered_count", 0)),
+                "attempted_count": int(meta.get("attempted_count", 0)),
+                "marked_for_review_count": int(meta.get("marked_for_review_count", 0)),
+                "bonus_count": int(meta.get("bonus_count", 0)),
+                "marks_before_penalty": float(meta.get("marks_before_penalty", 0.0)),
+                "penalty_deducted": float(meta.get("penalty_deducted", 0.0)),
+                "bonus_marks": float(meta.get("bonus_marks", 0.0)),
+                "time_taken_display": meta.get("time_taken_display", "--"),
+                "submitted_at": meta.get("submitted_at") or meta.get("updated_at") or format_ist_now(),
+                "subject_breakdown": meta.get("subject_breakdown", {}),
+            }
+        else:
+            # Re-evaluate from responses
+            resp_list = []
+            if att:
+                try:
+                    db_res = db.table("responses").select("*").eq("attempt_id", att["id"]).execute()
+                    resp_list = [r.get("response_data") if isinstance(r.get("response_data"), dict) else r for r in (db_res.data or [])]
+                except Exception:
+                    pass
+            if not resp_list:
+                cand_s = session.get("candidate_responses", {}).get(cid) or session.get("candidate_responses", {}).get(reg)
+                if cand_s:
+                    resp_list = list(cand_s.values()) if isinstance(cand_s, dict) else cand_s
+                elif session.get("reg_no") == reg or session.get("candidate_id") == cid or (not session.get("reg_no") and idx == 1):
+                    resp_list = active_responses
+
+            cand_res = ScoringEngine.calculate_score(
+                responses=resp_list,
+                questions_map=questions_map,
+                config=scoring_cfg,
+            )
+            cand_score = cand_res["total_score"]
+
+        is_submitted = (cand_score > 0 or att_status == "submitted" or meta.get("exam_status") == "submitted")
+        status_label = "Submitted" if is_submitted else "In Progress"
+
+        if status_filter_val != "ALL":
+            if status_filter_val in ("SUBMITTED", "COMPLETED") and not is_submitted:
+                continue
+            if status_filter_val in ("IN_PROGRESS", "ACTIVE") and is_submitted:
+                continue
+
+        if is_submitted:
+            scores.append(cand_score)
+
+        record = {
+            "candidate_id": cid,
+            "attempt_id": att.get("id") if att else None,
+            "registration_number": reg,
+            "roll_number": roll,
+            "full_name": name,
+            "email": email,
+            "category": category,
+            "gender": gender,
+            "terminal": terminal,
+            "score": cand_score,
+            "raw_score": cand_score,
+            "max_marks": cand_res.get("max_possible_score", total_marks),
+            "percentage": cand_res.get("percentage", 0.0),
+            "accuracy": cand_res.get("accuracy"),
+            "accuracy_display": cand_res.get("accuracy_display", "N/A"),
+            "correct_count": cand_res.get("correct_count", 0),
+            "incorrect_count": cand_res.get("incorrect_count", 0),
+            "unanswered_count": cand_res.get("unanswered_count", 0),
+            "attempted_count": cand_res.get("attempted_count", 0),
+            "marked_for_review_count": cand_res.get("marked_for_review_count", 0),
+            "bonus_count": cand_res.get("bonus_count", 0),
+            "marks_before_penalty": cand_res.get("marks_before_penalty", 0.0),
+            "penalty_deducted": cand_res.get("penalty_deducted", 0.0),
+            "bonus_marks": cand_res.get("bonus_marks", 0.0),
+            "time_taken_seconds": meta.get("time_taken_seconds", 0),
+            "time_taken_display": meta.get("time_taken_display", cand_res.get("time_taken_display", "--")),
+            "submitted_at_ist": cand_res.get("submitted_at") or meta.get("submitted_at") or format_ist_now(),
+            "status": status_label,
+            "disqualified": False,
+            "remarks": meta.get("remarks") or "Verified",
+            "subject_breakdown": cand_res.get("subject_breakdown", {}),
+        }
+        results_valid.append(record)
+
+    results_valid.sort(key=lambda x: x["score"], reverse=True)
+    for r_idx, item in enumerate(results_valid, start=1):
+        item["rank"] = r_idx
+
+    for item in results_disq:
+        item["rank"] = "DISQ"
+
+    all_results = results_valid + results_disq
+
+    avg_score = round(sum(scores) / len(scores), 2) if scores else 0.0
+    highest_score = max(scores, default=0.0)
+    lowest_score = min(scores, default=0.0)
+    pass_mark = total_marks * 0.40  # 40% standard qualifying threshold
+    pass_count = sum(1 for s in scores if s >= pass_mark)
+    fail_count = len(scores) - pass_count
+
+    return {
+        "status": "success",
+        "exam_id": exam_id,
+        "exam_code": exam_code,
+        "exam_title": exam_title,
+        "view_mode": view_mode or "normal",
+        "marking_scheme": {
+            "correct_marks": correct_m,
+            "negative_marks": neg_m,
+            "negative_marking_enabled": neg_en,
+            "total_marks": total_marks,
+            "total_questions": total_q_count,
+        },
+        "analytics": {
+            "total_enrolled": len(candidates),
+            "total_appeared": len(candidates),
+            "pass_count": pass_count,
+            "fail_count": fail_count,
+            "highest_score": highest_score,
+            "lowest_score": lowest_score,
+            "average_score": avg_score,
+            "pass_rate_pct": round((pass_count / max(len(scores), 1)) * 100, 1),
+        },
+        "results": all_results,
+    }
+
+
+@router.get("/{exam_id}/results/{candidate_id}")
+def get_candidate_result_dossier(exam_id: str, candidate_id: str):
+    """
+    Returns itemized examination dossier for a specific candidate.
+    Includes question-by-question review, chosen option, correct key, and score delta.
+    """
+    norm_id = _resolve_exam_id(exam_id)
+    db = get_db()
+
+    # Fetch candidate
+    c_res = db.table("candidates").select("*").eq("id", candidate_id).limit(1).execute()
+    if not c_res.data:
+        c_res = db.table("candidates").select("*").eq("registration_number", candidate_id).limit(1).execute()
+    if not c_res.data:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    c = c_res.data[0]
+    cid = str(c["id"])
+
+    # Fetch exam marking scheme
+    exam_cfg = {}
+    try:
+        ex_res = db.table("exams").select("*").eq("id", norm_id).limit(1).execute()
+        if ex_res.data:
+            exam_cfg = ex_res.data[0].get("config") or {}
+    except Exception:
+        pass
+
+    correct_m = float(exam_cfg.get("correct_marks", 4.0))
+    neg_en = bool(exam_cfg.get("negative_marking_enabled", True))
+    neg_m = 0.0 if not neg_en else float(exam_cfg.get("negative_marks", 1.0))
+
+    questions_map = _get_authoritative_exam_questions(db, exam_id)
+
+    # Fetch responses from DB
+    resp_list = []
+    try:
+        att_res = db.table("exam_attempts").select("id").eq("exam_id", norm_id).eq("candidate_id", cid).limit(1).execute()
+        if att_res.data:
+            att_id = att_res.data[0]["id"]
+            db_res = db.table("responses").select("*").eq("attempt_id", att_id).execute()
+            for r in (db_res.data or []):
+                rd = r.get("response_data")
+                ans = rd.get("answer") if isinstance(rd, dict) else rd
+                resp_list.append({
+                    "question_id": str(r["question_id"]),
+                    "answer": ans,
+                    "response_data": ans,
+                    "status": r.get("status"),
+                })
+    except Exception as ex:
+        logger.warning(f"Error fetching candidate responses: {ex}")
+
+    # Fallback to in-memory session if DB responses were empty
+    if not resp_list:
+        session = _get_or_create_session(norm_id)
+        cand_s = session.get("candidate_responses", {}).get(cid) or session.get("candidate_responses", {}).get(c.get("registration_number"))
+        if cand_s:
+            resp_list = list(cand_s.values()) if isinstance(cand_s, dict) else cand_s
+
+    scoring_result = ScoringEngine.calculate_score(
+        responses=resp_list,
+        questions_map=questions_map,
+        config={
+            "correct_marks": correct_m,
+            "negative_marks": neg_m,
+            "negative_marking_enabled": neg_en,
+        },
+    )
+
+    return {
+        "status": "success",
+        "exam_id": exam_id,
+        "candidate": {
+            "id": cid,
+            "full_name": c.get("full_name"),
+            "registration_number": c.get("registration_number"),
+            "roll_number": (c.get("metadata") or {}).get("roll_number") or c.get("registration_number"),
+            "email": c.get("email"),
+            "category": c.get("category") or (c.get("metadata") or {}).get("category", "General"),
+            "gender": c.get("gender") or (c.get("metadata") or {}).get("gender", "Male"),
+        },
+        "scoring": scoring_result,
+    }
+
+
+@router.put("/{exam_id}/results/{candidate_id}")
+async def update_candidate_result(exam_id: str, candidate_id: str, payload: ResultUpdatePayload):
+    """
+    CRUD Update: Modifies remarks, status, or applies manual score adjustment.
+    Persists updates directly to Supabase Cloud DB.
+    """
+    norm_id = _resolve_exam_id(exam_id)
+    db = get_db()
+
+    c_res = db.table("candidates").select("*").eq("id", candidate_id).limit(1).execute()
+    if not c_res.data:
+        c_res = db.table("candidates").select("*").eq("registration_number", candidate_id).limit(1).execute()
+    if not c_res.data:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    c = c_res.data[0]
+    cid = str(c["id"])
+    meta = c.get("metadata") or {}
+
+    updates_meta: Dict[str, Any] = {}
+    if payload.remarks is not None:
+        updates_meta["remarks"] = payload.remarks.strip()
+    if payload.status is not None:
+        updates_meta["result_status"] = payload.status.strip()
+        if payload.status.lower() in ("disqualified", "debarred"):
+            updates_meta["disqualified"] = True
+            updates_meta["disqualification_reason"] = payload.reason or "Administrative Decision"
+        elif payload.status.lower() in ("submitted", "validated"):
+            updates_meta["disqualified"] = False
+    if payload.score_override is not None:
+        updates_meta["score"] = float(payload.score_override)
+        updates_meta["manual_score_override"] = True
+        updates_meta["override_reason"] = payload.reason or "Directorate Moderation"
+
+    meta.update(updates_meta)
+    db.table("candidates").update({"metadata": meta}).eq("id", cid).execute()
+
+    if payload.score_override is not None:
+        try:
+            db.table("exam_attempts").update({"score": float(payload.score_override)}).eq("exam_id", norm_id).eq("candidate_id", cid).execute()
+        except Exception:
+            pass
+
+    await ws_manager.broadcast("admin_feed", {
+        "type": "RESULT_UPDATED",
+        "exam_id": exam_id,
+        "candidate_id": cid,
+        "updates": updates_meta,
+    })
+
+    return {"status": "success", "message": "Candidate result updated in Cloud DB", "candidate_id": cid}
+
+
+@router.delete("/{exam_id}/results/{candidate_id}")
+async def delete_candidate_result(exam_id: str, candidate_id: str):
+    """
+    CRUD Delete: Purges / invalidates a candidate's attempt and responses for this exam in Supabase Cloud DB.
+    """
+    norm_id = _resolve_exam_id(exam_id)
+    db = get_db()
+
+    c_res = db.table("candidates").select("*").eq("id", candidate_id).limit(1).execute()
+    if not c_res.data:
+        c_res = db.table("candidates").select("*").eq("registration_number", candidate_id).limit(1).execute()
+    if not c_res.data:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    c = c_res.data[0]
+    cid = str(c["id"])
+
+    try:
+        att_res = db.table("exam_attempts").select("id").eq("exam_id", norm_id).eq("candidate_id", cid).execute()
+        for a in (att_res.data or []):
+            db.table("responses").delete().eq("attempt_id", a["id"]).execute()
+        db.table("exam_attempts").delete().eq("exam_id", norm_id).eq("candidate_id", cid).execute()
+    except Exception as e:
+        logger.warning(f"Error purging candidate attempt: {e}")
+
+    meta = c.get("metadata") or {}
+    meta.pop("score", None)
+    meta.pop("percentage", None)
+    meta.pop("accuracy", None)
+    meta["exam_status"] = "reset"
+    db.table("candidates").update({"metadata": meta}).eq("id", cid).execute()
+
+    session = _get_or_create_session(norm_id)
+    if "submitted_candidates" in session and cid in session["submitted_candidates"]:
+        session["submitted_candidates"].pop(cid, None)
+    if "candidate_responses" in session and cid in session["candidate_responses"]:
+        session["candidate_responses"].pop(cid, None)
+
+    await ws_manager.broadcast("admin_feed", {
+        "type": "RESULT_DELETED",
+        "exam_id": exam_id,
+        "candidate_id": cid,
+    })
+
+    return {"status": "success", "message": f"Candidate {c.get('registration_number')} result purged from Cloud DB."}
+
+
+@router.post("/{exam_id}/recalculate-results")
+async def recalculate_exam_results(exam_id: str, payload: Optional[Dict[str, Any]] = None):
+    """
+    Recalculates authoritative scores for all candidates of this exam against current answer keys
+    and dynamic marking scheme, permanently synchronizing to Cloud DB.
+    """
+    norm_id = _resolve_exam_id(exam_id)
+    db = get_db()
+
+    exam_cfg = {}
+    try:
+        ex_res = db.table("exams").select("*").eq("id", norm_id).limit(1).execute()
+        if ex_res.data:
+            exam_cfg = ex_res.data[0].get("config") or {}
+    except Exception:
+        pass
+
+    correct_m = float(exam_cfg.get("correct_marks", 4.0))
+    neg_en = bool(exam_cfg.get("negative_marking_enabled", True))
+    neg_m = 0.0 if not neg_en else float(exam_cfg.get("negative_marks", 1.0))
+    scoring_cfg = {
+        "correct_marks": correct_m,
+        "negative_marks": neg_m,
+        "negative_marking_enabled": neg_en,
+    }
+
+    questions_map = _get_authoritative_exam_questions(db, exam_id)
+
+    att_res = db.table("exam_attempts").select("*").eq("exam_id", norm_id).execute()
+    attempts = att_res.data or []
+    recalc_count = 0
+
+    for a in attempts:
+        att_id = a["id"]
+        cid = a.get("candidate_id")
+        if not cid:
+            continue
+
+        resp_res = db.table("responses").select("*").eq("attempt_id", att_id).execute()
+        resp_list = []
+        for r in (resp_res.data or []):
+            rd = r.get("response_data")
+            ans = rd.get("answer") if isinstance(rd, dict) else rd
+            resp_list.append({
+                "question_id": str(r["question_id"]),
+                "answer": ans,
+                "response_data": ans,
+                "status": r.get("status"),
+            })
+
+        scoring_result = ScoringEngine.calculate_score(
+            responses=resp_list,
+            questions_map=questions_map,
+            config=scoring_cfg,
+        )
+
+        try:
+            db.table("exam_attempts").update({"status": "submitted"}).eq("id", att_id).execute()
+        except Exception:
+            pass
+
+        mark_attempt_submitted_cloud_db(
+            db=db,
+            tenant_id=DEFAULT_TENANT_ID,
+            exam_id=exam_id,
+            candidate_id=cid,
+            scoring_result=scoring_result,
+        )
+        recalc_count += 1
+
+    await ws_manager.broadcast("admin_feed", {
+        "type": "RESULTS_RECALCULATED",
+        "exam_id": exam_id,
+        "recalculated_count": recalc_count,
+    })
+
+    return {
+        "status": "success",
+        "message": f"Successfully recalculated and synchronized {recalc_count} candidate results to Cloud DB.",
+        "recalculated_count": recalc_count,
+        "marking_applied": scoring_cfg,
     }
 
 
@@ -2754,19 +3340,23 @@ async def save_response(exam_id: str, payload: ResponsePayload):
     norm_id = _resolve_exam_id(exam_id)
     session = _get_or_create_session(norm_id)
 
-    if session["status"] == "submitted":
-        raise HTTPException(status_code=400, detail="Exam has already been submitted")
+    actual_cand_id = str(payload.candidate_id or "")
+    if actual_cand_id and actual_cand_id in session.get("submitted_candidates", {}):
+        raise HTTPException(status_code=400, detail="Candidate has already submitted this exam")
+
+    if session.get("status") == "concluded":
+        raise HTTPException(status_code=400, detail="Exam has already been concluded by the Examination Directorate")
 
     q_id = str(payload.question_id)
     idemp_key = payload.idempotency_key
 
-    # Idempotent write check in session memory
-    existing = session["responses"].get(q_id)
+    # Record response per candidate and in session memory
+    cand_resps = session.setdefault("candidate_responses", {}).setdefault(actual_cand_id or "default", {})
+    existing = cand_resps.get(q_id) or session["responses"].get(q_id)
     if existing and existing.get("idempotency_key") == idemp_key:
         return ResponseAck(status="success", saved=True, cloud_synced=True, question_id=q_id, message="Already synced")
 
-    # Record response in session
-    session["responses"][q_id] = {
+    cand_resps[q_id] = {
         "question_id": q_id,
         "answer": payload.answer,
         "response_data": payload.answer,
@@ -2774,6 +3364,7 @@ async def save_response(exam_id: str, payload: ResponsePayload):
         "idempotency_key": idemp_key,
         "timestamp": time.time(),
     }
+    session["responses"][q_id] = cand_resps[q_id]
 
     # 1. Real-Time Cloud DB Persistence (Supabase responses table)
     db = get_db()
@@ -3017,10 +3608,26 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
                     r["response_data"] = s_resp.get("response_data")
                     r["answer"] = s_resp.get("answer")
 
+    exam_row = None
+    try:
+        ex_res = db.table("exams").select("*").eq("id", norm_id).limit(1).execute()
+        if ex_res.data:
+            exam_row = ex_res.data[0]
+    except Exception:
+        pass
+    exam_cfg = (exam_row.get("config") if exam_row else {}) or {}
+    correct_m = float(exam_cfg.get("correct_marks", 4.0))
+    neg_en = bool(exam_cfg.get("negative_marking_enabled", True))
+    neg_m = 0.0 if not neg_en else float(exam_cfg.get("negative_marks", 1.0))
+
     scoring_result = ScoringEngine.calculate_score(
         responses=recorded_responses,
         questions_map=questions_map,
-        config={"correct_marks": 4.0, "negative_marks": 1.0},
+        config={
+            "correct_marks": correct_m,
+            "negative_marks": neg_m,
+            "negative_marking_enabled": neg_en,
+        },
     )
 
     start_t = float(session.get("start_time", time.time() - 2500))
@@ -3031,7 +3638,7 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
 
     ref = str(uuid.uuid4())[:8].upper()
     now_ist = format_ist_now()
-    session["status"] = "submitted"
+    session.setdefault("submitted_candidates", {})[str(actual_cand_id)] = True
     session["submission_time"] = time.time()
     session["reference"] = ref
     scoring_result["reference"] = ref

@@ -10,7 +10,7 @@
         const role = localStorage.getItem('user_role');
         const godMode = localStorage.getItem('god_mode') === 'true';
         if (!token || (role !== 'super_admin' && role !== 'admin' && !godMode)) {
-          alert('Access Restricted: Examination Controller credentials required to access the Master Question Bank.');
+          alert('Access Restricted: Examination Directorate credentials required to access the Master Question Bank.');
           window.location.replace('/login.html');
         }
       })();

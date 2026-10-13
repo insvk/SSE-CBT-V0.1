@@ -16,7 +16,7 @@
       const role = localStorage.getItem('user_role');
       const godMode = localStorage.getItem('god_mode') === 'true';
       if (!token || (role !== 'super_admin' && !godMode)) {
-        alert('Access Restricted: Examination Controller credentials required. Candidate sessions are restricted to the Candidate Examination Portal.');
+        alert('Access Restricted: Examination Directorate credentials required. Candidate sessions are restricted to the Candidate Examination Portal.');
         window.location.replace('/login.html');
       }
     })();
@@ -1646,7 +1646,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/admin-0c210db3.js"></script>
+  <script type="module" crossorigin src="/assets/admin-4df5ee7a.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
 </head>
 
@@ -1815,13 +1815,13 @@
           </button>
 
           <!-- User Profile Avatar Pill -->
-          <div class="user-pill" title="Chief Examination Controller">
+          <div class="user-pill" title="Examination Directorate">
             <div class="user-avatar-wrap">
-              <div class="user-avatar">EC</div>
+              <div class="user-avatar">ED</div>
               <div class="online-dot"></div>
             </div>
             <div class="user-meta">
-              <span class="user-name">Exam Controller</span>
+              <span class="user-name">Examination Directorate</span>
               <span class="user-role">ADMIN</span>
             </div>
           </div>
@@ -2247,7 +2247,7 @@
           </div>
 
           <!-- EXAMS TABLE -->
-          <div style="overflow-x: auto;">
+          <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
             <table>
               <thead>
                 <tr>
@@ -2338,7 +2338,7 @@
               </div>
             </div>
 
-            <div style="overflow-x: auto;">
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
               <table>
                 <thead>
                   <tr>
@@ -2393,6 +2393,137 @@
 
           </div>
 
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- HIGH-END RESULT MANAGEMENT SUITE (EXAM-WISE CRUD & ADVANCED/NORMAL) -->
+        <!-- =================================================================== -->
+        <div class="table-card-box" id="results-management-section" style="margin-top: 1.5rem;">
+          <div class="table-header-bar" style="flex-wrap: wrap; gap: 1rem;">
+            <div class="table-title-area">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-heading); margin: 0;">
+                  High-End Examination Result Management Suite
+                </h3>
+                <span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">
+                  CLOUD DB VERIFIED
+                </span>
+                <span class="badge-pill" style="background: rgba(79, 70, 229, 0.12); color: #4f46e5; font-weight: 800;">
+                  CRUD ACTIVE
+                </span>
+              </div>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                Authoritative Cloud DB Storage &bull; Dynamic Marking Engine &bull; Itemized Response Dossiers &bull; Normal &amp; Advanced Toggles
+              </p>
+            </div>
+
+            <!-- EXAM PICKER & VIEW MODE TOGGLE -->
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); white-space: nowrap;">Target Exam:</label>
+                <select class="form-input-ctrl" id="results-exam-select" style="min-width: 220px; max-width: 320px; padding: 0.4rem 0.75rem; font-size: 0.8rem; font-weight: 700;">
+                  <option value="">-- Select Examination --</option>
+                </select>
+              </div>
+
+              <!-- VIEW MODE TOGGLES: NORMAL VS ADVANCED -->
+              <div style="display: inline-flex; background: var(--bg-body); padding: 3px; border-radius: 6px; border: 1px solid var(--border-color);">
+                <button type="button" class="btn btn-sm" id="btn-results-mode-normal"
+                  style="background: var(--brand-blue); color: white; font-weight: 700; border-radius: 4px; padding: 4px 12px; font-size: 0.78rem; border: none; cursor: pointer;">
+                  Normal View
+                </button>
+                <button type="button" class="btn btn-sm" id="btn-results-mode-advanced"
+                  style="background: transparent; color: var(--text-muted); font-weight: 700; border-radius: 4px; padding: 4px 12px; font-size: 0.78rem; border: none; cursor: pointer;">
+                  Advanced Dossier View
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- DYNAMIC MARKING SCHEME BANNER -->
+          <div id="results-marking-banner"
+            style="background: linear-gradient(135deg, rgba(30, 58, 138, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.75rem 1rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 0.82rem; font-weight: 800; color: var(--text-heading);" id="rmb-exam-title">All India CBT Mock Assessment</span>
+              <span class="badge-pill" id="rmb-q-count" style="background: rgba(50, 31, 219, 0.1); color: var(--brand-blue); font-weight: 700;">Questions: --</span>
+              <span class="badge-pill" id="rmb-correct-m" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 700;">Per Question: +4</span>
+              <span class="badge-pill" id="rmb-neg-m" style="background: rgba(239, 68, 68, 0.12); color: #dc2626; font-weight: 700;">Penalty: -1</span>
+              <span class="badge-pill" id="rmb-total-m" style="background: #1e3a8a; color: white; font-weight: 800;">Total Marks: --</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-recalc-results-top" style="color: #4f46e5; border-color: #c7d2fe; font-weight: 700;">
+                ⚡ Recalculate &amp; Sync Scores
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-export-results-csv-top">
+                📥 CSV
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-export-results-xls-top" style="color: #047857; border-color: #a7f3d0; font-weight: 700;">
+                📊 Excel (XLS)
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-export-results-resp-top">
+                📄 Responses CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- ANALYTICS KPI SUMMARY CARDS -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.75rem 1rem;">
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Appeared</div>
+              <div style="font-size: 1.35rem; font-weight: 800; color: var(--text-heading); margin: 2px 0;" id="kpi-total-cands">0</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Verified Submissions</div>
+            </div>
+            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.75rem 1rem;">
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Highest Score</div>
+              <div style="font-size: 1.35rem; font-weight: 800; color: #047857; margin: 2px 0;" id="kpi-highest-score">0 / 0</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Topper Performance</div>
+            </div>
+            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.75rem 1rem;">
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Average Score</div>
+              <div style="font-size: 1.35rem; font-weight: 800; color: #4f46e5; margin: 2px 0;" id="kpi-avg-score">0.0</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Batch Class Mean</div>
+            </div>
+            <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.75rem 1rem;">
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Pass / Qualified Rate</div>
+              <div style="font-size: 1.35rem; font-weight: 800; color: #d97706; margin: 2px 0;" id="kpi-pass-rate">0.0%</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Benchmark &ge; 40%</div>
+            </div>
+          </div>
+
+          <!-- SEARCH & FILTER CONTROLS FOR RESULTS -->
+          <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
+            <input type="text" class="table-search-input" id="results-search-input"
+              placeholder="Search result by candidate name, roll no, terminal..."
+              style="flex: 1; min-width: 240px; height: 36px; border-radius: var(--radius); border: 1px solid var(--border-color); background: var(--bg-body); padding: 0 0.85rem; font-size: 0.825rem; color: var(--text-heading); outline: none;" />
+
+            <select class="table-filter-select" id="results-status-filter"
+              style="height: 36px; border-radius: var(--radius); border: 1px solid var(--border-color); background: var(--bg-body); padding: 0 0.85rem; font-size: 0.825rem; color: var(--text-heading); outline: none;">
+              <option value="ALL">All Result Statuses</option>
+              <option value="submitted">Submitted / Completed</option>
+              <option value="disqualified">Disqualified / Debarred</option>
+              <option value="reset">Reset / Inactive</option>
+            </select>
+
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);" id="results-count-ticker">
+              Showing 0 candidate records
+            </div>
+          </div>
+
+          <!-- RESULTS TABLE (RESPONSIVE WRAPPER) -->
+          <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border-color); border-radius: var(--radius);">
+            <table id="table-results-mgmt" style="width: 100%; border-collapse: collapse;">
+              <thead id="results-table-head">
+                <!-- Swapped between Normal & Advanced by JavaScript -->
+              </thead>
+              <tbody id="results-table-body">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                    Select an examination from the dropdown above to load verified Cloud DB results.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- OFFICIAL INSTITUTIONAL FOOTER -->
@@ -2567,7 +2698,7 @@
     <div class="modal-box">
       <h2>Grant Compensatory Time Accommodation</h2>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-        Official Examination Controller Accommodation (PwD / Scribe / Hardware Glitch Relief).
+        Official Examination Directorate Accommodation (PwD / Scribe / Hardware Glitch Relief).
       </p>
 
       <form id="form-extend-candidate-time">
@@ -2897,8 +3028,9 @@
         </div>
 
         <!-- Schedule & Venue Details -->
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 1rem;">
         <table id="admit-slots-table"
-          style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.8rem; border: 1px solid #cbd5e1;">
+          style="width: 100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #cbd5e1;">
           <tr style="background: #f8fafc;">
             <th
               style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: left; font-size: 0.72rem; color: #475569;">
@@ -2923,6 +3055,7 @@
             <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;" id="admit-exam-timings">Subject Paper Slot A</td>
           </tr>
         </table>
+        </div>
 
         <!-- Venue & Terminal -->
         <div id="admit-venue-block"
@@ -2964,7 +3097,7 @@
               ADMIN@SSE.IN</div>
             <div
               style="font-size: 0.72rem; color: #0f172a; font-weight: 800; border-top: 1px solid #64748b; padding-top: 4px;" id="admit-controller-desig">
-              Controller of Examinations</div>
+              Examination Directorate</div>
             <div style="font-size: 0.65rem; color: #475569;" id="admit-controller-inst">SSE CBT PLATFORM</div>
           </div>
         </div>
@@ -3231,7 +3364,7 @@
         </div>
 
         <div style="margin-bottom: 1.25rem;">
-          <label class="form-label">Controller Executive Directive Note</label>
+          <label class="form-label">Directorate Executive Directive Note</label>
           <input type="text" class="form-input-ctrl" id="advance-phase-note"
             value="Authorized under SSE CBT Examination Directive 2026." required />
         </div>
@@ -3250,8 +3383,8 @@
     <div class="modal-box">
       <h2>Question Paper Custody Decryption</h2>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-        Authoritative CBT Standard: Question paper items remain cryptographically locked in storage until the Chief
-        Controller supplies the authoritative master custody key.
+        Authoritative CBT Standard: Question paper items remain cryptographically locked in storage until the Examination
+        Directorate supplies the authoritative master custody key.
       </p>
 
       <form id="form-paper-decrypt">
@@ -3266,7 +3399,7 @@
         <div style="margin-bottom: 1.25rem;">
           <label class="form-label">Master Custody Decryption Key</label>
           <input type="password" class="form-input-ctrl" id="input-custody-key"
-            placeholder="Enter Controller Custody Key (e.g. SSEC-CBT-KEY-2026)" required />
+            placeholder="Enter Directorate Custody Key (e.g. SSEC-CBT-KEY-2026)" required />
           <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
             Default Authorized Key: <code
               style="font-family: var(--font-mono); color: var(--brand-blue);">SSEC-CBT-KEY-2026</code>
@@ -3436,7 +3569,7 @@
           <div>&bull; <strong>Cryptographic Response Digest:</strong> <code
               style="font-family: var(--font-mono); font-size: 0.72rem; color: #1e3a8a;"
               id="cr-sha256-seal">SHA256: 7C14AE9F...</code></div>
-          <div>&bull; <strong>Official Certifying Officer:</strong> ADMIN@SSE.IN (Chief Examination Controller)
+          <div>&bull; <strong>Official Certifying Officer:</strong> ADMIN@SSE.IN (Examination Directorate)
           </div>
         </div>
 
@@ -3563,13 +3696,50 @@
           </div>
 
           <div>
-            <label class="form-label">Marks for Correct Answer</label>
-            <input type="number" class="form-input-ctrl" id="exam-correct-marks-input" value="4" min="1" max="20" />
+            <label class="form-label">Marks for Correct Answer (+M) *</label>
+            <input type="number" step="0.5" class="form-input-ctrl" id="exam-correct-marks-input" value="4" min="0.5" max="50" required />
+            <span style="font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; display: block;">Points awarded per correct response</span>
           </div>
 
           <div>
-            <label class="form-label">Negative Marks (Penalty)</label>
-            <input type="number" class="form-input-ctrl" id="exam-negative-marks-input" value="1" min="0" max="10" />
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+              <label class="form-label" style="margin-bottom: 0;">Negative Marking *</label>
+              <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700;">
+                <input type="checkbox" id="exam-negative-marking-toggle" checked style="width: 16px; height: 16px; accent-color: #ef4444; cursor: pointer;" />
+                <span id="exam-neg-toggle-label" style="color: #ef4444; font-weight: 800;">PENALTY ON</span>
+              </label>
+            </div>
+            <input type="number" step="0.25" class="form-input-ctrl" id="exam-negative-marks-input" value="1" min="0" max="20" />
+            <span id="exam-neg-hint" style="font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; display: block;">Penalty deducted per incorrect answer</span>
+          </div>
+
+          <!-- DYNAMIC LIVE MARKING ENGINE CALCULATOR BADGE -->
+          <div class="form-group-full" style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius); padding: 0.85rem 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-heading); display: flex; align-items: center; gap: 6px;">
+                  <span>⚡ Authoritative Dynamic Marking Engine</span>
+                  <span class="badge-pill" style="background: #10b981; color: white; font-weight: 800;">AUTO-CALCULATED</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                  Calculated automatically: Total Marks = (Selected Questions) &times; (Marks per Question)
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 700;">
+                  Questions: <span id="calc-live-q-count" style="color: var(--brand-blue); font-size: 0.88rem;">0</span>
+                </div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 700;">
+                  Per Question: <span id="calc-live-per-q" style="color: #047857; font-size: 0.88rem;">+4</span>
+                </div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 700;">
+                  Negative Penalty: <span id="calc-live-neg-m" style="color: #dc2626; font-size: 0.88rem;">-1</span>
+                </div>
+                <div style="background: var(--brand-blue); color: white; border-radius: 6px; padding: 0.35rem 0.85rem; font-size: 0.82rem; font-weight: 800; box-shadow: 0 2px 6px rgba(50, 31, 219, 0.3);">
+                  Total Marks: <span id="calc-live-total-marks" style="font-size: 1.05rem; letter-spacing: -0.02em;">0</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -3803,7 +3973,7 @@
         <div style="font-size: 0.825rem; font-weight: 800; color: var(--text-heading); margin-bottom: 0.5rem;">
           Top Ranking Candidate Performers:
         </div>
-        <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: var(--radius);">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border-color); border-radius: var(--radius);">
           <table>
             <thead>
               <tr>
@@ -3991,7 +4161,7 @@
               </label>
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="setting-admit-show-signatures" checked />
-                <span>Show Invigilator &amp; Controller Signatures</span>
+                <span>Show Invigilator &amp; Directorate Signatures</span>
               </label>
             </div>
           </div>
@@ -4050,7 +4220,7 @@
               </label>
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="setting-sc-show-signature" checked />
-                <span>Show Controller of Examinations Signature Block</span>
+                <span>Show Examination Directorate Signature Block</span>
               </label>
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="setting-sc-show-seal" checked />
@@ -4066,12 +4236,12 @@
             <div style="font-weight: 800; font-size: 0.9rem; color: #1e3a8a; margin-bottom: 0.75rem;">Signatory &amp; Examination Authority</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div>
-                <label class="form-label">Controller of Examination Name</label>
+                <label class="form-label">Examination Directorate Name</label>
                 <input type="text" class="form-input-ctrl" id="setting-controller-name" value="ADMIN@SSE.IN" required />
               </div>
               <div>
-                <label class="form-label">Controller Official Designation</label>
-                <input type="text" class="form-input-ctrl" id="setting-controller-desig" value="Controller of Examinations" required />
+                <label class="form-label">Directorate Official Designation</label>
+                <input type="text" class="form-input-ctrl" id="setting-controller-desig" value="Examination Directorate" required />
               </div>
             </div>
           </div>
@@ -4110,6 +4280,148 @@
               💾 Save to Cloud DB (Supabase)
             </button>
           </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =================================================================== -->
+  <!-- 11. CANDIDATE ITEMIZED RESULT DOSSIER MODAL                         -->
+  <!-- =================================================================== -->
+  <div class="modal-backdrop" id="modal-result-dossier">
+    <div class="modal-box" style="max-width: 850px; width: 95%;">
+      <div
+        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+        <div>
+          <h2
+            style="font-size: 1.25rem; font-weight: 800; color: var(--text-heading); display: flex; align-items: center; gap: 8px;">
+            <span>Candidate Examination Dossier</span>
+            <span class="badge-pill" id="dossier-status-badge" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">
+              VERIFIED
+            </span>
+          </h2>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;" id="dossier-candidate-subtitle">
+            Itemized Question-Level Response Breakdown &bull; Cloud DB Synchronized
+          </p>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm"
+          onclick="document.getElementById('modal-result-dossier').style.display='none'">Close</button>
+      </div>
+
+      <!-- CANDIDATE SUMMARY CARD -->
+      <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; text-align: center;">
+          <div style="background: var(--bg-card); padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">RAW SCORE</div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #047857;" id="dossier-raw-score">--</div>
+          </div>
+          <div style="background: var(--bg-card); padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">PERCENTAGE</div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: var(--brand-blue);" id="dossier-percentage">--</div>
+          </div>
+          <div style="background: var(--bg-card); padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">ACCURACY</div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #4f46e5;" id="dossier-accuracy">--</div>
+          </div>
+          <div style="background: var(--bg-card); padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">CORRECT / INCORRECT</div>
+            <div style="font-size: 1rem; font-weight: 800; color: var(--text-heading);" id="dossier-breakdown-counts">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ITEMIZED QUESTIONS BREAKDOWN TABLE -->
+      <div style="max-height: 400px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 1rem;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+          <thead style="position: sticky; top: 0; background: var(--bg-card); z-index: 2;">
+            <tr>
+              <th style="width: 45px;">#</th>
+              <th style="min-width: 180px;">Question Statement</th>
+              <th>Selected Option</th>
+              <th>Correct Key</th>
+              <th>Status</th>
+              <th>Marks</th>
+            </tr>
+          </thead>
+          <tbody id="dossier-questions-body">
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+                Loading candidate question-level responses...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" class="btn btn-primary btn-sm"
+          onclick="document.getElementById('modal-result-dossier').style.display='none'">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================================================================== -->
+  <!-- 12. CRUD EDIT CANDIDATE RESULT / REMARKS MODAL                      -->
+  <!-- =================================================================== -->
+  <div class="modal-backdrop" id="modal-edit-result">
+    <div class="modal-box" style="max-width: 520px; width: 95%;">
+      <div
+        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+        <div>
+          <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--text-heading);">
+            Edit Result &amp; Directorate Remarks
+          </h2>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+            Authoritative Cloud DB Override &bull; Direct Audit Trail
+          </p>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm"
+          onclick="document.getElementById('modal-edit-result').style.display='none'">Close</button>
+      </div>
+
+      <form id="form-edit-result">
+        <input type="hidden" id="edit-result-cand-id" />
+        <input type="hidden" id="edit-result-exam-id" />
+
+        <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 0.75rem 1rem; margin-bottom: 1rem;">
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Target Candidate:</div>
+          <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-heading);" id="edit-result-cand-name">--</div>
+          <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--brand-blue);" id="edit-result-cand-reg">--</div>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label class="form-label">Result Status</label>
+          <select class="form-input-ctrl" id="edit-result-status-select">
+            <option value="submitted">Submitted (Valid)</option>
+            <option value="validated">Validated (Directorate Approved)</option>
+            <option value="disqualified">Disqualified (Nullified)</option>
+            <option value="debarred">Debarred</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label class="form-label">Official Directorate Remarks / Notes</label>
+          <textarea class="form-input-ctrl" id="edit-result-remarks" rows="3"
+            placeholder="e.g. Identity verified by Directorate. Score validated after technical review."></textarea>
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <label class="form-label">Manual Score Override (Optional)</label>
+          <input type="number" step="0.5" class="form-input-ctrl" id="edit-result-score-override"
+            placeholder="Leave blank to retain calculated raw score" />
+          <span style="font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; display: block;">
+            Requires administrative justification in remarks if modified.
+          </span>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-outline"
+            onclick="document.getElementById('modal-edit-result').style.display='none'">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-result-edit">
+            Save to Cloud DB &rarr;
+          </button>
         </div>
       </form>
     </div>

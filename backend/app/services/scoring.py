@@ -36,6 +36,8 @@ class ScoringEngine:
         responses: List[Dict[str, Any]],
         questions_map: Dict[str, Dict[str, Any]],
         config: Optional[Dict[str, Any]] = None,
+        negative_marking_enabled: Optional[bool] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         """
         Authoritative server-side scoring for an exam attempt.
@@ -43,10 +45,18 @@ class ScoringEngine:
         :param responses: List of candidate responses [{'question_id': '...', 'response_data': ..., 'status': ...}]
         :param questions_map: Dict mapping question_id to question record with correct_answer, options, subject, etc.
         :param config: Exam configuration with marking rules
+        :param negative_marking_enabled: Explicit override for negative marking toggle
         """
         config = config or {}
+        if kwargs:
+            config.update(kwargs)
         default_correct = float(config.get("correct_marks", 4.0))
-        default_negative = float(config.get("negative_marks", 1.0))
+        if negative_marking_enabled is None:
+            negative_marking_enabled = bool(config.get("negative_marking_enabled", True))
+        if not negative_marking_enabled:
+            default_negative = 0.0
+        else:
+            default_negative = float(config.get("negative_marks", 1.0))
         tolerance = float(config.get("numerical_tolerance", 0.01))
 
         total_score = 0.0
@@ -90,7 +100,10 @@ class ScoringEngine:
 
             # Per-question marking configuration with exam defaults as fallback
             q_correct_marks = float(q_data.get("marks") or q_data.get("positive_marks") or default_correct)
-            q_neg_marks = float(q_data.get("negative_marks") if q_data.get("negative_marks") is not None else default_negative)
+            if not negative_marking_enabled:
+                q_neg_marks = 0.0
+            else:
+                q_neg_marks = float(q_data.get("negative_marks") if q_data.get("negative_marks") is not None else default_negative)
 
             max_possible_score += q_correct_marks
 
@@ -329,6 +342,7 @@ class ScoringEngine:
             "marks_before_penalty": round(marks_before_penalty, 2),
             "penalty_deducted": round(penalty_deducted, 2),
             "bonus_marks": round(bonus_marks, 2),
+            "negative_marking_enabled": negative_marking_enabled,
             "subject_breakdown": subject_scores,
             "details": details,
         }

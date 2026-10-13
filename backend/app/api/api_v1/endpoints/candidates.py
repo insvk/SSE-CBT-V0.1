@@ -653,7 +653,7 @@ def get_candidate_admit_card(
         term_pref = admit_tmpl.get("terminal_prefix") or settings.get("terminal_prefix") or f"T-{cand.batch}-"
         assigned_terminal = cand.assigned_terminal or f"{term_pref}{cand.id[-4:].upper()}"
         ctrl_name = admit_tmpl.get("controller_name") or settings.get("controller_name") or "ADMIN@SSE.IN"
-        ctrl_desig = admit_tmpl.get("controller_designation") or settings.get("controller_designation") or "Controller of Examinations"
+        ctrl_desig = admit_tmpl.get("controller_designation") or settings.get("controller_designation") or "Examination Directorate"
         inst_name = admit_tmpl.get("institution_name") or settings.get("institution_name") or "SSE CBT PLATFORM"
         exam_title = admit_tmpl.get("examination_title") or settings.get("examination_title") or "MCQ ASSESSMENT [ SSE CBT 2026 ]"
 
@@ -943,7 +943,7 @@ def suspend_candidate(candidate_id: str, user_context: dict = Depends(require_ad
 
 @router.patch("/{candidate_id}/toggle-status")
 async def toggle_candidate_status(candidate_id: str, user_context: dict = Depends(require_admin_user)):
-    """Examination Controller Tool: Toggles candidate status between active and suspended."""
+    """Examination Directorate Tool: Toggles candidate status between active and suspended."""
     tid = user_context["tenant_id"]
     db = get_db()
 
@@ -977,7 +977,7 @@ async def toggle_candidate_status(candidate_id: str, user_context: dict = Depend
 
 @router.post("/{candidate_id}/reset-attempt")
 async def reset_candidate_attempt(candidate_id: str, user_context: dict = Depends(require_admin_user)):
-    """Examination Controller Tool: Resets candidate exam attempt for immediate re-take."""
+    """Examination Directorate Tool: Resets candidate exam attempt for immediate re-take."""
     tid = user_context["tenant_id"]
     db = get_db()
 
@@ -1021,7 +1021,7 @@ async def reset_candidate_attempt(candidate_id: str, user_context: dict = Depend
 @router.delete("/{candidate_id}")
 async def delete_candidate(candidate_id: str, user_context: dict = Depends(require_admin_user)):
     """
-    Chief Examination Controller Tool:
+    Examination Directorate Tool:
     Permanently deregisters candidate from Cloud Database, cascades related attempts,
     and broadcasts event in real-time.
     """

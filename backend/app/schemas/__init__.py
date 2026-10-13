@@ -86,7 +86,7 @@ class AccommodationsUpdateRequest(BaseModel):
 
 class DebarCandidateRequest(BaseModel):
     reason: str
-    debarred_by: Optional[str] = "Examination Controller"
+    debarred_by: Optional[str] = "Examination Directorate"
 
 
 class BulkReallocateRequest(BaseModel):
@@ -115,7 +115,7 @@ class AdmitCardStructure(BaseModel):
     default_lab_room: Optional[str] = "LAB-01 (Block-A)"
     terminal_prefix: Optional[str] = "T-A-"
     controller_name: Optional[str] = "ADMIN@SSE.IN"
-    controller_designation: Optional[str] = "Controller of Examinations"
+    controller_designation: Optional[str] = "Examination Directorate"
     instructions_text: Optional[str] = "1. Government photo ID card mandatory for physical entrance.\n2. Electronic devices, smartwatches, and calculators strictly prohibited.\n3. Continuous webcam biometric tracking and screen proctoring active.\n4. Candidates must report at the allocated test center prior to gate closure."
     show_barcode: Optional[bool] = True
     show_photo: Optional[bool] = True
@@ -131,7 +131,7 @@ class ScorecardStructure(BaseModel):
     document_title: Optional[str] = "MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card"
     subhead_status_text: Optional[str] = "Status: Authenticated & Cloud Verified"
     controller_name: Optional[str] = "ADMIN@SSE.IN"
-    controller_designation: Optional[str] = "Controller of Examinations"
+    controller_designation: Optional[str] = "Examination Directorate"
     test_venue_name: Optional[str] = "SSE Digital Assessment Hub Node 01"
     footer_disclaimer: Optional[str] = "© 2026 Saveetha School of Engineering • CBT Examination Directorate. All rights reserved."
     show_score_banner: Optional[bool] = True
@@ -167,7 +167,7 @@ class AdmitCardResponse(BaseModel):
     compensatory_minutes: int
     authorized_signature_title: str
     controller_name: Optional[str] = "ADMIN@SSE.IN"
-    controller_designation: Optional[str] = "Controller of Examinations"
+    controller_designation: Optional[str] = "Examination Directorate"
     institution_name: Optional[str] = "SSE CBT PLATFORM"
     examination_title: Optional[str] = "MCQ ASSESSMENT [ SSE CBT 2026 ]"
     generated_at_ist: str
@@ -188,7 +188,7 @@ class ExamCenterSettings(BaseModel):
     institution_name: Optional[str] = "SSE CBT PLATFORM"
     examination_title: Optional[str] = "MCQ ASSESSMENT [ SSE CBT 2026 ]"
     controller_name: Optional[str] = "ADMIN@SSE.IN"
-    controller_designation: Optional[str] = "Controller of Examinations"
+    controller_designation: Optional[str] = "Examination Directorate"
     test_venue_name: Optional[str] = "SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105"
     test_center_code: Optional[str] = "SSEC-TN-042"
     default_lab_room: Optional[str] = "LAB-01 (Block-A)"
@@ -299,7 +299,7 @@ class CandidateInterventionRequest(BaseModel):
 
 class ExamPhaseAdvanceRequest(BaseModel):
     target_phase: str  # "staged", "admissions_open", "paper_decrypted", "active_concurrency", "concluded", "tabulated_sealed"
-    authorizing_controller: Optional[str] = "ADMIN@SSE.IN (Chief Examination Controller)"
+    authorizing_controller: Optional[str] = "ADMIN@SSE.IN (Examination Directorate)"
     notes: Optional[str] = "Phase transition authorized under National CBT Standard Operating Procedures."
 
 
@@ -358,7 +358,7 @@ class ClosingReportResponse(BaseModel):
     average_score: float
     integrity_digest_sha256: str
     sealed_by: str = "ADMIN@SSE.IN"
-    designation: str = "Chief Examination Controller"
+    designation: str = "Examination Directorate"
 
 
 class ExamCreateAdvanced(BaseModel):
@@ -375,6 +375,8 @@ class ExamCreateAdvanced(BaseModel):
     question_ids: Optional[List[str]] = []
     correct_marks: float = 4.0
     negative_marks: float = 1.0
+    negative_marking_enabled: Optional[bool] = True
+    total_marks: Optional[float] = None
     ai_camera_enabled: Optional[bool] = True
     sections: Optional[Union[List[str], List[Dict[str, Any]]]] = None
     assigned_candidate_ids: Optional[List[str]] = []
@@ -401,6 +403,8 @@ class ExamUpdateAdvanced(BaseModel):
     question_ids: Optional[List[str]] = None
     correct_marks: Optional[float] = None
     negative_marks: Optional[float] = None
+    negative_marking_enabled: Optional[bool] = None
+    total_marks: Optional[float] = None
     ai_camera_enabled: Optional[bool] = None
     sections: Optional[Union[List[str], List[Dict[str, Any]]]] = None
     assigned_candidate_ids: Optional[List[str]] = None
@@ -411,6 +415,13 @@ class ExamUpdateAdvanced(BaseModel):
     terminal_prefix: Optional[str] = None
     slot_batch: Optional[str] = None
     config: Optional[Dict[str, Any]] = None
+
+
+class ResultUpdatePayload(BaseModel):
+    remarks: Optional[str] = None
+    status: Optional[str] = None  # "Submitted", "Validated", "Under Review", "Invalidated", "Debarred"
+    score_override: Optional[float] = None
+    reason: Optional[str] = None
 
 
 class DeviceRegisterRequest(BaseModel):

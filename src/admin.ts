@@ -1023,7 +1023,7 @@ function openDebarModal(id: string): void {
 }
 
 async function deleteCandidateRecord(id: string, name: string): Promise<void> {
-    if (!confirm(`Chief Examination Controller Action:\nAre you sure you want to permanently deregister candidate "${name}" from the Cloud Database?\n\nThis will purge all corresponding session telemetry and records.`)) {
+    if (!confirm(`Examination Directorate Action:\nAre you sure you want to permanently deregister candidate "${name}" from the Cloud Database?\n\nThis will purge all corresponding session telemetry and records.`)) {
         return;
     }
     try {
@@ -1916,12 +1916,12 @@ function initAdminWebSocket(): void {
 
                 } else if (msg.type === 'EXAM_PHASE_CHANGED') {
                     showToast(`Phase Advanced: ${(msg.new_phase || '').toUpperCase().replace(/_/g, ' ')}`);
-                    appendIncidentLog(`EXAM LIFECYCLE: Advanced to ${msg.new_phase} by ${msg.authorizing_controller || 'Controller'}`);
+                    appendIncidentLog(`EXAM LIFECYCLE: Advanced to ${msg.new_phase} by ${msg.authorizing_controller || 'Examination Directorate'}`);
                     loadExamPhase();
 
                 } else if (msg.type === 'PAPER_DECRYPTED') {
                     showToast('256-Bit Question Paper Decrypted & Released!');
-                    appendIncidentLog(`CUSTODY RELEASE: Question Paper Decrypted by ${msg.decrypted_by || 'Controller'}`);
+                    appendIncidentLog(`CUSTODY RELEASE: Question Paper Decrypted by ${msg.decrypted_by || 'Examination Directorate'}`);
                     loadExamPhase();
 
                 } else if (msg.type === 'CANDIDATE_CHECKED_IN') {
@@ -1956,7 +1956,7 @@ function initAdminWebSocket(): void {
 }
 
 // =========================================================================
-// ENTERPRISE EXAMINATION CONTROLLER COMMAND SUITE
+// ENTERPRISE EXAMINATION DIRECTORATE COMMAND SUITE
 // =========================================================================
 
 // 1. Exam Lifecycle Phase Orchestrator
@@ -2340,6 +2340,7 @@ async function loadExams(): Promise<void> {
             updateExamStats();
             renderExamsTable();
             populateShareRegExamSelect();
+            populateResultsExamSelect();
         } else {
             console.error('Failed to load exams from Cloud DB');
         }
@@ -3187,17 +3188,55 @@ function renderQuestionChecklist(): void {
     updateQuestionSelectionTicker();
 }
 
-// Update live ticker of selected questions and max score
+// Update Negative Marking Toggle UI State
+function updateNegativeMarkingUI(enabled: boolean): void {
+    const negInp = document.getElementById('exam-negative-marks-input') as HTMLInputElement;
+    const label = document.getElementById('exam-neg-toggle-label');
+    const hint = document.getElementById('exam-neg-hint');
+    if (negInp) {
+        negInp.disabled = !enabled;
+        negInp.style.opacity = enabled ? '1' : '0.5';
+    }
+    if (label) {
+        label.textContent = enabled ? 'PENALTY ON' : 'DISABLED (OFF)';
+        label.style.color = enabled ? '#ef4444' : 'var(--text-muted)';
+    }
+    if (hint) {
+        hint.textContent = enabled
+            ? 'Penalty deducted per incorrect answer'
+            : 'Zero penalty (0.0 marks deducted) for incorrect answers';
+    }
+}
+
+// Update live ticker of selected questions and dynamic max score
 function updateQuestionSelectionTicker(): void {
     const selCountEl = document.getElementById('qb-selected-count');
     const maxScoreEl = document.getElementById('qb-max-score');
     const count = selectedQuestionIds.size;
 
     const correctMarksInput = document.getElementById('exam-correct-marks-input') as HTMLInputElement;
-    const correctMarks = parseInt(correctMarksInput?.value || '4', 10) || 4;
+    const correctMarks = parseFloat(correctMarksInput?.value || '4') || 4;
+
+    const negToggle = document.getElementById('exam-negative-marking-toggle') as HTMLInputElement;
+    const negEnabled = negToggle ? negToggle.checked : true;
+    const negMarksInput = document.getElementById('exam-negative-marks-input') as HTMLInputElement;
+    const negMarks = parseFloat(negMarksInput?.value || '1') || 1;
+
+    const totalMarks = Math.round(count * correctMarks * 100) / 100;
 
     if (selCountEl) selCountEl.textContent = String(count);
-    if (maxScoreEl) maxScoreEl.textContent = String(count * correctMarks);
+    if (maxScoreEl) maxScoreEl.textContent = String(totalMarks);
+
+    // Live Dynamic Marking Engine Badges in Modal
+    const liveQCount = document.getElementById('calc-live-q-count');
+    const livePerQ = document.getElementById('calc-live-per-q');
+    const liveNegM = document.getElementById('calc-live-neg-m');
+    const liveTotalM = document.getElementById('calc-live-total-marks');
+
+    if (liveQCount) liveQCount.textContent = String(count);
+    if (livePerQ) livePerQ.textContent = `+${correctMarks}`;
+    if (liveNegM) liveNegM.textContent = negEnabled ? `-${negMarks}` : 'OFF (0)';
+    if (liveTotalM) liveTotalM.textContent = String(totalMarks);
 }
 
 // Auto-pick balanced questions (10 Physics + 10 Chemistry + 10 Math)
@@ -3257,6 +3296,11 @@ function openCreateExamModal(): void {
     (document.getElementById('exam-duration-input') as HTMLInputElement).value = '180';
     (document.getElementById('exam-correct-marks-input') as HTMLInputElement).value = '4';
     (document.getElementById('exam-negative-marks-input') as HTMLInputElement).value = '1';
+    const negToggleCreate = document.getElementById('exam-negative-marking-toggle') as HTMLInputElement;
+    if (negToggleCreate) {
+        negToggleCreate.checked = true;
+        updateNegativeMarkingUI(true);
+    }
 
     const venueInp = document.getElementById('exam-venue-input') as HTMLInputElement;
     if (venueInp) venueInp.value = 'Saveetha Engineering College, Chennai - 602105';
@@ -3318,7 +3362,14 @@ function openEditExamModal(examId: string): void {
     (document.getElementById('exam-code-input') as HTMLInputElement).value = ex.config?.exam_code || ex.code || '';
     (document.getElementById('exam-duration-input') as HTMLInputElement).value = String(ex.duration_minutes || 180);
     (document.getElementById('exam-correct-marks-input') as HTMLInputElement).value = String(ex.config?.correct_marks || 4);
-    (document.getElementById('exam-negative-marks-input') as HTMLInputElement).value = String(ex.config?.negative_marks || 1);
+    const negVal = (ex.config?.negative_marks !== undefined) ? ex.config.negative_marks : 1;
+    (document.getElementById('exam-negative-marks-input') as HTMLInputElement).value = String(negVal);
+    const negToggleEdit = document.getElementById('exam-negative-marking-toggle') as HTMLInputElement;
+    const isNegOn = (ex.config?.negative_marking_enabled !== undefined) ? Boolean(ex.config.negative_marking_enabled) : true;
+    if (negToggleEdit) {
+        negToggleEdit.checked = isNegOn;
+        updateNegativeMarkingUI(isNegOn);
+    }
 
     const editVenueInp = document.getElementById('exam-venue-input') as HTMLInputElement;
     if (editVenueInp) editVenueInp.value = ex.test_venue_name || ex.config?.test_venue_name || 'Saveetha Engineering College, Chennai - 602105';
@@ -3422,8 +3473,10 @@ if (formExamCreate) {
         const duration = parseInt((document.getElementById('exam-duration-input') as HTMLInputElement).value, 10) || 180;
         const startTimeStr = (document.getElementById('exam-start-time-input') as HTMLInputElement).value;
         const endTimeStr = (document.getElementById('exam-end-time-input') as HTMLInputElement).value;
-        const correctMarks = parseInt((document.getElementById('exam-correct-marks-input') as HTMLInputElement).value, 10) || 4;
-        const negMarks = parseInt((document.getElementById('exam-negative-marks-input') as HTMLInputElement).value, 10) || 1;
+        const correctMarks = parseFloat((document.getElementById('exam-correct-marks-input') as HTMLInputElement).value) || 4;
+        const negMarks = parseFloat((document.getElementById('exam-negative-marks-input') as HTMLInputElement).value) || 1;
+        const negToggle = document.getElementById('exam-negative-marking-toggle') as HTMLInputElement;
+        const negEnabled = negToggle ? negToggle.checked : true;
         const venue = (document.getElementById('exam-venue-input') as HTMLInputElement)?.value.trim() || 'Saveetha Engineering College, Chennai - 602105';
         const centerCode = (document.getElementById('exam-center-code-input') as HTMLInputElement)?.value.trim() || 'TN-CHE-001';
         const labRoom = (document.getElementById('exam-room-input') as HTMLInputElement)?.value.trim() || 'Lab 4';
@@ -3464,6 +3517,8 @@ if (formExamCreate) {
             return;
         }
 
+        const totalMarks = Math.round(qIdArray.length * correctMarks * 100) / 100;
+
         const btnSubmit = document.getElementById('btn-submit-exam') as HTMLButtonElement;
         if (btnSubmit) {
             btnSubmit.disabled = true;
@@ -3489,10 +3544,14 @@ if (formExamCreate) {
                         default_lab_room: labRoom,
                         terminal_prefix: terminalPrefix,
                         slot_batch: slotBatch,
+                        total_marks: totalMarks,
+                        negative_marking_enabled: negEnabled,
                         config: {
                             exam_code: code,
                             correct_marks: correctMarks,
                             negative_marks: negMarks,
+                            negative_marking_enabled: negEnabled,
+                            total_marks: totalMarks,
                             question_ids: qIdArray,
                             ai_camera_enabled: aiCameraEnabled,
                             sections: validSections,
@@ -3521,10 +3580,14 @@ if (formExamCreate) {
                         default_lab_room: labRoom,
                         terminal_prefix: terminalPrefix,
                         slot_batch: slotBatch,
+                        total_marks: totalMarks,
+                        negative_marking_enabled: negEnabled,
                         config: {
                             exam_code: code,
                             correct_marks: correctMarks,
                             negative_marks: negMarks,
+                            negative_marking_enabled: negEnabled,
+                            total_marks: totalMarks,
                             question_ids: qIdArray,
                             ai_camera_enabled: aiCameraEnabled,
                             sections: validSections,
@@ -3983,7 +4046,7 @@ if (formExamSettings) {
             institution_name: inputAdmitInst?.value.trim() || 'SSE CBT PLATFORM',
             examination_title: inputAdmitExam?.value.trim() || 'MCQ ASSESSMENT [ SSE CBT 2026 ]',
             controller_name: inputCtrlName?.value.trim() || 'ADMIN@SSE.IN',
-            controller_designation: inputCtrlDesig?.value.trim() || 'Controller of Examinations',
+            controller_designation: inputCtrlDesig?.value.trim() || 'Examination Directorate',
             test_venue_name: inputVenueName?.value.trim() || 'SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105',
             test_center_code: inputCenterCode?.value.trim() || 'SSEC-TN-042',
             default_lab_room: inputLabRoom?.value.trim() || 'LAB-01 (Block-A)',
@@ -4119,6 +4182,632 @@ if (navLinkCandidates) {
     });
 }
 
+// ============================================================================
+// HIGH-END EXAMINATION RESULT MANAGEMENT SUITE (EXAM-WISE CRUD & ADVANCED/NORMAL)
+// ============================================================================
+
+let currentResultsViewMode: 'normal' | 'advanced' = 'normal';
+let currentResultsData: any = null;
+let currentResultsList: any[] = [];
+let currentResultsExamId: string = '';
+
+// Populate the Target Exam select in Results Management Section
+function populateResultsExamSelect(): void {
+    const sel = document.getElementById('results-exam-select') as HTMLSelectElement;
+    if (!sel) return;
+
+    const currentVal = sel.value;
+    sel.innerHTML = '<option value="">-- Select Examination --</option>';
+
+    for (const ex of cachedExams) {
+        const opt = document.createElement('option');
+        opt.value = ex.id;
+        const code = ex.config?.exam_code || ex.code || 'CBT';
+        opt.textContent = `${ex.title} (${code})`;
+        sel.appendChild(opt);
+    }
+
+    if (currentVal && cachedExams.some(e => e.id === currentVal)) {
+        sel.value = currentVal;
+    } else if (cachedExams.length > 0) {
+        sel.value = cachedExams[0].id;
+        loadExamResults(cachedExams[0].id, currentResultsViewMode);
+    }
+}
+
+// Fetch Authoritative Results for Target Exam with Normal or Advanced Dossier
+async function loadExamResults(examId: string, viewMode: 'normal' | 'advanced' = 'normal'): Promise<void> {
+    if (!examId) return;
+    currentResultsExamId = examId;
+    currentResultsViewMode = viewMode;
+
+    const tbody = document.getElementById('results-table-body');
+    if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            <div class="pulse-chip" style="margin: 0 auto; display: inline-flex;"><span class="pulse-dot"></span> Loading verified Cloud DB results...</div>
+        </td></tr>`;
+    }
+
+    try {
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/results?view_mode=${viewMode}`, {
+            headers: getHeaders()
+        });
+        if (res.ok) {
+            const data = await res.json();
+            currentResultsData = data;
+            currentResultsList = data.results || [];
+
+            // Update Dynamic Marking Scheme Banner
+            const ms = data.marking_scheme || {};
+            const rmbTitle = document.getElementById('rmb-exam-title');
+            const rmbQ = document.getElementById('rmb-q-count');
+            const rmbCorr = document.getElementById('rmb-correct-m');
+            const rmbNeg = document.getElementById('rmb-neg-m');
+            const rmbTotal = document.getElementById('rmb-total-m');
+
+            const ex = cachedExams.find(e => e.id === examId);
+            if (rmbTitle) rmbTitle.textContent = ex ? `${ex.title}` : `Exam: ${examId}`;
+            if (rmbQ) rmbQ.textContent = `Questions: ${ms.total_questions ?? '--'}`;
+            if (rmbCorr) rmbCorr.textContent = `Per Question: +${ms.correct_marks ?? 4}`;
+            if (rmbNeg) {
+                if (ms.negative_marking_enabled === false) {
+                    rmbNeg.textContent = `Penalty: DISABLED (0)`;
+                    rmbNeg.style.background = 'rgba(100, 116, 139, 0.15)';
+                    rmbNeg.style.color = '#475569';
+                } else {
+                    rmbNeg.textContent = `Penalty: -${ms.negative_marks ?? 1}`;
+                    rmbNeg.style.background = 'rgba(239, 68, 68, 0.12)';
+                    rmbNeg.style.color = '#dc2626';
+                }
+            }
+            if (rmbTotal) rmbTotal.textContent = `Total Marks: ${ms.total_marks ?? '--'}`;
+
+            // Update Analytics KPI Summary Cards
+            const an = data.analytics || {};
+            const elTotalCands = document.getElementById('kpi-total-cands');
+            const elHigh = document.getElementById('kpi-highest-score');
+            const elAvg = document.getElementById('kpi-avg-score');
+            const elPass = document.getElementById('kpi-pass-rate');
+
+            if (elTotalCands) elTotalCands.textContent = String(an.total_candidates_appeared || currentResultsList.length);
+            if (elHigh) elHigh.textContent = `${an.highest_score || 0} / ${ms.total_marks || 0}`;
+            if (elAvg) elAvg.textContent = String(an.average_score || 0);
+            if (elPass) elPass.textContent = `${an.pass_rate || 0}%`;
+
+            renderResultsTable();
+        } else {
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 2rem; color: #ef4444;">Failed to load results for exam from Cloud DB.</td></tr>`;
+            }
+        }
+    } catch (err) {
+        console.error('Error fetching exam results:', err);
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 2rem; color: #ef4444;">Network error fetching results.</td></tr>`;
+        }
+    }
+}
+
+// Render Results Table (Normal vs Advanced)
+function renderResultsTable(): void {
+    const thead = document.getElementById('results-table-head');
+    const tbody = document.getElementById('results-table-body');
+    const searchInput = document.getElementById('results-search-input') as HTMLInputElement;
+    const statusFilter = document.getElementById('results-status-filter') as HTMLSelectElement;
+    const ticker = document.getElementById('results-count-ticker');
+
+    if (!tbody || !thead) return;
+
+    const q = (searchInput?.value || '').toLowerCase().trim();
+    const stFilter = (statusFilter?.value || 'ALL').toLowerCase();
+
+    const filtered = currentResultsList.filter(r => {
+        const name = (r.candidate_name || '').toLowerCase();
+        const reg = (r.registration_number || '').toLowerCase();
+        const roll = (r.roll_number || '').toLowerCase();
+        const term = (r.terminal_node || '').toLowerCase();
+        const matchSearch = !q || name.includes(q) || reg.includes(q) || roll.includes(q) || term.includes(q);
+
+        const rStatus = (r.status || 'submitted').toLowerCase();
+        let matchStatus = true;
+        if (stFilter !== 'all') {
+            if (stFilter === 'disqualified') {
+                matchStatus = r.disqualified === true || rStatus.includes('disq') || rStatus.includes('debar');
+            } else if (stFilter === 'submitted') {
+                matchStatus = (rStatus === 'submitted' || rStatus === 'validated') && !r.disqualified;
+            } else if (stFilter === 'reset') {
+                matchStatus = rStatus === 'reset';
+            }
+        }
+        return matchSearch && matchStatus;
+    });
+
+    if (ticker) {
+        ticker.textContent = `Showing ${filtered.length} of ${currentResultsList.length} candidate records`;
+    }
+
+    const isAdv = currentResultsViewMode === 'advanced';
+
+    // Render Table Header
+    if (isAdv) {
+        thead.innerHTML = `
+            <tr>
+              <th style="width: 50px;">Rank</th>
+              <th>Candidate Identification</th>
+              <th style="color: #047857;">Correct (+M)</th>
+              <th style="color: #dc2626;">Incorrect (-P)</th>
+              <th>Unanswered</th>
+              <th>Review</th>
+              <th style="font-weight: 800; color: #1e3a8a;">Net Score</th>
+              <th>Accuracy</th>
+              <th>Time Taken</th>
+              <th>Status</th>
+              <th style="text-align: right; min-width: 140px;">CRUD Actions</th>
+            </tr>
+        `;
+    } else {
+        thead.innerHTML = `
+            <tr>
+              <th style="width: 50px;">Rank</th>
+              <th>Candidate Identification</th>
+              <th>Category &amp; Gender</th>
+              <th style="font-weight: 800; color: #1e3a8a;">Raw Score / Max</th>
+              <th>Percentage</th>
+              <th>Accuracy</th>
+              <th>Status</th>
+              <th style="text-align: right; min-width: 140px;">CRUD Actions</th>
+            </tr>
+        `;
+    }
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${isAdv ? 11 : 8}" style="text-align: center; padding: 2rem; color: var(--text-muted);">No candidate results match current search / filter criteria.</td></tr>`;
+        return;
+    }
+
+    let rowsHtml = '';
+    const maxScore = (currentResultsData?.marking_scheme?.total_marks) || 120;
+
+    filtered.forEach((r, idx) => {
+        const isDisq = r.disqualified === true || (r.status || '').toLowerCase().includes('disq');
+        const rankDisplay = isDisq
+            ? '<span style="color: #dc2626; font-weight: 800;">DISQ</span>'
+            : (r.rank != null ? (typeof r.rank === 'number' ? (r.rank === 1 ? '🥇 Rank 1' : r.rank === 2 ? '🥈 Rank 2' : r.rank === 3 ? '🥉 Rank 3' : `#${r.rank}`) : `#${r.rank}`) : `#${idx + 1}`);
+
+        const scoreDisplay = isDisq
+            ? '<span style="color: #dc2626; font-weight: 800;">0.0 (NULLIFIED)</span>'
+            : `<span style="font-weight: 800; color: #047857; font-size: 0.95rem;">${r.raw_score ?? 0}</span> <span style="font-size: 0.75rem; color: var(--text-muted);">/ ${maxScore}</span>`;
+
+        const pctDisplay = isDisq ? '0.0%' : (r.percentage != null ? `${r.percentage}%` : 'N/A');
+        const accDisplay = isDisq ? '0.0%' : (r.accuracy != null ? `${r.accuracy}%` : 'N/A');
+
+        const statusBadge = isDisq
+            ? `<span class="badge-pill" style="background: #fee2e2; color: #b91c1c; font-weight: 800;" title="${escapeHtml(r.disqualification_reason || 'Security Malpractice')}">DISQUALIFIED</span>`
+            : (r.status === 'validated'
+                ? `<span class="badge-pill" style="background: #dbeafe; color: #1e40af; font-weight: 800;">VALIDATED</span>`
+                : (r.status === 'reset'
+                    ? `<span class="badge-pill" style="background: #f1f5f9; color: #64748b; font-weight: 700;">RESET</span>`
+                    : `<span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">COMPLETED</span>`));
+
+        const remarksSnippet = r.remarks ? `<div style="font-size: 0.7rem; color: #4338ca; margin-top: 2px;">💬 ${escapeHtml(r.remarks)}</div>` : '';
+
+        if (isAdv) {
+            rowsHtml += `
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="font-weight: 800; text-align: center;">${rankDisplay}</td>
+                <td>
+                  <div style="font-weight: 700; color: var(--text-heading);">${escapeHtml(r.candidate_name)}</div>
+                  <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted);">${escapeHtml(r.registration_number)} &bull; ${escapeHtml(r.terminal_node || 'Term')}</div>
+                  ${remarksSnippet}
+                </td>
+                <td style="font-weight: 700; color: #047857;">+${r.correct_count ?? 0}</td>
+                <td style="font-weight: 700; color: #dc2626;">-${r.incorrect_count ?? 0}</td>
+                <td style="color: var(--text-muted);">${r.unanswered_count ?? 0}</td>
+                <td style="color: #7e22ce;">${r.marked_for_review_count ?? 0}</td>
+                <td>${scoreDisplay}</td>
+                <td style="font-weight: 700;">${accDisplay}</td>
+                <td style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(r.time_taken_display || '--')}</td>
+                <td>${statusBadge}</td>
+                <td style="text-align: right;">
+                  <div style="display: inline-flex; gap: 4px;">
+                    <button type="button" class="btn btn-outline btn-sm btn-inspect-dossier" data-cid="${r.candidate_id}" title="Inspect Itemized Dossier" style="padding: 3px 7px; font-size: 0.72rem;">🔍 Dossier</button>
+                    <button type="button" class="btn btn-outline btn-sm btn-edit-result" data-cid="${r.candidate_id}" title="Edit Remarks &amp; Override" style="padding: 3px 7px; font-size: 0.72rem;">✏️ Edit</button>
+                    <button type="button" class="btn btn-outline btn-sm btn-delete-result" data-cid="${r.candidate_id}" data-name="${escapeHtml(r.candidate_name)}" title="Invalidate / Purge Attempt" style="padding: 3px 7px; font-size: 0.72rem; color: #ef4444; border-color: #fca5a5;">🗑️ Invalidate</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+        } else {
+            rowsHtml += `
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="font-weight: 800; text-align: center;">${rankDisplay}</td>
+                <td>
+                  <div style="font-weight: 700; color: var(--text-heading);">${escapeHtml(r.candidate_name)}</div>
+                  <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted);">${escapeHtml(r.registration_number)} &bull; ${escapeHtml(r.terminal_node || 'Term')}</div>
+                  ${remarksSnippet}
+                </td>
+                <td style="font-size: 0.78rem; color: var(--text-muted);">${escapeHtml(r.category || 'GEN')} &bull; ${escapeHtml(r.gender || 'M')}</td>
+                <td>${scoreDisplay}</td>
+                <td><span class="badge-pill" style="background: rgba(30, 58, 138, 0.08); color: #1e3a8a; font-weight: 800;">${pctDisplay}</span></td>
+                <td style="font-weight: 700;">${accDisplay}</td>
+                <td>${statusBadge}</td>
+                <td style="text-align: right;">
+                  <div style="display: inline-flex; gap: 4px;">
+                    <button type="button" class="btn btn-outline btn-sm btn-inspect-dossier" data-cid="${r.candidate_id}" title="Inspect Itemized Dossier" style="padding: 3px 7px; font-size: 0.72rem;">🔍 Dossier</button>
+                    <button type="button" class="btn btn-outline btn-sm btn-edit-result" data-cid="${r.candidate_id}" title="Edit Remarks &amp; Override" style="padding: 3px 7px; font-size: 0.72rem;">✏️ Edit</button>
+                    <button type="button" class="btn btn-outline btn-sm btn-delete-result" data-cid="${r.candidate_id}" data-name="${escapeHtml(r.candidate_name)}" title="Invalidate / Purge Attempt" style="padding: 3px 7px; font-size: 0.72rem; color: #ef4444; border-color: #fca5a5;">🗑️ Invalidate</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+        }
+    });
+
+    tbody.innerHTML = rowsHtml;
+
+    // Attach row button events
+    tbody.querySelectorAll('.btn-inspect-dossier').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const cid = (btn as HTMLElement).dataset.cid;
+            if (cid && currentResultsExamId) {
+                openResultDossierModal(currentResultsExamId, cid);
+            }
+        });
+    });
+
+    tbody.querySelectorAll('.btn-edit-result').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const cid = (btn as HTMLElement).dataset.cid;
+            if (cid && currentResultsExamId) {
+                const candResult = currentResultsList.find(c => String(c.candidate_id) === String(cid));
+                if (candResult) {
+                    openEditResultModal(currentResultsExamId, candResult);
+                }
+            }
+        });
+    });
+
+    tbody.querySelectorAll('.btn-delete-result').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const cid = (btn as HTMLElement).dataset.cid;
+            const name = (btn as HTMLElement).dataset.name || 'Candidate';
+            if (cid && currentResultsExamId) {
+                deleteCandidateResult(currentResultsExamId, cid, name);
+            }
+        });
+    });
+}
+
+// Open Itemized Candidate Response Dossier Modal
+async function openResultDossierModal(examId: string, candidateId: string): Promise<void> {
+    const modal = document.getElementById('modal-result-dossier');
+    if (!modal) return;
+
+    const tbody = document.getElementById('dossier-questions-body');
+    if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">Fetching itemized question responses from Cloud DB...</td></tr>`;
+    }
+    modal.style.display = 'flex';
+
+    try {
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/results/${encodeURIComponent(candidateId)}`, {
+            headers: getHeaders()
+        });
+        if (res.ok) {
+            const dossier = await res.json();
+            const subTitle = document.getElementById('dossier-candidate-subtitle');
+            if (subTitle) {
+                subTitle.textContent = `${dossier.candidate_name} (${dossier.registration_number}) • Exam: ${dossier.exam_title}`;
+            }
+
+            const rawScore = document.getElementById('dossier-raw-score');
+            const pct = document.getElementById('dossier-percentage');
+            const acc = document.getElementById('dossier-accuracy');
+            const counts = document.getElementById('dossier-breakdown-counts');
+
+            if (rawScore) rawScore.textContent = `${dossier.raw_score} / ${dossier.max_score}`;
+            if (pct) pct.textContent = `${dossier.percentage}%`;
+            if (acc) acc.textContent = `${dossier.accuracy}%`;
+            if (counts) counts.textContent = `+${dossier.correct_count} / -${dossier.incorrect_count} / Unans: ${dossier.unanswered_count}`;
+
+            const qList = dossier.questions || [];
+            if (qList.length === 0) {
+                if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">No responses recorded.</td></tr>`;
+                return;
+            }
+
+            let qRows = '';
+            qList.forEach((qItem: any, idx: number) => {
+                const statusColor = qItem.status === 'correct' ? '#047857' : (qItem.status === 'incorrect' ? '#b91c1c' : (qItem.status === 'bonus' ? '#d97706' : '#64748b'));
+                const statusBg = qItem.status === 'correct' ? '#d1fae5' : (qItem.status === 'incorrect' ? '#fee2e2' : (qItem.status === 'bonus' ? '#fef3c7' : '#f1f5f9'));
+                const marksColor = qItem.marks_awarded > 0 ? '#047857' : (qItem.marks_awarded < 0 ? '#dc2626' : '#64748b');
+
+                qRows += `
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="font-weight: 700; text-align: center;">${idx + 1}</td>
+                    <td style="font-size: 0.78rem; max-width: 280px; word-break: break-word;">${escapeHtml(qItem.statement || 'Question Statement')}</td>
+                    <td style="font-weight: 700;">${qItem.candidate_answer != null ? escapeHtml(String(qItem.candidate_answer)) : '<span style="color: var(--text-muted); font-weight: normal;">Unanswered</span>'}</td>
+                    <td style="font-weight: 700; color: #1e3a8a;">${escapeHtml(String(qItem.correct_key || '--'))}</td>
+                    <td>
+                      <span class="badge-pill" style="background: ${statusBg}; color: ${statusColor}; font-weight: 800;">
+                        ${(qItem.status || '').toUpperCase()}
+                      </span>
+                    </td>
+                    <td style="font-weight: 800; color: ${marksColor};">${qItem.marks_awarded > 0 ? `+${qItem.marks_awarded}` : qItem.marks_awarded}</td>
+                  </tr>
+                `;
+            });
+
+            if (tbody) tbody.innerHTML = qRows;
+        } else {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 1.5rem; color: #ef4444;">Could not load candidate dossier.</td></tr>`;
+        }
+    } catch (_) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 1.5rem; color: #ef4444;">Network error loading dossier.</td></tr>`;
+    }
+}
+
+// Open CRUD Edit Result Modal
+function openEditResultModal(examId: string, candResult: any): void {
+    const modal = document.getElementById('modal-edit-result');
+    if (!modal) return;
+
+    (document.getElementById('edit-result-exam-id') as HTMLInputElement).value = examId;
+    (document.getElementById('edit-result-cand-id') as HTMLInputElement).value = String(candResult.candidate_id);
+
+    const nameEl = document.getElementById('edit-result-cand-name');
+    const regEl = document.getElementById('edit-result-cand-reg');
+    const selStatus = document.getElementById('edit-result-status-select') as HTMLSelectElement;
+    const txtRemarks = document.getElementById('edit-result-remarks') as HTMLTextAreaElement;
+    const inpScore = document.getElementById('edit-result-score-override') as HTMLInputElement;
+
+    if (nameEl) nameEl.textContent = candResult.candidate_name;
+    if (regEl) regEl.textContent = `Reg: ${candResult.registration_number} • Roll: ${candResult.roll_number || candResult.registration_number}`;
+
+    const currentSt = candResult.disqualified ? 'disqualified' : (candResult.status || 'submitted');
+    if (selStatus) selStatus.value = currentSt;
+    if (txtRemarks) txtRemarks.value = candResult.remarks || '';
+    if (inpScore) inpScore.value = '';
+
+    modal.style.display = 'flex';
+}
+
+// Invalidate & Delete Candidate Result
+async function deleteCandidateResult(examId: string, candidateId: string, candidateName: string): Promise<void> {
+    if (!confirm(`Examination Directorate Action:\nAre you sure you want to permanently invalidate & purge result for "${candidateName}"?\n\nThis will remove candidate attempt and responses from Supabase Cloud DB.`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/results/${encodeURIComponent(candidateId)}`, {
+            method: 'DELETE',
+            headers: getHeaders(),
+        });
+        if (res.ok) {
+            showToast(`Candidate "${candidateName}" attempt purged from Cloud DB.`);
+            await loadExamResults(examId, currentResultsViewMode);
+        } else {
+            showToast('Failed to purge candidate attempt', true);
+        }
+    } catch (_) {
+        showToast('Network error purging candidate attempt', true);
+    }
+}
+
+// Recalculate and Synchronize All Candidate Results Against Current Answer Keys
+async function recalculateExamResults(examId: string): Promise<void> {
+    const btn = document.getElementById('btn-recalc-results-top') as HTMLButtonElement;
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⚡ Recalculating Cloud DB...';
+    }
+
+    try {
+        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/recalculate-results`, {
+            method: 'POST',
+            headers: getHeaders(),
+        });
+        if (res.ok) {
+            const data = await res.json();
+            showToast(data.message || 'Authoritative recalculation completed!');
+            await loadExamResults(examId, currentResultsViewMode);
+        } else {
+            showToast('Recalculation failed', true);
+        }
+    } catch (_) {
+        showToast('Network error during score recalculation', true);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '⚡ Recalculate & Sync Scores';
+        }
+    }
+}
+
+// Result Management Listeners Setup
+function initResultsManagementListeners(): void {
+    const selResultsExam = document.getElementById('results-exam-select') as HTMLSelectElement;
+    if (selResultsExam) {
+        selResultsExam.addEventListener('change', () => {
+            const examId = selResultsExam.value;
+            if (examId) {
+                loadExamResults(examId, currentResultsViewMode);
+            }
+        });
+    }
+
+    const btnModeNormal = document.getElementById('btn-results-mode-normal') as HTMLButtonElement;
+    const btnModeAdvanced = document.getElementById('btn-results-mode-advanced') as HTMLButtonElement;
+
+    if (btnModeNormal && btnModeAdvanced) {
+        btnModeNormal.addEventListener('click', () => {
+            btnModeNormal.style.background = 'var(--brand-blue)';
+            btnModeNormal.style.color = 'white';
+            btnModeAdvanced.style.background = 'transparent';
+            btnModeAdvanced.style.color = 'var(--text-muted)';
+            currentResultsViewMode = 'normal';
+            if (currentResultsExamId) {
+                loadExamResults(currentResultsExamId, 'normal');
+            }
+        });
+
+        btnModeAdvanced.addEventListener('click', () => {
+            btnModeAdvanced.style.background = 'var(--brand-blue)';
+            btnModeAdvanced.style.color = 'white';
+            btnModeNormal.style.background = 'transparent';
+            btnModeNormal.style.color = 'var(--text-muted)';
+            currentResultsViewMode = 'advanced';
+            if (currentResultsExamId) {
+                loadExamResults(currentResultsExamId, 'advanced');
+            }
+        });
+    }
+
+    const searchInput = document.getElementById('results-search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => renderResultsTable());
+    }
+
+    const statusFilter = document.getElementById('results-status-filter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', () => renderResultsTable());
+    }
+
+    // Recalculate button
+    const btnRecalc = document.getElementById('btn-recalc-results-top');
+    if (btnRecalc) {
+        btnRecalc.addEventListener('click', () => {
+            if (currentResultsExamId) {
+                recalculateExamResults(currentResultsExamId);
+            } else {
+                showToast('Please select an exam first', true);
+            }
+        });
+    }
+
+    // Export buttons
+    const btnCsv = document.getElementById('btn-export-results-csv-top');
+    if (btnCsv) {
+        btnCsv.addEventListener('click', () => {
+            if (currentResultsExamId) {
+                window.location.href = `/api/v1/exams/${encodeURIComponent(currentResultsExamId)}/results-export?format=csv`;
+            } else {
+                showToast('Please select an exam first', true);
+            }
+        });
+    }
+
+    const btnXls = document.getElementById('btn-export-results-xls-top');
+    if (btnXls) {
+        btnXls.addEventListener('click', () => {
+            if (currentResultsExamId) {
+                window.location.href = `/api/v1/exams/${encodeURIComponent(currentResultsExamId)}/results-export?format=xlsx`;
+            } else {
+                showToast('Please select an exam first', true);
+            }
+        });
+    }
+
+    const btnResp = document.getElementById('btn-export-results-resp-top');
+    if (btnResp) {
+        btnResp.addEventListener('click', () => {
+            if (currentResultsExamId) {
+                window.location.href = `/api/v1/exams/${encodeURIComponent(currentResultsExamId)}/export/responses`;
+            } else {
+                showToast('Please select an exam first', true);
+            }
+        });
+    }
+
+    // Form Edit Result submit
+    const formEditResult = document.getElementById('form-edit-result') as HTMLFormElement;
+    if (formEditResult) {
+        formEditResult.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const examId = (document.getElementById('edit-result-exam-id') as HTMLInputElement).value;
+            const candId = (document.getElementById('edit-result-cand-id') as HTMLInputElement).value;
+            const statusVal = (document.getElementById('edit-result-status-select') as HTMLSelectElement).value;
+            const remarksVal = (document.getElementById('edit-result-remarks') as HTMLTextAreaElement).value.trim();
+            const scoreVal = (document.getElementById('edit-result-score-override') as HTMLInputElement).value.trim();
+
+            const btnSave = document.getElementById('btn-save-result-edit') as HTMLButtonElement;
+            if (btnSave) {
+                btnSave.disabled = true;
+                btnSave.textContent = 'Saving to Cloud DB...';
+            }
+
+            try {
+                const body: any = {
+                    status: statusVal,
+                    remarks: remarksVal,
+                };
+                if (scoreVal) {
+                    body.score_override = parseFloat(scoreVal);
+                    body.reason = remarksVal || 'Directorate Moderation';
+                }
+
+                const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/results/${encodeURIComponent(candId)}`, {
+                    method: 'PUT',
+                    headers: getHeaders(),
+                    body: JSON.stringify(body),
+                });
+
+                if (res.ok) {
+                    showToast('Candidate result and remarks updated in Cloud DB!');
+                    document.getElementById('modal-edit-result')!.style.display = 'none';
+                    await loadExamResults(examId, currentResultsViewMode);
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    showToast(err.detail || 'Failed to update result in Cloud DB', true);
+                }
+            } catch (_) {
+                showToast('Network error updating result', true);
+            } finally {
+                if (btnSave) {
+                    btnSave.disabled = false;
+                    btnSave.textContent = 'Save to Cloud DB →';
+                }
+            }
+        });
+    }
+
+    // Dynamic marking inputs in create/edit exam modal
+    const negToggleInput = document.getElementById('exam-negative-marking-toggle') as HTMLInputElement;
+    if (negToggleInput) {
+        negToggleInput.addEventListener('change', () => {
+            updateNegativeMarkingUI(negToggleInput.checked);
+            updateQuestionSelectionTicker();
+        });
+    }
+    const corrMarksInput = document.getElementById('exam-correct-marks-input') as HTMLInputElement;
+    if (corrMarksInput) {
+        corrMarksInput.addEventListener('input', () => {
+            updateQuestionSelectionTicker();
+        });
+    }
+    const negMarksInput = document.getElementById('exam-negative-marks-input') as HTMLInputElement;
+    if (negMarksInput) {
+        negMarksInput.addEventListener('input', () => {
+            updateQuestionSelectionTicker();
+        });
+    }
+
+    // Navigation smooth scroll for Results Management link
+    const navLinkResults = document.querySelector('a[href="#results-management-section"]');
+    if (navLinkResults) {
+        navLinkResults.addEventListener('click', (e) => {
+            e.preventDefault();
+            const sec = document.getElementById('results-management-section');
+            if (sec) {
+                sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (window.innerWidth <= 768 && sidebarEl) {
+                    sidebarEl.classList.remove('mobile-open');
+                }
+            }
+        });
+    }
+}
+
 // Initialize on page ready
 initTheme();
 loadDashboardSummary();
@@ -4129,9 +4818,11 @@ initAdminWebSocket();
 loadExamPhase();
 loadExamSettings();
 loadTelemetryRadar();
+initResultsManagementListeners();
 syncMasterClock();
 setInterval(updateMasterClockDisplay, 1000);
 setInterval(syncMasterClock, 60000);
 setInterval(loadTelemetryRadar, 30000);
 setInterval(loadExams, 45000);
+
 

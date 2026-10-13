@@ -518,7 +518,7 @@ function handleExamSocketMessage(msg: any): void {
             showInvigilatorMessage("[NOTICE]", "Mandatory Proctor Directive", msg.message || "Please return your full attention to the exam terminal screen.", true);
         }
     } else if (msg.type === 'QUESTION_UPDATED') {
-        // Examination Controller Live Question Edit applied to all consoles
+        // Examination Directorate Live Question Edit applied to all consoles
         const qIdx = allQuestions.findIndex(q => q.id === msg.question_id);
         if (qIdx !== -1) {
             if (msg.statement) allQuestions[qIdx].text = msg.statement;
@@ -546,7 +546,7 @@ function handleExamSocketMessage(msg: any): void {
             triggerTerminalForceLock(msg.reason || "Terminal locked: Candidate disqualified under examination regulations.");
         }
     } else if (msg.type === 'PAPER_DECRYPTED') {
-        showLiveToast('256-Bit Question Paper Decrypted & Unlocked by Examination Controller!');
+        showLiveToast('256-Bit Question Paper Decrypted & Unlocked by Examination Directorate!');
         fetchRemoteQuestions();
     } else if (msg.type === 'DISASTER_HOLD') {
         isExamPaused = true;
@@ -802,7 +802,7 @@ async function performFinalSubmission(): Promise<void> {
     }
 }
 
-// Examination Controller Live Item Editor Feature
+// Examination Directorate Live Item Editor Feature
 function openGodEditModal(): void {
     const q = allQuestions[currentQuestionIndex];
     if (!q) return;
@@ -1004,7 +1004,7 @@ if (ui.btnAutoSolve) {
         });
         ui.modalGodTools.style.display = 'none';
         loadQuestion(currentQuestionIndex);
-        showLiveToast("Controller Diagnostics: Authoritative answer keys populated and synchronized.");
+        showLiveToast("Directorate Diagnostics: Authoritative answer keys populated and synchronized.");
     };
 }
 
@@ -1014,7 +1014,7 @@ if (ui.btnRevealKey) {
         revealAnswersMode = !revealAnswersMode;
         ui.modalGodTools.style.display = 'none';
         loadQuestion(currentQuestionIndex);
-        showLiveToast(`Controller Diagnostics: Authoritative answer key display is now ${revealAnswersMode ? "VISIBLE (highlighted in green)" : "HIDDEN"}.`);
+        showLiveToast(`Directorate Diagnostics: Authoritative answer key display is now ${revealAnswersMode ? "VISIBLE (highlighted in green)" : "HIDDEN"}.`);
     };
 }
 
@@ -1253,7 +1253,7 @@ async function fetchRemoteQuestions(): Promise<void> {
             }
         }
     } catch (_) {}
-    if (ui.qText) ui.qText.textContent = "Awaiting Question Paper release from Examination Controller...";
+    if (ui.qText) ui.qText.textContent = "Awaiting Question Paper release from Examination Directorate...";
 }
 
 // Scheduled Pre-Flight Gatekeeper Overlay
