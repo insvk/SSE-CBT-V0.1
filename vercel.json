@@ -4,7 +4,7 @@
   "trailingSlash": false,
   "builds": [
     {
-      "src": "api_app.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
     },
     {
@@ -18,15 +18,15 @@
   "rewrites": [
     {
       "source": "/api",
-      "destination": "/api_app.py"
+      "destination": "/api/index.py"
     },
     {
       "source": "/api/(.*)",
-      "destination": "/api_app.py"
+      "destination": "/api/index.py"
     },
     {
       "source": "/health",
-      "destination": "/api_app.py"
+      "destination": "/api/index.py"
     }
   ]
 }
