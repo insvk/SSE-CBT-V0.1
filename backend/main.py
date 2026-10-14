@@ -28,9 +28,14 @@ app.add_middleware(
 
 @app.get("/health")
 @app.get("/")
+@app.get("/api/health")
+@app.get("/v1/health")
 @app.get(f"{settings.API_V1_STR}/health")
 def health_check():
     return {"status": "ok", "message": "SSE CBT Platform Backend is running."}
 
-app.include_router(api_router, prefix=settings.API_V1_STR)
+# Multi-prefix router mount for zero-failure cloud deployment (Vercel serverless + local + direct proxy)
+app.include_router(api_router, prefix=settings.API_V1_STR)  # /api/v1
+app.include_router(api_router, prefix="/v1")               # /v1 (when /api stripped)
+app.include_router(api_router)                             # / (direct endpoint access)
 app.include_router(ws_router)

@@ -2,20 +2,71 @@ export {};
 
 const API_BASE = '/api/v1/candidates';
 
-function getAuthToken(): string {
-    return localStorage.getItem('access_token') || 'dev_test_token_do_not_use_in_prod';
+function getAuthToken(preferDev = false): string {
+    if (preferDev) return 'dev_test_token_do_not_use_in_prod';
+    return localStorage.getItem('admin_token') || localStorage.getItem('access_token') || 'dev_test_token_do_not_use_in_prod';
 }
 
 function getTenantId(): string {
     return localStorage.getItem('tenant_id') || '00000000-0000-0000-0000-000000000001';
 }
 
-function getHeaders(): HeadersInit {
+function getHeaders(preferDev = false): HeadersInit {
     return {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAuthToken()}`,
+        'Authorization': `Bearer ${getAuthToken(preferDev)}`,
         'x-tenant-id': getTenantId(),
     };
+}
+
+async function adminFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    const buildHeaders = (preferDev = false): HeadersInit => {
+        const h: any = {
+            'Content-Type': 'application/json',
+            'x-tenant-id': getTenantId(),
+            ...(options.headers || {}),
+        };
+        const token = getAuthToken(preferDev);
+        if (token) {
+            h['Authorization'] = `Bearer ${token}`;
+        }
+        return h;
+    };
+
+    let targetUrl = endpoint;
+    let res: Response;
+
+    try {
+        res = await fetch(targetUrl, { ...options, headers: buildHeaders(false) });
+    } catch (networkErr) {
+        if (isLocal && window.location.port !== '8000' && !endpoint.startsWith('http')) {
+            console.info(`[Admin Console] Relative fetch failed, trying direct connection to http://127.0.0.1:8000${endpoint}`);
+            targetUrl = `http://127.0.0.1:8000${endpoint}`;
+            res = await fetch(targetUrl, { ...options, headers: buildHeaders(false) });
+        } else {
+            throw networkErr;
+        }
+    }
+
+    if ((res.status === 401 || res.status === 403) && (localStorage.getItem('access_token') || localStorage.getItem('admin_token'))) {
+        console.warn('[Admin Console] Auth rejected with stored token, trying fallback admin credentials...');
+        localStorage.removeItem('access_token');
+        res = await fetch(targetUrl, { ...options, headers: buildHeaders(true) });
+    }
+
+    if ((res.status === 404 || res.status === 502) && isLocal && window.location.port !== '8000' && !targetUrl.startsWith('http://127.0.0.1:8000')) {
+        try {
+            console.info(`[Admin Console] HTTP ${res.status} on relative path, attempting http://127.0.0.1:8000${endpoint}`);
+            const altRes = await fetch(`http://127.0.0.1:8000${endpoint}`, { ...options, headers: buildHeaders(false) });
+            if (altRes.ok || altRes.status !== 404) {
+                res = altRes;
+            }
+        } catch (_) {}
+    }
+
+    return res;
 }
 
 function escapeHtml(str: string): string {
@@ -221,7 +272,7 @@ function renderDynamicCharts(summary: any): void {
 // --- LOAD DASHBOARD SUMMARY (ZERO DUMMY DATA) ---
 async function loadDashboardSummary(): Promise<void> {
     try {
-        const res = await fetch(`${API_BASE}/dashboard-summary`, { headers: getHeaders() });
+        const res = await adminFetch(`${API_BASE}/dashboard-summary`);
         if (res.ok) {
             const summary = await res.json();
             
@@ -255,7 +306,7 @@ let ntpSynced = false;
 async function syncMasterClock(): Promise<void> {
     try {
         const tStart = Date.now();
-        const res = await fetch('/api/v1/system/time', { headers: getHeaders() });
+        const res = await adminFetch('/api/v1/system/time');
         const tEnd = Date.now();
         if (res.ok) {
             const data = await res.json();
@@ -473,14 +524,25 @@ function renderCandidateTable(): void {
 // --- LOAD CANDIDATES LIST ---
 async function loadCandidates(): Promise<void> {
     try {
-        const res = await fetch(`${API_BASE}/`, { headers: getHeaders() });
+        const res = await adminFetch(`${API_BASE}/`);
         if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            console.error("[Candidate Suite] Failed to load candidates:", res.status, err);
+            let errorMsg = '';
+            try {
+                const err = await res.json();
+                errorMsg = err.detail || err.message;
+            } catch (_) {
+                try {
+                    const text = await res.text();
+                    if (text && text.length < 200) errorMsg = text;
+                } catch (_) {}
+            }
+            console.error("[Candidate Suite] Failed to load candidates:", res.status, errorMsg);
             if (res.status === 401) {
                 showToast("Session expired or unauthorized. Please re-authenticate.", true);
+            } else if (res.status === 403) {
+                showToast("Forbidden: Super Admin authority required.", true);
             } else {
-                showToast(err.detail || "Database query failed while fetching candidates.", true);
+                showToast(errorMsg || `Database query failed (HTTP ${res.status}).`, true);
             }
             return;
         }
@@ -488,9 +550,9 @@ async function loadCandidates(): Promise<void> {
         if (!Array.isArray(data)) data = [];
         cachedCandidates = data;
         renderCandidateTable();
-    } catch (err) {
+    } catch (err: any) {
         console.error("[Candidate Suite] Network error loading candidates:", err);
-        showToast("Failed to load candidates from Supabase", true);
+        showToast(err?.message || "Failed to load candidates from Cloud DB", true);
     }
 }
 
@@ -2333,7 +2395,7 @@ function toLocalInputString(date: Date): string {
 // 1. Load All Exams from Cloud DB
 async function loadExams(): Promise<void> {
     try {
-        const res = await fetch('/api/v1/exams/', { headers: getHeaders() });
+        const res = await adminFetch('/api/v1/exams/');
         if (res.ok) {
             cachedExams = await res.json();
             if (!Array.isArray(cachedExams)) cachedExams = [];

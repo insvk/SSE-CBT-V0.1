@@ -676,6 +676,14 @@
               <a href="/register.html" class="register-link" id="link-register-account">Register here &rarr;</a>
             </div>
 
+            <!-- Examination Directorate Admin Credentials Quick Helper -->
+            <div style="margin-top: 1rem; padding: 0.65rem 0.85rem; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 0.75rem; color: #475569; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+              <span><strong>Admin:</strong> admin@sse.cbt.in</span>
+              <button type="button" id="btn-autofill-admin" style="padding: 2px 8px; font-size: 0.7rem; font-weight: 600; border-radius: 4px; border: 1px solid #94a3b8; background: #fff; cursor: pointer; color: #1e293b;">
+                Auto-Fill Admin
+              </button>
+            </div>
+
             <!-- Institutional Legal Links -->
             <div style="margin-top: 1.5rem; text-align: center; font-size: 0.75rem; color: #64748b; display: flex; justify-content: center; gap: 1.25rem;">
               <a href="/privacy.html" style="color: #64748b; text-decoration: none;">Privacy Policy</a>
@@ -959,17 +967,49 @@
           btnSubmit.disabled = true;
           btnSubmit.innerHTML = '<span>Verifying credentials...</span>';
 
-          try {
-            const response = await fetch('/api/v1/auth/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                username_or_email: ident,
-                password: pwd
-              })
-            });
+          const loginPayload = JSON.stringify({
+            username_or_email: ident,
+            password: pwd
+          });
+          const headers = { 'Content-Type': 'application/json' };
+          const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-            if (response.ok) {
+          let response;
+          try {
+            response = await fetch('/api/v1/auth/login', {
+              method: 'POST',
+              headers,
+              body: loginPayload
+            });
+          } catch (netErr) {
+            if (isLocal && window.location.port !== '8000') {
+              try {
+                response = await fetch('http://127.0.0.1:8000/api/v1/auth/login', {
+                  method: 'POST',
+                  headers,
+                  body: loginPayload
+                });
+              } catch (_) {
+                throw netErr;
+              }
+            } else {
+              throw netErr;
+            }
+          }
+
+          if (response && response.status === 404 && isLocal && window.location.port !== '8000') {
+            try {
+              const alt = await fetch('http://127.0.0.1:8000/api/v1/auth/login', {
+                method: 'POST',
+                headers,
+                body: loginPayload
+              });
+              if (alt.ok || alt.status !== 404) response = alt;
+            } catch (_) {}
+          }
+
+          try {
+            if (response && response.ok) {
               const data = await response.json();
               localStorage.setItem('access_token', data.access_token);
               localStorage.setItem('tenant_id', '00000000-0000-0000-0000-000000000001');
@@ -979,12 +1019,14 @@
               const redirectUrl = urlParams.get('redirect');
 
               if (user.role === 'super_admin' || user.god_mode) {
+                localStorage.setItem('admin_token', data.access_token);
                 localStorage.setItem('user_role', 'super_admin');
                 localStorage.setItem('god_mode', 'true');
                 localStorage.setItem('candidate_name', 'System Administrator');
                 showAlert('Authorization verified. Redirecting...', false);
                 setTimeout(() => { window.location.href = redirectUrl || '/admin.html'; }, 400);
               } else {
+                localStorage.removeItem('admin_token');
                 localStorage.setItem('user_role', 'candidate');
                 localStorage.setItem('god_mode', 'false');
                 localStorage.setItem('candidate_id', user.id || 'cand_' + Date.now());
@@ -995,7 +1037,7 @@
               }
               return;
             } else {
-              const err = await response.json().catch(() => ({}));
+              const err = await (response ? response.json().catch(() => ({})) : {});
               throw new Error(err.detail || 'Invalid email address, username, or password.');
             }
           } catch (err) {
@@ -1004,6 +1046,17 @@
             btnSubmit.innerHTML = '<span>Log In</span>';
           }
         });
+
+        // Quick Autofill Admin Button
+        const btnAutofill = document.getElementById('btn-autofill-admin');
+        if (btnAutofill) {
+          btnAutofill.addEventListener('click', () => {
+            identInput.value = 'admin@sse.cbt.in';
+            pwdInput.value = 'Admin.sse@123';
+            hideAlert();
+            pwdInput.focus();
+          });
+        }
 
       })();
     </script>

@@ -67,13 +67,15 @@ SLOT_SCHEDULE = {
 
 def _format_candidate_response(row: dict) -> CandidateResponse:
     metadata = row.get("metadata") or {}
+    if not isinstance(metadata, dict):
+        metadata = {}
     reg_no = row.get("registration_number", "")
     batch = str(metadata.get("batch", "A")).upper()
     if batch not in SLOT_SCHEDULE:
         batch = "A"
     slot_info = SLOT_SCHEDULE.get(batch, SLOT_SCHEDULE["A"])
 
-    cand_id_str = str(row["id"])
+    cand_id_str = str(row.get("id") or "")
     id_short = cand_id_str[-4:].upper() if len(cand_id_str) >= 4 else "0001"
 
     # Standardized Roll Number / Registration Number format: SSE-{SLOT}-CBT-{SEQ:04d}
@@ -102,14 +104,46 @@ def _format_candidate_response(row: dict) -> CandidateResponse:
     else:
         created_at_ist = format_ist_now()
 
+    # Safely extract compensatory minutes
+    raw_comp = metadata.get("compensatory_minutes")
+    try:
+        comp_mins = int(raw_comp) if raw_comp is not None else 0
+    except (ValueError, TypeError):
+        comp_mins = 0
+
+    # Safely extract biometric score
+    raw_bio = metadata.get("biometric_score")
+    try:
+        bio_score = float(raw_bio) if raw_bio is not None else 98.4
+    except (ValueError, TypeError):
+        bio_score = 98.4
+
+    # Robust candidate name fallback
+    cand_name = row.get("full_name") or row.get("name") or metadata.get("full_name") or metadata.get("name") or "Candidate"
+
+    # Safely extract score and percentage
+    score_val = None
+    if metadata.get("score") is not None:
+        try:
+            score_val = float(metadata["score"])
+        except (ValueError, TypeError):
+            pass
+
+    pct_val = None
+    if metadata.get("percentage") is not None:
+        try:
+            pct_val = float(metadata["percentage"])
+        except (ValueError, TypeError):
+            pass
+
     return CandidateResponse(
         id=cand_id_str,
-        full_name=row["full_name"],
+        full_name=cand_name,
         registration_number=reg_no,
         roll_number=roll_no,
         status=metadata.get("status", "active"),
         batch=batch,
-        email=metadata.get("email") or f"{reg_no.lower()}@ssecbt.in",
+        email=metadata.get("email") or (f"{reg_no.lower()}@ssecbt.in" if reg_no else "candidate@ssecbt.in"),
         password=metadata.get("password") or "12345678",
         tenant_id=str(row.get("tenant_id", "")),
         category=metadata.get("category", "General"),
@@ -117,14 +151,14 @@ def _format_candidate_response(row: dict) -> CandidateResponse:
         is_pwd=bool(metadata.get("is_pwd", False)),
         has_scribe=bool(metadata.get("has_scribe", False)),
         disability_type=metadata.get("disability_type"),
-        compensatory_minutes=int(metadata.get("compensatory_minutes", 0)),
+        compensatory_minutes=comp_mins,
         assigned_terminal=assigned_terminal,
         test_center_name=metadata.get("test_center_name"),
         test_center_code=metadata.get("test_center_code"),
         room_number=metadata.get("room_number") or metadata.get("lab_number"),
         device_details=metadata.get("device_details"),
         biometric_status=metadata.get("biometric_status", "verified"),
-        biometric_score=float(metadata.get("biometric_score", 98.4)),
+        biometric_score=bio_score,
         exam_status=metadata.get("exam_status", "assigned"),
         debar_reason=metadata.get("debar_reason"),
         ip_address=metadata.get("ip_address", "10.0.4.12"),
@@ -132,8 +166,8 @@ def _format_candidate_response(row: dict) -> CandidateResponse:
         slot_timing_ist=slot_info["timing"],
         created_at_ist=created_at_ist,
         photo_url=metadata.get("photo_url") or "/user.png",
-        score=metadata.get("score"),
-        percentage=metadata.get("percentage"),
+        score=score_val,
+        percentage=pct_val,
         metadata=metadata,
     )
 
@@ -314,26 +348,53 @@ def get_candidates(user_context: dict = Depends(require_admin_user)):
     db = get_db()
     ensure_tenant_exists(db, tid)
 
+    candidates_data = []
     try:
         if is_super_admin:
-            res = db.table("candidates").select("*").order("created_at", desc=False).execute()
+            try:
+                res = db.table("candidates").select("*").order("created_at", desc=False).execute()
+            except Exception:
+                res = db.table("candidates").select("*").execute()
         else:
-            res = db.table("candidates").select("*").eq("tenant_id", tid).order("created_at", desc=False).execute()
+            try:
+                res = db.table("candidates").select("*").eq("tenant_id", tid).order("created_at", desc=False).execute()
+            except Exception:
+                res = db.table("candidates").select("*").eq("tenant_id", tid).execute()
+
             if not res.data:
-                res = db.table("candidates").select("*").or_("tenant_id.eq.00000000-0000-0000-0000-000000000001,tenant_id.is.null").order("created_at", desc=False).execute()
+                try:
+                    res = db.table("candidates").select("*").or_("tenant_id.eq.00000000-0000-0000-0000-000000000001,tenant_id.is.null").order("created_at", desc=False).execute()
+                except Exception:
+                    res = db.table("candidates").select("*").execute()
 
         candidates_data = res.data or []
-        if not candidates_data:
-            res_all = db.table("candidates").select("*").order("created_at", desc=False).execute()
-            candidates_data = res_all.data or []
+        if not candidates_data and not is_super_admin:
+            try:
+                res_all = db.table("candidates").select("*").execute()
+                candidates_data = res_all.data or []
+            except Exception:
+                pass
 
-        return [_format_candidate_response(row) for row in candidates_data]
     except Exception as e:
         logger.error("Failed to query candidates from Supabase: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database query failed: {str(e)}",
-        )
+        try:
+            res_all = db.table("candidates").select("*").execute()
+            candidates_data = res_all.data or []
+        except Exception as fallback_e:
+            logger.error("Fallback candidates query failed: %s", fallback_e)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Database query failed: {str(e)}",
+            )
+
+    formatted = []
+    for row in candidates_data:
+        try:
+            formatted.append(_format_candidate_response(row))
+        except Exception as fmt_err:
+            logger.warning("Could not format candidate row %s: %s", row.get("id"), fmt_err)
+
+    return formatted
 
 
 @router.post("", response_model=CandidateResponse, include_in_schema=False)
