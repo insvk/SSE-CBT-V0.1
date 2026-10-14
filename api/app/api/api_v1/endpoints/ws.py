@@ -1,0 +1,346 @@
+import time
+import json
+import logging
+from typing import Dict, Any
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from app.core.ws_manager import ws_manager
+from app.core.db import get_db
+from app.core.tenant import DEFAULT_TENANT_ID
+from app.services.exam_persistence import (
+    persist_response_cloud_db,
+    mark_attempt_submitted_cloud_db,
+    resolve_exam_uuid
+)
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+
+
+@router.websocket("/ws/exam/{exam_id}")
+async def exam_websocket_endpoint(websocket: WebSocket, exam_id: str):
+    """
+    Real-Time WebSocket channel for candidate exam session.
+    Provides sub-second answer synchronization and live proctoring alerts.
+    Persists all candidate responses directly into Supabase Cloud DB in real time.
+    """
+    channel = f"exam_{exam_id}"
+    await ws_manager.connect(websocket, channel)
+
+    # Send initial connection confirmation
+    await websocket.send_text(json.dumps({
+        "type": "CONNECTED",
+        "channel": channel,
+        "exam_id": exam_id,
+        "server_time": time.time(),
+        "cloud_db_connected": True,
+        "message": "Real-time bidirectional CBT synchronization active."
+    }))
+
+    db = get_db()
+
+    try:
+        while True:
+            raw_text = await websocket.receive_text()
+            try:
+                data = json.loads(raw_text)
+                msg_type = data.get("type")
+
+                if msg_type == "PING":
+                    await websocket.send_text(json.dumps({
+                        "type": "PONG",
+                        "server_time": time.time()
+                    }))
+
+                elif msg_type == "RESPONSE_UPDATE":
+                    # Realtime response updated via WebSocket
+                    q_id = str(data.get("question_id"))
+                    ans = data.get("answer")
+                    st = data.get("state", 1)
+                    idemp_key = data.get("idempotency_key") or f"ws_{q_id}_{int(time.time()*1000)}"
+                    cand_id = data.get("candidate_id")
+                    reg_no = data.get("reg_no") or ""
+                    cand_name = data.get("candidate_name") or "Candidate"
+
+                    # 1. Direct Cloud DB Persistence
+                    persist_res = persist_response_cloud_db(
+                        db=db,
+                        tenant_id=DEFAULT_TENANT_ID,
+                        exam_id=exam_id,
+                        question_id=q_id,
+                        answer=ans,
+                        state=st,
+                        idempotency_key=idemp_key,
+                        candidate_id=cand_id,
+                        reg_no=reg_no,
+                        candidate_name=cand_name,
+                    )
+
+                    # 2. Live Broadcast to Administrator Command Centre
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "CANDIDATE_RESPONSE",
+                        "exam_id": exam_id,
+                        "candidate_id": cand_id or persist_res.get("candidate_id"),
+                        "candidate_name": cand_name,
+                        "reg_no": reg_no,
+                        "question_id": q_id,
+                        "question_uuid": persist_res.get("question_uuid"),
+                        "answer": ans,
+                        "state": st,
+                        "status": persist_res.get("status"),
+                        "cloud_synced": persist_res.get("success", False),
+                        "timestamp": time.time()
+                    })
+
+                    # 3. Fast Acknowledgement back to Candidate Console
+                    await websocket.send_text(json.dumps({
+                        "type": "ACK",
+                        "question_id": q_id,
+                        "cloud_synced": persist_res.get("success", False),
+                        "status": persist_res.get("status"),
+                        "timestamp": time.time()
+                    }))
+
+                elif msg_type == "CANDIDATE_VIOLATION":
+                    v_type = data.get("violation_type", "Tab Switch Detected")
+                    v_count = data.get("count", 1)
+                    cand_name = data.get("candidate_name", "Registered Candidate")
+                    reg_no = data.get("reg_no") or ""
+                    terminal = data.get("terminal", "C-042")
+
+                    # Live Alert to Admin Command Centre Proctor Feed
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "CANDIDATE_VIOLATION",
+                        "exam_id": exam_id,
+                        "candidate_name": cand_name,
+                        "reg_no": reg_no,
+                        "terminal": terminal,
+                        "violation_type": v_type,
+                        "count": v_count,
+                        "timestamp": time.time()
+                    })
+
+                elif msg_type == "ACTIVE_QUESTION_CHANGED":
+                    q_idx = data.get("current_question_index", 1)
+                    q_id = str(data.get("current_question_id", ""))
+                    cand_id = data.get("candidate_id")
+                    reg_no = data.get("reg_no") or ""
+                    cand_name = data.get("candidate_name") or "Candidate"
+
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "ACTIVE_QUESTION_CHANGED",
+                        "exam_id": exam_id,
+                        "candidate_id": cand_id,
+                        "candidate_name": cand_name,
+                        "reg_no": reg_no,
+                        "current_question_index": q_idx,
+                        "current_question_id": q_id,
+                        "timestamp": time.time()
+                    })
+
+                elif msg_type == "SUBMIT_EXAM":
+                    cand_id = data.get("candidate_id")
+                    reg_no = data.get("reg_no")
+                    cand_name = data.get("candidate_name") or "Candidate"
+
+                    mark_attempt_submitted_cloud_db(
+                        db=db,
+                        tenant_id=DEFAULT_TENANT_ID,
+                        exam_id=exam_id,
+                        candidate_id=cand_id,
+                        reg_no=reg_no
+                    )
+
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "CANDIDATE_SUBMITTED",
+                        "exam_id": exam_id,
+                        "candidate_name": cand_name,
+                        "reg_no": reg_no,
+                        "timestamp": time.time()
+                    })
+
+                    await websocket.send_text(json.dumps({
+                        "type": "SUBMIT_ACK",
+                        "status": "success",
+                        "timestamp": time.time()
+                    }))
+
+                elif msg_type == "DIRECTIVE_ACKNOWLEDGED":
+                    reg_no = data.get("reg_no")
+                    cand_name = data.get("candidate_name") or "Candidate"
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "DIRECTIVE_ACKNOWLEDGED",
+                        "reg_no": reg_no,
+                        "candidate_name": cand_name,
+                        "timestamp": time.time(),
+                        "message": f"Candidate {cand_name} ({reg_no}) confirmed compliance with directive."
+                    })
+
+            except json.JSONDecodeError:
+                pass
+
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket, channel)
+    except Exception as e:
+        logger.warning(f"WebSocket error in {channel}: {e}")
+        ws_manager.disconnect(websocket, channel)
+
+
+@router.websocket("/ws/admin")
+async def admin_websocket_endpoint(websocket: WebSocket):
+    """
+    Real-Time WebSocket channel for Administrator Command Centre.
+    Receives live test-taker progress, violations, proctoring feeds, and dispatches broadcast announcements.
+    """
+    channel = "admin_feed"
+    await ws_manager.connect(websocket, channel)
+
+    await websocket.send_text(json.dumps({
+        "type": "CONNECTED",
+        "channel": channel,
+        "server_time": time.time(),
+        "cloud_db_connected": True,
+        "message": "Command Centre Real-Time Feed Active."
+    }))
+
+    try:
+        while True:
+            raw_text = await websocket.receive_text()
+            try:
+                data = json.loads(raw_text)
+                msg_type = data.get("type")
+                if msg_type == "PING":
+                    await websocket.send_text(json.dumps({
+                        "type": "PONG",
+                        "server_time": time.time()
+                    }))
+                elif msg_type == "EXTEND_TIME":
+                    exam_id = data.get("exam_id", "EX-1001")
+                    extra_mins = int(data.get("extra_minutes", 15))
+                    await ws_manager.broadcast(f"exam_{exam_id}", {
+                        "type": "TIME_EXTENDED",
+                        "exam_id": exam_id,
+                        "extra_minutes": extra_mins,
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "EXTEND_CANDIDATE_TIME":
+                    exam_id = data.get("exam_id", "EX-1001")
+                    reg_no = data.get("reg_no")
+                    extra_mins = int(data.get("extra_minutes", 15))
+                    reason = data.get("reason", "Compensatory time grant")
+                    await ws_manager.broadcast(f"exam_{exam_id}", {
+                        "type": "INDIVIDUAL_TIME_EXTENDED",
+                        "reg_no": reg_no,
+                        "extra_minutes": extra_mins,
+                        "reason": reason,
+                        "timestamp": time.time()
+                    })
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "INDIVIDUAL_TIME_EXTENDED",
+                        "reg_no": reg_no,
+                        "extra_minutes": extra_mins,
+                        "reason": reason,
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "PAUSE_SESSION":
+                    exam_id = data.get("exam_id", "EX-1001")
+                    reg_no = data.get("reg_no", "ALL")
+                    reason = data.get("reason", "Invigilator Verification Hold")
+                    await ws_manager.broadcast(f"exam_{exam_id}", {
+                        "type": "EXAM_PAUSED",
+                        "reg_no": reg_no,
+                        "reason": reason,
+                        "timestamp": time.time()
+                    })
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "EXAM_PAUSED",
+                        "reg_no": reg_no,
+                        "reason": reason,
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "RESUME_SESSION":
+                    exam_id = data.get("exam_id", "EX-1001")
+                    reg_no = data.get("reg_no", "ALL")
+                    await ws_manager.broadcast(f"exam_{exam_id}", {
+                        "type": "EXAM_RESUMED",
+                        "reg_no": reg_no,
+                        "timestamp": time.time()
+                    })
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "EXAM_RESUMED",
+                        "reg_no": reg_no,
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "RESEAT_TERMINAL":
+                    exam_id = data.get("exam_id", "EX-1001")
+                    reg_no = data.get("reg_no")
+                    new_term = data.get("new_terminal", "C-043")
+                    reason = data.get("reason", "Terminal Swap")
+                    await ws_manager.broadcast(f"exam_{exam_id}", {
+                        "type": "TERMINAL_RESEATED",
+                        "reg_no": reg_no,
+                        "new_terminal": new_term,
+                        "reason": reason,
+                        "timestamp": time.time()
+                    })
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "TERMINAL_RESEATED",
+                        "reg_no": reg_no,
+                        "new_terminal": new_term,
+                        "reason": reason,
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "UNLOCK_TERMINAL":
+                    exam_id = data.get("exam_id", "EX-1001")
+                    reg_no = data.get("reg_no")
+                    await ws_manager.broadcast(f"exam_{exam_id}", {
+                        "type": "TERMINAL_UNLOCKED",
+                        "reg_no": reg_no,
+                        "timestamp": time.time()
+                    })
+                    await ws_manager.broadcast("admin_feed", {
+                        "type": "TERMINAL_UNLOCKED",
+                        "reg_no": reg_no,
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "BROADCAST_ANNOUNCEMENT":
+                    broadcast_msg = data.get("message", "Attention all candidates: Invigilator Announcement.")
+                    await ws_manager.broadcast_all({
+                        "type": "BROADCAST_ANNOUNCEMENT",
+                        "message": broadcast_msg,
+                        "sender": "Central Invigilator",
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "SEND_CANDIDATE_WARNING":
+                    target_exam = data.get("exam_id", "EX-1001")
+                    await ws_manager.broadcast(f"exam_{target_exam}", {
+                        "type": "PROCTOR_DIRECTIVE",
+                        "reg_no": data.get("reg_no"),
+                        "message": data.get("message", "Proctor Alert: Return to your test terminal immediately."),
+                        "requires_ack": True,
+                        "timestamp": time.time()
+                    })
+                elif msg_type == "LOCK_TERMINAL":
+                    target_exam = data.get("exam_id", "EX-1001")
+                    await ws_manager.broadcast(f"exam_{target_exam}", {
+                        "type": "FORCE_LOCK_TERMINAL",
+                        "reg_no": data.get("reg_no"),
+                        "reason": data.get("reason", "Terminal locked by Administrator."),
+                        "timestamp": time.time()
+                    })
+            except Exception:
+                pass
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket, channel)
+    except Exception as e:
+        logger.warning(f"Admin WebSocket error: {e}")
+        ws_manager.disconnect(websocket, channel)
+
+
+@router.get("/ws/status")
+def get_ws_status():
+    """Diagnostic health check for active WebSocket connections."""
+    return {
+        "status": "online",
+        "stats": ws_manager.get_stats(),
+        "server_time": time.time()
+    }

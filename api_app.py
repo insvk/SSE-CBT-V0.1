@@ -2,20 +2,11 @@ import os
 import sys
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
+api_dir = os.path.join(root_dir, "api")
 backend_dir = os.path.join(root_dir, "backend")
 
-candidate_paths = [
-    backend_dir,
-    os.path.join(os.getcwd(), "backend"),
-    os.path.join("/var/task", "backend"),
-    os.path.abspath("backend"),
-]
-
-for p in candidate_paths:
+for p in [api_dir, backend_dir, root_dir]:
     if os.path.exists(p) and p not in sys.path:
         sys.path.insert(0, p)
 
-try:
-    from main import app  # noqa: F401, E402
-except ImportError:
-    from backend.main import app  # noqa: F401, E402
+from index import app, application, handler  # noqa: F401, E402
