@@ -1,5 +1,22 @@
 export {};
 
+// Purge legacy hardcoded account from browser localStorage if present
+(function purgeLegacyHardcodedUser() {
+    try {
+        const staleValues = ['5254740', '5254740(V4.3.7)', 'NARESH S'];
+        const r = localStorage.getItem('reg_no') || '';
+        const n = localStorage.getItem('candidate_name') || '';
+        const u = localStorage.getItem('cbt_remembered_user') || '';
+        if (staleValues.some(v => r.includes(v) || n.toUpperCase() === v.toUpperCase() || u.includes(v))) {
+            localStorage.removeItem('reg_no');
+            localStorage.removeItem('candidate_name');
+            localStorage.removeItem('candidate_id');
+            localStorage.removeItem('cbt_remembered_user');
+            localStorage.removeItem('access_token');
+        }
+    } catch (_) {}
+})();
+
 function getAuthToken(): string {
     return localStorage.getItem('access_token') || '';
 }

@@ -84,6 +84,17 @@ def resolve_question_uuid(db, q_id: str, tenant_id: str = "00000000-0000-0000-00
     return target_uuid
 
 
+def resolve_candidate_uuid(candidate_id: Optional[str], reg_no: Optional[str] = None) -> str:
+    """Guarantees candidate_id is a valid UUID format acceptable by PostgreSQL/Supabase."""
+    if candidate_id:
+        try:
+            return str(uuid.UUID(str(candidate_id)))
+        except (ValueError, AttributeError):
+            pass
+    seed = str(candidate_id or reg_no or f"cand_{time.time()}").strip()
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, seed))
+
+
 def ensure_candidate_exists(
     db,
     tenant_id: str,
@@ -93,25 +104,26 @@ def ensure_candidate_exists(
 ) -> str:
     """Ensures candidate row exists in public.candidates table."""
     ensure_tenant_exists(db, tenant_id)
-    reg = (reg_no or f"SSE-A-CBT-{uuid.uuid4().hex[:4].upper()}").strip()
+    cand_uuid = resolve_candidate_uuid(candidate_id, reg_no)
+    reg = (reg_no or f"SSE-A-CBT-{cand_uuid[:4].upper()}").strip()
     name = (candidate_name or f"Candidate {reg}").strip()
     try:
-        chk = db.table("candidates").select("id").eq("id", candidate_id).limit(1).execute()
+        chk = db.table("candidates").select("id").eq("id", cand_uuid).limit(1).execute()
         if chk.data:
             return str(chk.data[0]["id"])
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Error checking candidate {cand_uuid}: {e}")
 
     try:
         chk_reg = db.table("candidates").select("id").eq("registration_number", reg).limit(1).execute()
         if chk_reg.data:
             return str(chk_reg.data[0]["id"])
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Error checking candidate by reg {reg}: {e}")
 
     try:
         db.table("candidates").upsert({
-            "id": candidate_id,
+            "id": cand_uuid,
             "tenant_id": tenant_id,
             "full_name": name,
             "registration_number": reg,
@@ -126,10 +138,10 @@ def ensure_candidate_exists(
                 "biometric_score": 98.6,
             }
         }).execute()
-        return candidate_id
+        return cand_uuid
     except Exception as e:
         logger.warning(f"Error ensuring candidate exists: {e}")
-    return candidate_id
+    return cand_uuid
 
 
 def get_or_create_candidate_id(db, reg_no: Optional[str] = None, candidate_name: Optional[str] = None) -> str:

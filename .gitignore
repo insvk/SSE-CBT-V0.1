@@ -7,3 +7,4 @@ venv/
 .pytest_cache/
 supabase/.temp/
 .vercel/
+*.zip

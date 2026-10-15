@@ -16,6 +16,7 @@ from app.services.exam_persistence import (
     resolve_exam_uuid,
     get_or_create_candidate_id,
     ensure_candidate_exists,
+    resolve_candidate_uuid,
 )
 import hashlib
 from app.core.master_clock import (
@@ -3514,26 +3515,8 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
     reg_no = payload.get("reg_no") or session.get("reg_no") or f"SSE-A-CBT-{uuid.uuid4().hex[:4].upper()}"
 
     db = get_db()
-    actual_cand_id = cand_id
-    if not actual_cand_id or len(str(actual_cand_id)) < 10:
-        actual_cand_id = get_or_create_candidate_id(db, reg_no, cand_name)
-    else:
-        try:
-            chk = db.table("candidates").select("id").eq("id", str(actual_cand_id)).execute()
-            if not chk.data:
-                db.table("candidates").upsert({
-                    "id": str(actual_cand_id),
-                    "tenant_id": DEFAULT_TENANT_ID,
-                    "registration_number": reg_no,
-                    "full_name": cand_name,
-                    "metadata": {
-                        "batch": "A",
-                        "roll_number": reg_no,
-                        "status": "active",
-                    }
-                }).execute()
-        except Exception:
-            pass
+    actual_cand_id = resolve_candidate_uuid(cand_id, reg_no)
+    actual_cand_id = ensure_candidate_exists(db, DEFAULT_TENANT_ID, actual_cand_id, reg_no=reg_no, candidate_name=cand_name)
 
     # Idempotency Protection: If candidate has already submitted this exam, return their existing scorecard
     cand_key = str(actual_cand_id)
@@ -3726,7 +3709,8 @@ def get_exam_result(
     target_cand = None
     if candidate_id:
         try:
-            c_res = db.table("candidates").select("*").eq("id", candidate_id).limit(1).execute()
+            cand_uuid = resolve_candidate_uuid(candidate_id, reg_no)
+            c_res = db.table("candidates").select("*").eq("id", cand_uuid).limit(1).execute()
             if c_res.data:
                 target_cand = c_res.data[0]
         except Exception:

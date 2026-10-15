@@ -121,6 +121,58 @@ function getAuthHeaders(): HeadersInit {
     return headers;
 }
 
+// Purge legacy hardcoded account from browser localStorage if present
+(function purgeLegacyHardcodedUser() {
+    try {
+        const staleValues = ['5254740', '5254740(V4.3.7)', 'NARESH S'];
+        const r = localStorage.getItem('reg_no') || '';
+        const n = localStorage.getItem('candidate_name') || '';
+        const u = localStorage.getItem('cbt_remembered_user') || '';
+        if (staleValues.some(v => r.includes(v) || n.toUpperCase() === v.toUpperCase() || u.includes(v))) {
+            localStorage.removeItem('reg_no');
+            localStorage.removeItem('candidate_name');
+            localStorage.removeItem('candidate_id');
+            localStorage.removeItem('cbt_remembered_user');
+            localStorage.removeItem('access_token');
+        }
+    } catch (_) {}
+})();
+
+async function safeExamFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const buildHeaders = (): HeadersInit => ({
+        ...getAuthHeaders(),
+        ...(options.headers || {}),
+    });
+
+    let targetUrl = endpoint;
+    let res: Response;
+
+    try {
+        res = await fetch(targetUrl, { ...options, headers: buildHeaders() });
+    } catch (networkErr) {
+        if (isLocal && window.location.port !== '8000' && !endpoint.startsWith('http')) {
+            console.info(`[Exam Engine] Relative fetch failed, trying direct connection to http://127.0.0.1:8000${endpoint}`);
+            targetUrl = `http://127.0.0.1:8000${endpoint}`;
+            res = await fetch(targetUrl, { ...options, headers: buildHeaders() });
+        } else {
+            throw networkErr;
+        }
+    }
+
+    if ((res.status === 404 || res.status === 502) && isLocal && window.location.port !== '8000' && !targetUrl.startsWith('http://127.0.0.1:8000')) {
+        try {
+            console.info(`[Exam Engine] HTTP ${res.status} on relative path, attempting http://127.0.0.1:8000${endpoint}`);
+            const altRes = await fetch(`http://127.0.0.1:8000${endpoint}`, { ...options, headers: buildHeaders() });
+            if (altRes.ok || altRes.status !== 404) {
+                res = altRes;
+            }
+        } catch (_) {}
+    }
+
+    return res;
+}
+
 // Math Formula KaTeX Renderer
 function renderMath(target: HTMLElement): void {
     if ((window as any).renderMathInElement) {
@@ -761,9 +813,35 @@ async function performFinalSubmission(): Promise<void> {
     }
 
     try {
-        const candId = localStorage.getItem('candidate_id') || '';
-        const candName = localStorage.getItem('candidate_name') || 'Candidate';
-        const regNo = localStorage.getItem('reg_no') || '';
+        let examIdToSubmit = EXAM_ID;
+        if (!examIdToSubmit) {
+            examIdToSubmit = localStorage.getItem('active_exam_id') || '';
+        }
+        if (!examIdToSubmit) {
+            try {
+                const exListRes = await safeExamFetch(`${API_BASE}/`);
+                if (exListRes.ok) {
+                    const exList = await exListRes.json();
+                    if (Array.isArray(exList) && exList.length > 0) {
+                        examIdToSubmit = exList[0].id;
+                        EXAM_ID = examIdToSubmit;
+                        localStorage.setItem('active_exam_id', examIdToSubmit);
+                    }
+                }
+            } catch (_) {}
+        }
+        if (!examIdToSubmit) {
+            examIdToSubmit = '00000000-0000-0000-0000-000000000101';
+        }
+
+        let candId = localStorage.getItem('candidate_id') || '';
+        let candName = localStorage.getItem('candidate_name') || 'Candidate';
+        let regNo = localStorage.getItem('reg_no') || '';
+
+        // If candId is not a valid UUID format, clear it so backend generates a deterministic UUID
+        if (candId && !candId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+            candId = '';
+        }
 
         // Pack full candidate responses array to guarantee zero data loss
         const fullResponses = allQuestions.map((q, idx) => ({
@@ -772,9 +850,8 @@ async function performFinalSubmission(): Promise<void> {
             state: questionState[idx]
         }));
 
-        const res = await fetch(`${API_BASE}/${EXAM_ID}/submit`, {
+        const res = await safeExamFetch(`${API_BASE}/${encodeURIComponent(examIdToSubmit)}/submit`, {
             method: 'POST',
-            headers: getAuthHeaders(),
             body: JSON.stringify({
                 candidate_id: candId,
                 candidate_name: candName,
@@ -786,17 +863,31 @@ async function performFinalSubmission(): Promise<void> {
         if (res.ok) {
             const data = await res.json();
             sessionStorage.setItem('latest_result', JSON.stringify(data));
-            window.location.href = '/scorecard.html';
+            localStorage.setItem('active_exam_id', examIdToSubmit);
+            const redirectUrl = `/scorecard.html?exam_id=${encodeURIComponent(examIdToSubmit)}&reg_no=${encodeURIComponent(regNo)}&candidate_id=${encodeURIComponent(candId || (data.scoring_details?.candidate_id || ''))}`;
+            window.location.href = redirectUrl;
         } else {
-            alert("Examination server error. Please retry submission.");
+            let errorMsg = `Server error (HTTP ${res.status})`;
+            try {
+                const errData = await res.json();
+                errorMsg = errData.detail || errData.message || errorMsg;
+            } catch (_) {
+                try {
+                    const text = await res.text();
+                    if (text && text.length < 200) errorMsg = text;
+                } catch (_) {}
+            }
+            console.error('[Exam Submission Error]', res.status, errorMsg);
+            alert(`Examination submission error: ${errorMsg}. Please retry.`);
             if (ui.modalConfirmSubmit) {
                 ui.modalConfirmSubmit.textContent = "Confirm Final Submit";
                 ui.modalConfirmSubmit.disabled = false;
             }
             isSubmitting = false;
         }
-    } catch (_) {
-        alert("Network failure syncing with server. Please retry.");
+    } catch (netErr: any) {
+        console.error('[Exam Submission Network Error]', netErr);
+        alert(`Network failure syncing with examination server: ${netErr?.message || 'Connection refused'}. Please retry.`);
         if (ui.modalConfirmSubmit) {
             ui.modalConfirmSubmit.textContent = "Confirm Final Submit";
             ui.modalConfirmSubmit.disabled = false;

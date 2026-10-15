@@ -24,9 +24,10 @@ _last_ntp_sync: float = 0.0
 _sync_status: str = "initialized"
 
 
-def sync_with_google_ntp(timeout: float = 2.0) -> Dict[str, Any]:
+def sync_with_google_ntp(timeout: float = 0.4) -> Dict[str, Any]:
     """Queries time.google.com on UDP port 123 to calculate atomic clock offset."""
     global _ntp_offset_seconds, _last_ntp_sync, _sync_status
+    _last_ntp_sync = time.time()
     client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     client.settimeout(timeout)
     # NTP v3 client mode request (0x1b = 00 011 011)
@@ -55,7 +56,7 @@ def sync_with_google_ntp(timeout: float = 2.0) -> Dict[str, Any]:
                 "sync_timestamp": _last_ntp_sync,
             }
     except Exception as e:
-        logger.warning("Could not sync with NTP server %s: %s. Using local clock.", NTP_SERVER, e)
+        logger.debug("Could not sync with NTP server %s: %s. Using local clock.", NTP_SERVER, e)
         _sync_status = "local_fallback"
     finally:
         client.close()
