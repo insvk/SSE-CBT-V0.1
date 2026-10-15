@@ -115,11 +115,11 @@ function loadCandidateProfile(): void {
 // Load live questions count and attempt history from database
 async function loadPortalData(): Promise<void> {
     try {
-        const qRes = await fetch('/api/v1/questions/', { headers: getHeaders() });
+        const qRes = await fetch('/api/v1/questions/count', { headers: getHeaders() });
         if (qRes.ok) {
-            const questions = await qRes.json();
-            if (Array.isArray(questions) && ui.candStatQCount) {
-                ui.candStatQCount.textContent = `${questions.length} Questions`;
+            const data = await qRes.json();
+            if (data && data.count !== undefined && ui.candStatQCount) {
+                ui.candStatQCount.textContent = `${data.count} Questions`;
             }
         }
     } catch (_) {}

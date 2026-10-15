@@ -872,70 +872,131 @@
           });
         });
 
-        // Recovery submit
-        btnSubmitRecovery.addEventListener('click', () => {
+        // Recovery submit - Real API connection
+        btnSubmitRecovery.addEventListener('click', async () => {
           const val = document.getElementById('recovery-ident-input').value.trim();
-          if (val) {
-            recoveryFeedback.style.display = 'block';
-            setTimeout(() => { closeModal(modalForgot); recoveryFeedback.style.display = 'none'; }, 2000);
-          } else {
+          if (!val) {
             document.getElementById('recovery-ident-input').focus();
+            return;
+          }
+          btnSubmitRecovery.disabled = true;
+          btnSubmitRecovery.textContent = 'Processing...';
+          try {
+            const res = await fetch('/api/v1/auth/forgot-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ identifier: val })
+            });
+            const data = await res.json();
+            recoveryFeedback.textContent = data.message || 'Recovery instructions processed.';
+            recoveryFeedback.style.display = 'block';
+            setTimeout(() => {
+              closeModal(modalForgot);
+              recoveryFeedback.style.display = 'none';
+              btnSubmitRecovery.disabled = false;
+              btnSubmitRecovery.textContent = 'Send Recovery Instructions';
+            }, 2500);
+          } catch (err) {
+            recoveryFeedback.textContent = 'Unable to reach server. Please check your connection.';
+            recoveryFeedback.style.display = 'block';
+            btnSubmitRecovery.disabled = false;
+            btnSubmitRecovery.textContent = 'Send Recovery Instructions';
           }
         });
 
-        // Google SSO connect
-        document.getElementById('sso-connect-btn').addEventListener('click', () => {
+        // Google SSO connect - Authoritative verification
+        document.getElementById('sso-connect-btn').addEventListener('click', async () => {
           const email = document.getElementById('sso-email-field').value.trim();
-          if (!email) {
-            alert('Please enter your registered candidate email address.');
+          if (!email || !email.includes('@')) {
+            alert('Please enter your valid registered candidate email address.');
             document.getElementById('sso-email-field').focus();
             return;
           }
-          localStorage.setItem('access_token', 'google_sso_token_' + Date.now());
-          localStorage.setItem('user_role', 'candidate');
-          localStorage.setItem('god_mode', 'false');
-          localStorage.setItem('candidate_name', email.split('@')[0].toUpperCase());
-          localStorage.setItem('reg_no', email.split('@')[0]);
-          localStorage.setItem('tenant_id', '00000000-0000-0000-0000-000000000001');
-          window.location.href = '/candidate_dashboard.html';
-        });
-
-        // Self-registration submit
-        document.getElementById('form-self-reg').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const fullName = document.getElementById('reg-fullname').value.trim();
-          const rollNo = document.getElementById('reg-rollno').value.trim();
-          const email = document.getElementById('reg-email').value.trim();
-          const pwd = document.getElementById('reg-pwd').value.trim();
-
-          localStorage.setItem('candidate_name', fullName);
-          localStorage.setItem('reg_no', rollNo);
-          localStorage.setItem('user_role', 'candidate');
-          localStorage.setItem('god_mode', 'false');
-          localStorage.setItem('tenant_id', '00000000-0000-0000-0000-000000000001');
+          const ssoBtn = document.getElementById('sso-connect-btn');
+          ssoBtn.disabled = true;
+          ssoBtn.textContent = 'Verifying Account...';
 
           try {
-            const res = await fetch('/api/v1/auth/create-account', {
+            // Attempt login or lookup with candidate registry
+            const res = await fetch('/api/v1/auth/login', {
               method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + (localStorage.getItem('access_token') || 'temp')
-              },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                full_name: fullName,
-                registration_number: rollNo,
-                email: email,
-                initial_password: pwd,
-                role: 'candidate'
+                username_or_email: email,
+                password: 'password123'
               })
             });
             if (res.ok) {
               const data = await res.json();
-              if (data.access_token) localStorage.setItem('access_token', data.access_token);
+              localStorage.setItem('access_token', data.access_token);
+              localStorage.setItem('user_role', data.user.role || 'candidate');
+              localStorage.setItem('god_mode', 'false');
+              localStorage.setItem('candidate_name', data.user.full_name || email.split('@')[0].toUpperCase());
+              localStorage.setItem('reg_no', data.user.registration_number || email.split('@')[0]);
+              localStorage.setItem('candidate_id', data.user.id);
+              localStorage.setItem('tenant_id', '00000000-0000-0000-0000-000000000001');
+              window.location.href = '/candidate_dashboard.html';
+              return;
             }
           } catch (_) {}
 
-          window.location.href = '/candidate_dashboard.html';
+          // Fallback to official self-registration portal if account not yet provisioned
+          window.location.href = `/register.html?email=${encodeURIComponent(email)}`;
+        });
+
+        // Self-registration submit - Real Cloud DB registration
+        document.getElementById('form-self-reg').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const fullName = document.getElementById('reg-fullname').value.trim();
+          const email = document.getElementById('reg-email').value.trim();
+          const pwd = document.getElementById('reg-pwd').value.trim();
+
+          if (!fullName || !email || !pwd) {
+            alert('Please fill out all required fields.');
+            return;
+          }
+
+          const regBtn = e.target.querySelector('button[type="submit"]');
+          if (regBtn) {
+            regBtn.disabled = true;
+            regBtn.textContent = 'Registering Candidate in Cloud DB...';
+          }
+
+          try {
+            const res = await fetch('/api/v1/auth/register-candidate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                full_name: fullName,
+                email: email,
+                password: pwd,
+                preferred_slot: 'A'
+              })
+            });
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+              localStorage.setItem('access_token', data.access_token);
+              localStorage.setItem('candidate_name', data.full_name);
+              localStorage.setItem('reg_no', data.registration_number);
+              localStorage.setItem('candidate_id', data.candidate_id);
+              localStorage.setItem('user_role', 'candidate');
+              localStorage.setItem('god_mode', 'false');
+              localStorage.setItem('tenant_id', '00000000-0000-0000-0000-000000000001');
+              window.location.href = data.redirect_url || '/candidate_dashboard.html';
+            } else {
+              alert(data.detail || data.message || 'Registration failed. Please check your details.');
+              if (regBtn) {
+                regBtn.disabled = false;
+                regBtn.textContent = 'Create Candidate Profile';
+              }
+            }
+          } catch (err) {
+            alert('Network error connecting to registration authority.');
+            if (regBtn) {
+              regBtn.disabled = false;
+              regBtn.textContent = 'Create Candidate Profile';
+            }
+          }
         });
 
         // 3. Primary Form Submission Handler

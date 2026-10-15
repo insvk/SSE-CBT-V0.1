@@ -240,12 +240,24 @@ def parse_raw_question_text(
     return parsed_questions, errors
 
 
+@router.get("/count")
+def get_questions_count(user_context: dict = Depends(get_tenant_user)):
+    """Returns question count metric without exposing question content or answer keys."""
+    tid = user_context["tenant_id"]
+    db = get_db()
+    try:
+        res = db.table("question_bank").select("id").eq("tenant_id", tid).execute()
+        return {"status": "success", "count": len(res.data or [])}
+    except Exception:
+        return {"status": "success", "count": 0}
+
+
 @router.get("/")
 @router.get("")
 def get_question_bank(
     subject: Optional[str] = Query(None),
     status_filter: Optional[str] = Query(None, alias="status"),
-    user_context: dict = Depends(get_tenant_user),
+    user_context: dict = Depends(require_admin_user),
 ):
     """Fetch user-uploaded / inputted questions from Supabase Cloud DB with optional subject/status filters."""
     tid = user_context["tenant_id"]

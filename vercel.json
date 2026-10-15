@@ -31,6 +31,14 @@
       "destination": "/api/index.py"
     },
     {
+      "source": "/v1",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/v1/(.*)",
+      "destination": "/api/index.py"
+    },
+    {
       "source": "/health",
       "destination": "/api/index.py"
     }

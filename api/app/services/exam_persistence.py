@@ -149,6 +149,25 @@ def get_or_create_candidate_id(db, reg_no: Optional[str] = None, candidate_name:
     return ensure_candidate_exists(db, DEFAULT_TENANT_ID, cand_id, reg_no=reg, candidate_name=candidate_name)
 
 
+def ensure_exam_exists(db, tenant_id: str, exam_uuid: str, title: str = "MCQ ASSESSMENT [ SSE CBT 2026 ]") -> str:
+    """Ensures an exam record exists in public.exams so foreign keys in exam_attempts are satisfied."""
+    ensure_tenant_exists(db, tenant_id)
+    try:
+        chk = db.table("exams").select("id").eq("id", exam_uuid).limit(1).execute()
+        if not chk.data:
+            db.table("exams").upsert({
+                "id": exam_uuid,
+                "tenant_id": tenant_id,
+                "title": title,
+                "state": "active",
+                "duration_minutes": 180,
+                "config": {"correct_marks": 4, "negative_marks": 1, "negative_marking_enabled": True}
+            }).execute()
+    except Exception as e:
+        logger.warning(f"Could not ensure exam exists: {e}")
+    return exam_uuid
+
+
 def get_or_create_attempt(
     db,
     tenant_id: str,
@@ -162,6 +181,7 @@ def get_or_create_attempt(
     Returns (attempt_id, candidate_id).
     """
     ensure_tenant_exists(db, tenant_id)
+    ensure_exam_exists(db, tenant_id, exam_uuid)
     cand_id = candidate_id
     if not cand_id:
         cand_id = get_or_create_candidate_id(db, reg_no, candidate_name)
@@ -174,8 +194,10 @@ def get_or_create_attempt(
         if res.data:
             return str(res.data[0]["id"]), cand_id
 
-        # Insert new attempt
-        ins = db.table("exam_attempts").insert({
+        # Insert new attempt with deterministic UUID to prevent race conditions
+        det_attempt_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{exam_uuid}:{cand_id}"))
+        ins = db.table("exam_attempts").upsert({
+            "id": det_attempt_id,
             "tenant_id": tenant_id,
             "exam_id": exam_uuid,
             "candidate_id": cand_id,
@@ -184,11 +206,21 @@ def get_or_create_attempt(
 
         if ins.data:
             return str(ins.data[0]["id"]), cand_id
+        return det_attempt_id, cand_id
     except Exception as e:
         logger.error(f"Error getting/creating attempt: {e}")
-
-    # Fallback attempt ID
-    return "bf892c9a-43d8-43a7-b1dc-628e919e4307", cand_id
+        det_attempt_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{exam_uuid}:{cand_id}"))
+        try:
+            db.table("exam_attempts").upsert({
+                "id": det_attempt_id,
+                "tenant_id": tenant_id,
+                "exam_id": exam_uuid,
+                "candidate_id": cand_id,
+                "status": "active",
+            }).execute()
+        except Exception:
+            pass
+        return det_attempt_id, cand_id
 
 
 def persist_response_cloud_db(

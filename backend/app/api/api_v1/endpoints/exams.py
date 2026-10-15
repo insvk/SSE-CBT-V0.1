@@ -39,6 +39,7 @@ from app.schemas import (
     ExamUpdateAdvanced,
     ExamCenterSettings,
     DeviceRegisterRequest,
+    ResultUpdatePayload,
 )
 import sys
 import os
@@ -3347,6 +3348,11 @@ async def save_response(exam_id: str, payload: ResponsePayload):
     if session.get("status") == "concluded":
         raise HTTPException(status_code=400, detail="Exam has already been concluded by the Examination Directorate")
 
+    now = time.time()
+    if session.get("deadline") and (now - session["deadline"]) > 30 and session.get("status") not in ("scheduled", "draft"):
+        session["status"] = "expired"
+        raise HTTPException(status_code=400, detail="Exam duration has expired. New responses cannot be saved.")
+
     q_id = str(payload.question_id)
     idemp_key = payload.idempotency_key
 
@@ -3542,6 +3548,11 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
         except Exception:
             pass
 
+    # Idempotency Protection: If candidate has already submitted this exam, return their existing scorecard
+    cand_key = str(actual_cand_id)
+    if cand_key in session.get("submitted_candidates", {}) and cand_key in LATEST_SUBMISSION_RESULT:
+        return LATEST_SUBMISSION_RESULT[cand_key]
+
     # Fetch authoritative answer keys from database
     questions_map = _get_authoritative_exam_questions(db, exam_id)
 
@@ -3560,6 +3571,7 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
                     "state": cr_st,
                     "timestamp": time.time(),
                 }
+                session.setdefault("candidate_responses", {}).setdefault(actual_cand_id, {})[cr_qid] = session["responses"][cr_qid]
                 if actual_cand_id:
                     try:
                         persist_response_cloud_db(
@@ -3597,9 +3609,9 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
         except Exception as e:
             logger.warning(f"Error reading responses from Cloud DB: {e}")
 
-    session_resps = session.get("responses", {})
+    cand_session_resps = session.get("candidate_responses", {}).get(actual_cand_id, {}) or session.get("responses", {})
     existing_qids = {r["question_id"] for r in recorded_responses}
-    for qid, s_resp in session_resps.items():
+    for qid, s_resp in cand_session_resps.items():
         if qid not in existing_qids:
             recorded_responses.append(s_resp)
         else:
@@ -3641,6 +3653,9 @@ async def submit_exam(exam_id: str, payload: Optional[Dict[str, Any]] = None):
     session.setdefault("submitted_candidates", {})[str(actual_cand_id)] = True
     session["submission_time"] = time.time()
     session["reference"] = ref
+    session["candidate_id"] = str(actual_cand_id)
+    session["reg_no"] = reg_no
+    session["candidate_name"] = cand_name
     scoring_result["reference"] = ref
     scoring_result["time_taken_seconds"] = time_taken_seconds
     scoring_result["time_taken_display"] = time_taken_display
@@ -3720,17 +3735,7 @@ def get_exam_result(
     if candidate_id and candidate_id in LATEST_SUBMISSION_RESULT:
         return LATEST_SUBMISSION_RESULT[candidate_id]
 
-    # Check if latest submission in memory matches when no query param is given
-    if not candidate_id and not reg_no:
-        cached = (
-            LATEST_SUBMISSION_RESULT.get(norm_id)
-            or LATEST_SUBMISSION_RESULT.get(exam_id)
-            or LATEST_SUBMISSION_RESULT.get("latest")
-        )
-        if cached:
-            return cached
-
-    # 1. Check Cloud DB candidate record first
+    # 1. Resolve target candidate record strictly by identifier
     target_cand = None
     if candidate_id:
         try:
@@ -3760,13 +3765,36 @@ def get_exam_result(
                 target_cand = c_res.data[0]
         except Exception:
             pass
-    if not target_cand and not candidate_id and not reg_no:
-        try:
-            c_res = db.table("candidates").select("*").order("created_at", desc=True).limit(1).execute()
-            if c_res.data:
-                target_cand = c_res.data[0]
-        except Exception:
-            pass
+
+    # If candidate is not yet identified by DB lookup, check cached submission results or awaiting payload
+    if not target_cand:
+        cached = (
+            (reg_no and LATEST_SUBMISSION_RESULT.get(reg_no))
+            or (candidate_id and LATEST_SUBMISSION_RESULT.get(candidate_id))
+            or (session.get("reg_no") and LATEST_SUBMISSION_RESULT.get(session.get("reg_no")))
+            or (session.get("candidate_id") and LATEST_SUBMISSION_RESULT.get(session.get("candidate_id")))
+            or LATEST_SUBMISSION_RESULT.get(norm_id)
+            or LATEST_SUBMISSION_RESULT.get(exam_id)
+            or LATEST_SUBMISSION_RESULT.get("latest")
+        )
+        if cached:
+            return cached
+        return {
+            "status": "pending",
+            "disqualified": False,
+            "candidate_name": "Registered Candidate",
+            "registration_number": "Awaiting Submission",
+            "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
+            "score": "-- / --",
+            "percentage": 0.0,
+            "accuracy": None,
+            "accuracy_display": "N/A",
+            "percentile": None,
+            "time_taken": "--",
+            "submitted_at": "--",
+            "reference": "N/A",
+            "scoring_details": None,
+        }
 
     if target_cand:
         meta = target_cand.get("metadata") or {}
