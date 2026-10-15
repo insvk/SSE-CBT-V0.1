@@ -1,7 +1,7 @@
 export {};
 
 function getAuthToken(): string {
-    return localStorage.getItem('access_token') || 'dev_test_token_do_not_use_in_prod';
+    return localStorage.getItem('access_token') || '';
 }
 
 function getTenantId(): string {
@@ -9,11 +9,15 @@ function getTenantId(): string {
 }
 
 function getHeaders(): HeadersInit {
-    return {
+    const token = getAuthToken();
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAuthToken()}`,
         'x-tenant-id': getTenantId(),
     };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
 }
 
 function escapeHtml(str: string): string {

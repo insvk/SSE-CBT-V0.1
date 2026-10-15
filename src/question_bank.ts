@@ -3,13 +3,16 @@ export {};
 const API_BASE = '/api/v1/questions';
 
 function getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('access_token') || 'dev_test_token_do_not_use_in_prod';
+    const token = localStorage.getItem('access_token') || localStorage.getItem('admin_token') || '';
     const tenantId = localStorage.getItem('tenant_id') || '00000000-0000-0000-0000-000000000001';
-    return {
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'x-tenant-id': tenantId,
     };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
 }
 
 function showToast(msg: string, isError = false) {
@@ -457,7 +460,7 @@ if (ui.btnDryRun) {
         formData.append('file', file);
         formData.append('format', 'csv');
 
-        const token = localStorage.getItem('access_token') || 'dev_test_token_do_not_use_in_prod';
+        const token = localStorage.getItem('access_token') || localStorage.getItem('admin_token') || '';
         const tenantId = localStorage.getItem('tenant_id') || '00000000-0000-0000-0000-000000000001';
 
         ui.btnDryRun.textContent = "Verifying...";

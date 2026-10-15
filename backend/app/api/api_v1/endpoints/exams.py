@@ -1821,19 +1821,6 @@ def _get_authoritative_exam_questions(db, exam_id: str) -> Dict[str, Dict[str, A
     except Exception as e:
         logger.warning(f"Error querying question_bank: {e}")
 
-    if not rows and ("pytest" in sys.modules or os.environ.get("PYTEST_CURRENT_TEST")):
-        rows = [
-            {
-                "id": "01f1db8c-9b61-4f92-962d-e977bd1dcc4a",
-                "content": {"statement": "What does HTTP stand for in networking?"},
-                "options": ["HyperText Transfer Protocol", "High Tech Transmission Program", "Hyper Transfer Text Path", "None of the above"],
-                "correct_answer": "A",
-                "subject": "Computer Science",
-                "difficulty": "Easy",
-                "type": "mcq_single",
-                "status": "approved",
-            }
-        ]
 
     # Enabled sections
     enabled_sections = []

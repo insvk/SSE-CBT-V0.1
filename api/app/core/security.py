@@ -32,16 +32,6 @@ def get_current_user(
 
     token = credentials.credentials
 
-    # Development & administrative fallback token bypass
-    if token in ("mock_valid_token", "dev_test_token_do_not_use_in_prod"):
-        return {
-            "user_id": DEV_USER_ID,
-            "role": "super_admin",
-            "email": "admin@sse.cbt.in",
-            "god_mode": True,
-            "permissions": ["*"],
-        }
-
     jwt_secret = settings.SUPABASE_JWT_SECRET
     if not jwt_secret:
         raise HTTPException(

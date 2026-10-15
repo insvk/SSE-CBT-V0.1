@@ -2,33 +2,36 @@ export {};
 
 const API_BASE = '/api/v1/candidates';
 
-function getAuthToken(preferDev = false): string {
-    if (preferDev) return 'dev_test_token_do_not_use_in_prod';
-    return localStorage.getItem('admin_token') || localStorage.getItem('access_token') || 'dev_test_token_do_not_use_in_prod';
+function getAuthToken(): string {
+    return localStorage.getItem('admin_token') || localStorage.getItem('access_token') || '';
 }
 
 function getTenantId(): string {
     return localStorage.getItem('tenant_id') || '00000000-0000-0000-0000-000000000001';
 }
 
-function getHeaders(preferDev = false): HeadersInit {
-    return {
+function getHeaders(): HeadersInit {
+    const token = getAuthToken();
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAuthToken(preferDev)}`,
         'x-tenant-id': getTenantId(),
     };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
 }
 
 async function adminFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-    const buildHeaders = (preferDev = false): HeadersInit => {
+    const buildHeaders = (): HeadersInit => {
         const h: any = {
             'Content-Type': 'application/json',
             'x-tenant-id': getTenantId(),
             ...(options.headers || {}),
         };
-        const token = getAuthToken(preferDev);
+        const token = getAuthToken();
         if (token) {
             h['Authorization'] = `Bearer ${token}`;
         }
@@ -39,27 +42,29 @@ async function adminFetch(endpoint: string, options: RequestInit = {}): Promise<
     let res: Response;
 
     try {
-        res = await fetch(targetUrl, { ...options, headers: buildHeaders(false) });
+        res = await fetch(targetUrl, { ...options, headers: buildHeaders() });
     } catch (networkErr) {
         if (isLocal && window.location.port !== '8000' && !endpoint.startsWith('http')) {
             console.info(`[Admin Console] Relative fetch failed, trying direct connection to http://127.0.0.1:8000${endpoint}`);
             targetUrl = `http://127.0.0.1:8000${endpoint}`;
-            res = await fetch(targetUrl, { ...options, headers: buildHeaders(false) });
+            res = await fetch(targetUrl, { ...options, headers: buildHeaders() });
         } else {
             throw networkErr;
         }
     }
 
-    if ((res.status === 401 || res.status === 403) && (localStorage.getItem('access_token') || localStorage.getItem('admin_token'))) {
-        console.warn('[Admin Console] Auth rejected with stored token, trying fallback admin credentials...');
-        localStorage.removeItem('access_token');
-        res = await fetch(targetUrl, { ...options, headers: buildHeaders(true) });
+    if (res.status === 401 || res.status === 403) {
+        console.warn('[Admin Console] Authentication required or expired; redirecting to login...');
+        if (!window.location.pathname.includes('login.html')) {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('admin_token');
+        }
     }
 
     if ((res.status === 404 || res.status === 502) && isLocal && window.location.port !== '8000' && !targetUrl.startsWith('http://127.0.0.1:8000')) {
         try {
             console.info(`[Admin Console] HTTP ${res.status} on relative path, attempting http://127.0.0.1:8000${endpoint}`);
-            const altRes = await fetch(`http://127.0.0.1:8000${endpoint}`, { ...options, headers: buildHeaders(false) });
+            const altRes = await fetch(`http://127.0.0.1:8000${endpoint}`, { ...options, headers: buildHeaders() });
             if (altRes.ok || altRes.status !== 404) {
                 res = altRes;
             }
