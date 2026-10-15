@@ -130,9 +130,82 @@ function initTheme(): void {
 function applyTheme(theme: string): void {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('cbt_theme', theme);
+    const lightBtn = document.getElementById('dock-theme-light');
+    const darkBtn = document.getElementById('dock-theme-dark');
+    if (theme === 'dark') {
+        lightBtn?.classList.remove('active');
+        darkBtn?.classList.add('active');
+    } else {
+        lightBtn?.classList.add('active');
+        darkBtn?.classList.remove('active');
+    }
     if (ui.themeIcon) {
         ui.themeIcon.textContent = theme === 'dark' ? 'Light' : 'Dark';
     }
+}
+(window as any).applyTheme = applyTheme;
+
+function switchAdminTab(tabName: string): void {
+    // 1. Update dock items
+    document.querySelectorAll('.fx-dock-item').forEach((item) => {
+        if (item.getAttribute('data-tab') === tabName) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+
+    // 2. Update top pills
+    document.querySelectorAll('.fx-pill').forEach((pill) => {
+        if (pill.getAttribute('data-tab') === tabName) {
+            pill.classList.add('active');
+        } else {
+            pill.classList.remove('active');
+        }
+    });
+
+    // 3. Update view sections
+    document.querySelectorAll('.fx-section-view').forEach((sec) => {
+        if (sec.id === `view-${tabName}`) {
+            sec.classList.add('active');
+        } else {
+            sec.classList.remove('active');
+        }
+    });
+
+    try {
+        history.replaceState(null, '', `#${tabName}`);
+    } catch (_) {}
+
+    // Special tab triggers
+    if (tabName === 'scorecards') {
+        const resultsSelect = document.getElementById('select-results-exam') as HTMLSelectElement;
+        if (resultsSelect && (!resultsSelect.value || resultsSelect.value === '')) {
+            const activeId = getActiveExamId();
+            if (activeId) {
+                resultsSelect.value = activeId;
+                resultsSelect.dispatchEvent(new Event('change'));
+            }
+        }
+    } else if (tabName === 'candidates') {
+        renderCandidateTable();
+    } else if (tabName === 'exams') {
+        loadExams();
+    }
+}
+(window as any).switchAdminTab = switchAdminTab;
+
+function updateGreeting(): void {
+    const el = document.getElementById('hero-greeting-title');
+    if (!el) return;
+    const hour = new Date().getHours();
+    let timeOfDay = 'evening';
+    if (hour < 12) {
+        timeOfDay = 'morning';
+    } else if (hour < 17) {
+        timeOfDay = 'afternoon';
+    }
+    el.textContent = `Good ${timeOfDay}, Administrator`;
 }
 
 function toggleTheme(): void {
@@ -402,15 +475,19 @@ function updateBulkSelectionToolbar(): void {
 function renderCandidateTable(): void {
     const data = getFilteredCandidates();
     ui.tbody.innerHTML = '';
+    const fullTbody = document.getElementById('candidate-full-table-body');
+    if (fullTbody) fullTbody.innerHTML = '';
 
     if (data.length === 0) {
-        ui.tbody.innerHTML = `
+        const emptyRow = `
             <tr>
-                <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--fx-text-muted);">
                     No candidates match the active search/filter criteria.
                 </td>
             </tr>
         `;
+        ui.tbody.innerHTML = emptyRow;
+        if (fullTbody) fullTbody.innerHTML = emptyRow;
         updateBulkSelectionToolbar();
         return;
     }
@@ -519,6 +596,9 @@ function renderCandidateTable(): void {
             </td>
         `;
         ui.tbody.appendChild(tr);
+        if (fullTbody) {
+            fullTbody.appendChild(tr.cloneNode(true));
+        }
     });
 
     bindCheckboxes();
@@ -4877,6 +4957,7 @@ function initResultsManagementListeners(): void {
 
 // Initialize on page ready
 initTheme();
+updateGreeting();
 loadDashboardSummary();
 loadCandidates();
 loadExams();
@@ -4891,5 +4972,27 @@ setInterval(updateMasterClockDisplay, 1000);
 setInterval(syncMasterClock, 60000);
 setInterval(loadTelemetryRadar, 30000);
 setInterval(loadExams, 45000);
+setInterval(updateGreeting, 60000);
+
+// Check URL Hash for Deep Tab Linking (#overview, #exams, #candidates, #questions, #proctor, #scorecards, #settings)
+const initialTab = window.location.hash ? window.location.hash.replace('#', '') : 'overview';
+if (['overview', 'exams', 'candidates', 'questions', 'proctor', 'scorecards', 'settings'].includes(initialTab)) {
+    switchAdminTab(initialTab);
+}
+
+// Bind Top Quick Action Buttons
+const btnTopCreateExam = document.getElementById('btn-open-create-exam-top');
+if (btnTopCreateExam) {
+    btnTopCreateExam.addEventListener('click', () => {
+        document.getElementById('btn-open-create-exam')?.click();
+    });
+}
+const btnQuickProv = document.getElementById('btn-quick-provision-nav');
+if (btnQuickProv) {
+    btnQuickProv.addEventListener('click', () => {
+        ui.btnCreate?.click();
+    });
+}
+
 
 

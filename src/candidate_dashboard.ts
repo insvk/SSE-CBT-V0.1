@@ -74,9 +74,70 @@ function initTheme(): void {
 function applyTheme(theme: string): void {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('cbt_theme', theme);
+    const lightBtn = document.getElementById('dock-theme-light');
+    const darkBtn = document.getElementById('dock-theme-dark');
+    if (theme === 'dark') {
+        lightBtn?.classList.remove('active');
+        darkBtn?.classList.add('active');
+    } else {
+        lightBtn?.classList.add('active');
+        darkBtn?.classList.remove('active');
+    }
     if (ui.themeIcon) {
         ui.themeIcon.textContent = theme === 'dark' ? 'Light' : 'Dark';
     }
+}
+(window as any).applyTheme = applyTheme;
+
+function switchCandTab(tabName: string): void {
+    document.querySelectorAll('.fx-dock-item').forEach((item) => {
+        if (item.getAttribute('data-tab') === tabName) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+
+    document.querySelectorAll('.fx-pill').forEach((pill) => {
+        if (pill.getAttribute('data-tab') === tabName) {
+            pill.classList.add('active');
+        } else {
+            pill.classList.remove('active');
+        }
+    });
+
+    document.querySelectorAll('.fx-section-view').forEach((sec) => {
+        if (sec.id === `view-${tabName}`) {
+            sec.classList.add('active');
+        } else {
+            sec.classList.remove('active');
+        }
+    });
+}
+(window as any).switchCandTab = switchCandTab;
+
+function updateGreeting(): void {
+    const el = document.getElementById('hero-greeting-title');
+    if (!el) return;
+    const hour = new Date().getHours();
+    let timeOfDay = 'evening';
+    if (hour < 12) timeOfDay = 'morning';
+    else if (hour < 17) timeOfDay = 'afternoon';
+    const candName = localStorage.getItem('candidate_name') || 'Candidate';
+    el.textContent = `Good ${timeOfDay}, ${candName}`;
+}
+
+function updateClock(): void {
+    const el = document.getElementById('master-clock-time');
+    if (!el) return;
+    const now = new Date();
+    // Format IST
+    const istMs = now.getTime() + (5.5 * 3600 * 1000) + (now.getTimezoneOffset() * 60 * 1000);
+    const ist = new Date(istMs);
+    const h = String(ist.getHours()).padStart(2, '0');
+    const m = String(ist.getMinutes()).padStart(2, '0');
+    const s = String(ist.getSeconds()).padStart(2, '0');
+    el.textContent = `${h}:${m}:${s} IST`;
 }
 
 function toggleTheme(): void {
@@ -379,5 +440,10 @@ if (btnCloseAdmit && modalAdmit) {
 }
 
 initTheme();
+updateGreeting();
+updateClock();
+setInterval(updateClock, 1000);
+setInterval(updateGreeting, 60000);
 loadCandidateProfile();
 loadPortalData();
+
