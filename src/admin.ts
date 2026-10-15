@@ -4006,10 +4006,10 @@ if (toggleAiCamInput) {
 // --- DOCUMENT TEMPLATES & SYSTEM CONFIGURATION SUITE (LEGIT CLOUD PERSISTENT) ---
 const btnOpenSettingsModal = document.getElementById('btn-open-settings-modal');
 const sidebarDocSettings = document.getElementById('sidebar-doc-settings');
-const modalExamSettings = document.getElementById('modal-exam-settings');
-const btnCloseSettingsModal = document.getElementById('btn-close-settings-modal');
+const modalExamSettings = document.getElementById('modal-document-settings') || document.getElementById('modal-exam-settings');
+const btnCloseSettingsModal = document.getElementById('btn-close-settings') || document.getElementById('btn-close-settings-modal');
 const btnCancelSettings = document.getElementById('btn-cancel-settings');
-const formExamSettings = document.getElementById('form-exam-settings') as HTMLFormElement;
+const formExamSettings = (document.getElementById('form-document-settings') || document.getElementById('form-exam-settings')) as HTMLFormElement;
 
 // Tab Switching
 const tabBtnAdmit = document.getElementById('tab-btn-admit');
@@ -4062,6 +4062,7 @@ const chkAdmitSignatures = document.getElementById('setting-admit-show-signature
 const inputScInst = document.getElementById('setting-sc-inst-name') as HTMLInputElement;
 const inputScTitle = document.getElementById('setting-sc-doc-title') as HTMLInputElement;
 const inputScSubhead = document.getElementById('setting-sc-subhead-status') as HTMLInputElement;
+const inputScWatermark = document.getElementById('setting-sc-watermark') as HTMLInputElement;
 const inputScFooter = document.getElementById('setting-sc-footer-disclaimer') as HTMLInputElement;
 const chkScBanner = document.getElementById('setting-sc-show-banner') as HTMLInputElement;
 const chkScMetrics = document.getElementById('setting-sc-show-metrics-grid') as HTMLInputElement;
@@ -4103,6 +4104,7 @@ async function loadExamSettings(): Promise<void> {
             if (inputScInst) inputScInst.value = sc.institution_name || s.institution_name || 'SSE CBT PLATFORM';
             if (inputScTitle) inputScTitle.value = sc.document_title || (s.examination_title ? `${s.examination_title} : Official Score Card` : 'MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card');
             if (inputScSubhead && sc.subhead_status_text) inputScSubhead.value = sc.subhead_status_text;
+            if (inputScWatermark && sc.watermark_text) inputScWatermark.value = sc.watermark_text;
             if (inputScFooter && sc.footer_disclaimer) inputScFooter.value = sc.footer_disclaimer;
             if (chkScBanner) chkScBanner.checked = sc.show_score_banner !== false;
             if (chkScMetrics) chkScMetrics.checked = sc.show_metrics_grid !== false;
@@ -4217,6 +4219,7 @@ if (formExamSettings) {
                 institution_name: inputScInst?.value.trim() || 'SSE CBT PLATFORM',
                 document_title: inputScTitle?.value.trim() || 'MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card',
                 subhead_status_text: inputScSubhead?.value.trim() || 'Status: Authenticated & Cloud Verified',
+                watermark_text: inputScWatermark?.value.trim() || 'CONFIDENTIAL',
                 footer_disclaimer: inputScFooter?.value.trim() || '',
                 show_score_banner: chkScBanner ? chkScBanner.checked : true,
                 show_metrics_grid: chkScMetrics ? chkScMetrics.checked : true,

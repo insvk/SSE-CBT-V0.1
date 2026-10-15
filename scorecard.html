@@ -153,15 +153,18 @@
       </div>
 
       <!-- Main Scorecard Card -->
-      <div class="fx-card" style="margin-top: 20px; padding: 28px;">
+      <div class="fx-card" style="margin-top: 20px; padding: 28px; position: relative; overflow: hidden;">
+
+        <!-- Dynamic Security Watermark -->
+        <div id="sc-watermark" style="position: absolute; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: 900; color: rgba(148, 163, 184, 0.06); transform: rotate(-25deg); text-transform: uppercase; user-select: none; z-index: 0;">CONFIDENTIAL</div>
 
         <!-- Header Banner -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--fx-border); padding-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+        <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--fx-border); padding-bottom: 20px; flex-wrap: wrap; gap: 14px;">
           <div>
             <div style="font-size: 0.8rem; font-weight: 800; color: var(--fx-coral); letter-spacing: 0.08em; text-transform: uppercase;" id="sc-agency">SSE CBT PLATFORM</div>
-            <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading); margin-top: 4px;" id="sc-title">MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card</h2>
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading); margin-top: 4px;" id="sc-title">Official Score Card</h2>
             <div style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">
-              Assessment: <span id="sc-subhead-exam" style="font-weight: 600; color: var(--fx-text-heading);">MCQ Assessment 2026</span> &bull; 
+              Assessment: <span id="sc-subhead-exam" style="font-weight: 600; color: var(--fx-text-heading);">--</span> &bull; 
               Status: <span id="sc-subhead-status" style="color: #10b981; font-weight: 700;">Authenticated &amp; Verified</span>
             </div>
           </div>
@@ -171,7 +174,7 @@
         </div>
 
         <!-- Candidate Profile Grid -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--fx-border);">
+        <div style="position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--fx-border);">
           <div>
             <div style="margin-bottom: 12px;">
               <div style="font-size: 0.72rem; font-weight: 700; color: var(--fx-text-muted); text-transform: uppercase;">Candidate's Name</div>
@@ -179,33 +182,40 @@
             </div>
             <div style="margin-bottom: 12px;">
               <div style="font-size: 0.72rem; font-weight: 700; color: var(--fx-text-muted); text-transform: uppercase;">Application Number</div>
-              <div style="font-size: 1rem; font-weight: 700; font-family: var(--fx-font-mono); color: var(--fx-text-heading);" id="sc-app-no">260310084920</div>
+              <div style="font-size: 1rem; font-weight: 700; font-family: var(--fx-font-mono); color: var(--fx-text-heading);" id="sc-app-no">--</div>
             </div>
-            <div>
+            <div style="margin-bottom: 12px;">
               <div style="font-size: 0.72rem; font-weight: 700; color: var(--fx-text-muted); text-transform: uppercase;">Roll / Registration Number</div>
               <div style="font-size: 1rem; font-weight: 800; font-family: var(--fx-font-mono); color: var(--fx-coral);" id="sc-reg">Loading...</div>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; font-weight: 700; color: var(--fx-text-muted); text-transform: uppercase;">Category &amp; Gender</div>
+              <div style="font-size: 0.95rem; font-weight: 700; color: var(--fx-text-heading);"><span id="sc-category">--</span> &bull; <span id="sc-gender">--</span></div>
             </div>
           </div>
 
           <div>
             <div style="margin-bottom: 12px;">
               <div style="font-size: 0.72rem; font-weight: 700; color: var(--fx-text-muted); text-transform: uppercase;">Examination Title</div>
-              <div style="font-size: 1rem; font-weight: 700; color: var(--fx-text-heading);" id="sc-exam">MCQ ASSESSMENT [ SSE CBT 2026 ]</div>
+              <div style="font-size: 1rem; font-weight: 700; color: var(--fx-text-heading);" id="sc-exam">--</div>
             </div>
             <div style="margin-bottom: 12px;">
               <div style="font-size: 0.72rem; font-weight: 700; color: var(--fx-text-muted); text-transform: uppercase;">Submission Reference</div>
               <div style="font-size: 0.95rem; font-weight: 700; font-family: var(--fx-font-mono); color: #0284c7;" id="sc-ref">--</div>
             </div>
-            <div>
+            <div style="margin-bottom: 12px;">
               <div style="font-size: 0.72rem; font-weight: 700; color: var(--fx-text-muted); text-transform: uppercase;">Attempt Status</div>
               <div style="font-size: 0.95rem; font-weight: 800; color: #10b981;" id="sc-status">Submitted &amp; Evaluated</div>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; font-weight: 700; color: var(--fx-text-muted); text-transform: uppercase;">Examination Center</div>
+              <div style="font-size: 0.88rem; font-weight: 700; color: var(--fx-text-heading);" id="sc-center-node">SSE Assessment Hub</div>
             </div>
           </div>
         </div>
 
-        <div style="padding: 12px 0; font-size: 0.8rem; color: var(--fx-text-muted);">
-          Time Taken &bull; Submitted At: <strong id="sc-time-taken" style="color: var(--fx-text-heading);">-- min</strong> &bull; <strong id="sc-submitted-at" style="color: var(--fx-text-heading);">--</strong>
-          <span id="sc-center-node" style="display: none;">SSE Digital Hub</span>
+        <div style="position: relative; z-index: 1; padding: 12px 0; font-size: 0.8rem; color: var(--fx-text-muted);">
+          Time Taken: <strong id="sc-time-taken" style="color: var(--fx-text-heading);">-- min</strong> &bull; Submitted At: <strong id="sc-submitted-at" style="color: var(--fx-text-heading);">--</strong>
         </div>
 
         <!-- Disqualification Alert Banner -->
@@ -339,6 +349,9 @@
               Examination Directorate
             </div>
           </div>
+        <!-- Dynamic Footer Disclaimer -->
+        <div id="sc-footer-disclaimer" style="font-size: 0.75rem; color: var(--fx-text-muted); text-align: center; margin-top: 20px; padding-top: 14px; border-top: 1px dashed var(--fx-border);">
+          &copy; 2026 Saveetha School of Engineering &bull; CBT Examination Directorate. All rights reserved.
         </div>
 
         <!-- Actions -->

@@ -22,7 +22,7 @@
       }
     })();
   </script>
-  <script type="module" crossorigin src="/assets/admin-187ae2fd.js"></script>
+  <script type="module" crossorigin src="/assets/admin-a29c16fb.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
   <link rel="stylesheet" href="/assets/finexy-theme-f3294019.css">
 </head>
@@ -1050,19 +1050,22 @@
   </div>
 
   <!-- 4. DOCUMENT SETTINGS STUDIO MODAL -->
+  <!-- 4. DOCUMENT SETTINGS STUDIO MODAL -->
   <div class="modal-backdrop" id="modal-document-settings"
     style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
     <div
-      style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 750px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
+      style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 780px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading);">Directorate Document &amp;
-          Center Settings</h3>
+        <div>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading);">Directorate Document &amp; Center Settings</h3>
+          <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-top: 2px;">Configure dynamic hall tickets, official scorecards, and testing venue authorities stored in Cloud DB.</p>
+        </div>
         <button type="button" class="fx-tool-btn" id="btn-close-settings"
           onclick="document.getElementById('modal-document-settings').style.display='none'">✕</button>
       </div>
 
       <div class="fx-pills-bar" style="margin-bottom: 16px;">
-        <button type="button" class="fx-pill active" id="tab-btn-admit">Admit Card Badge</button>
+        <button type="button" class="fx-pill active" id="tab-btn-admit">Admit Card Template</button>
         <button type="button" class="fx-pill" id="tab-btn-scorecard">Audited Scorecard</button>
         <button type="button" class="fx-pill" id="tab-btn-authority">Authority &amp; Venue</button>
       </div>
@@ -1070,98 +1073,154 @@
       <form id="form-document-settings">
         <!-- Admit Card Pane -->
         <div id="tab-pane-admit" class="settings-tab-pane">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div>
-              <label
-                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Institution
-                Name</label>
-              <input type="text" id="setting-admit-institution" class="fx-pill-search"
-                value="SAVEETHA DIGITAL TESTING AUTHORITY"
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Institution / Testing Agency Name</label>
+              <input type="text" id="setting-admit-inst-name" class="fx-pill-search"
+                value="SSE CBT PLATFORM"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label
-                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Examination
-                Title</label>
-              <input type="text" id="setting-admit-title" class="fx-pill-search" value="NATIONAL CBT MERIT TEST 2026"
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Examination Title</label>
+              <input type="text" id="setting-admit-exam-title" class="fx-pill-search"
+                value="MCQ ASSESSMENT [ SSE CBT 2026 ]"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
           </div>
-          <div style="margin-bottom: 12px;">
-            <label
-              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Candidate
-              Instructions</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Header Subtitle / Tagline</label>
+              <input type="text" id="setting-admit-subtitle" class="fx-pill-search"
+                value="PROVISIONAL ADMIT CARD / HALL TICKET • COMPUTER BASED TEST (CBT)"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            </div>
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Security Watermark Text</label>
+              <input type="text" id="setting-admit-watermark" class="fx-pill-search"
+                value="CONFIDENTIAL"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            </div>
+          </div>
+          <div style="margin-bottom: 14px;">
+            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Candidate Instructions &amp; Rules</label>
             <textarea id="setting-admit-instructions" class="fx-pill-search" rows="3"
-              style="width: 100%; border-radius: 10px; padding: 8px 12px;">1. Carry valid Aadhar or Passport. 2. Arrive 45 mins prior to test commencement.</textarea>
+              style="width: 100%; border-radius: 10px; padding: 8px 12px;">1. Government photo ID card mandatory for physical entrance.
+2. Electronic devices, smartwatches, and calculators strictly prohibited.
+3. Continuous webcam biometric tracking and screen proctoring active.
+4. Candidates must report at the allocated test center prior to gate closure.</textarea>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 12px; padding: 12px;">
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="setting-admit-show-photo" checked /> Show Biometric Photo
+            </label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="setting-admit-show-barcode" checked /> Show 2D Barcode
+            </label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="setting-admit-show-slots" checked /> Show Slot Timings
+            </label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="setting-admit-show-venue" checked /> Show Venue Details
+            </label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="setting-admit-show-instructions" checked /> Show Instructions
+            </label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="setting-admit-show-signatures" checked /> Show Signature Block
+            </label>
           </div>
         </div>
 
         <!-- Scorecard Pane -->
         <div id="tab-pane-scorecard" class="settings-tab-pane" style="display: none;">
-          <div style="margin-bottom: 12px;">
-            <label
-              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Official
-              Certificate Title</label>
-            <input type="text" id="setting-sc-title" class="fx-pill-search"
-              value="OFFICIAL AUDITED SCORECARD [ NATIONAL CBT 2026 ]"
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Institution / Testing Agency Name</label>
+              <input type="text" id="setting-sc-inst-name" class="fx-pill-search"
+                value="SSE CBT PLATFORM"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            </div>
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Official Certificate Title</label>
+              <input type="text" id="setting-sc-doc-title" class="fx-pill-search"
+                value="MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Subhead / Status Verification Text</label>
+              <input type="text" id="setting-sc-subhead-status" class="fx-pill-search"
+                value="Status: Authenticated &amp; Cloud Verified"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            </div>
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Security Watermark Text</label>
+              <input type="text" id="setting-sc-watermark" class="fx-pill-search"
+                value="CONFIDENTIAL"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            </div>
+          </div>
+          <div style="margin-bottom: 14px;">
+            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Scorecard Legal Footer Disclaimer</label>
+            <input type="text" id="setting-sc-footer-disclaimer" class="fx-pill-search"
+              value="This is an official computer-generated score document verified against Supabase Cloud DB. No signature required."
               style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;"><input type="checkbox"
-                id="setting-sc-show-banner" checked /> Show Overall Banner</label>
-            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;"><input type="checkbox"
-                id="setting-sc-show-metrics-grid" checked /> Show Performance Grid</label>
-            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;"><input type="checkbox"
-                id="setting-sc-show-subject-breakdown" checked /> Show Subject Breakdown</label>
-            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;"><input type="checkbox"
-                id="setting-sc-show-seal" checked /> Show Verification Seal</label>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 12px; padding: 12px;">
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="setting-sc-show-banner" checked /> Show Overall Banner
+            </label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="setting-sc-show-metrics-grid" checked /> Show Performance Grid
+            </label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="setting-sc-show-subject-breakdown" checked /> Show Subject Breakdown
+            </label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="setting-sc-show-question-review" checked /> Show Question Review
+            </label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="setting-sc-show-signature" checked /> Show Directorate Signature
+            </label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="setting-sc-show-seal" checked /> Show Verification Seal
+            </label>
           </div>
         </div>
 
         <!-- Authority Pane -->
         <div id="tab-pane-authority" class="settings-tab-pane" style="display: none;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div>
-              <label
-                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate
-                Official Name</label>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate Official Name</label>
               <input type="text" id="setting-controller-name" class="fx-pill-search" value="ADMIN@SSE.IN"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label
-                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate
-                Designation</label>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate Designation</label>
               <input type="text" id="setting-controller-desig" class="fx-pill-search" value="Examination Directorate"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
           </div>
           <div style="margin-bottom: 12px;">
-            <label
-              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Venue
-              Name &amp; Full Address</label>
+            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Venue Name &amp; Full Address</label>
             <textarea id="setting-venue-name" class="fx-pill-search" rows="2"
               style="width: 100%; border-radius: 10px; padding: 8px 12px;">SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105</textarea>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
             <div>
-              <label
-                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Center
-                Code</label>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Center Code</label>
               <input type="text" id="setting-center-code" class="fx-pill-search" value="SSEC-TN-042"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label
-                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Default
-                Lab Room</label>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Default Lab Room</label>
               <input type="text" id="setting-lab-room" class="fx-pill-search" value="LAB-01 (Block-A)"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label
-                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Terminal
-                Prefix</label>
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Terminal Prefix</label>
               <input type="text" id="setting-terminal-prefix" class="fx-pill-search" value="T-A-"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
@@ -1171,9 +1230,175 @@
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
           <button type="button" class="fx-btn-pill-light" id="btn-cancel-settings"
             onclick="document.getElementById('modal-document-settings').style.display='none'">Cancel</button>
-          <button type="submit" class="fx-btn-pill-coral" id="btn-save-settings">Save to Cloud DB</button>
+          <button type="submit" class="fx-btn-pill-coral" id="btn-save-settings">💾 Save to Cloud DB (Supabase)</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- OFFICIAL ADMIT CARD / HALL TICKET MODAL (PRINT-READY) -->
+  <div class="modal-backdrop" id="modal-admit-card"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); z-index: 1100; align-items: center; justify-content: center;">
+    <div class="modal-box"
+      style="max-width: 780px; width: 95%; max-height: 92vh; overflow-y: auto; background: #ffffff !important; color: #0f172a !important; padding: 0; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+      <div
+        style="padding: 1rem 1.5rem; background: #0f172a; color: white; display: flex; justify-content: space-between; align-items: center; border-radius: 16px 16px 0 0;"
+        class="no-print">
+        <strong style="font-size: 0.95rem;">Official CBT Examination Admit Card (Hall Ticket)</strong>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="fx-btn-pill-coral" id="btn-print-admit" style="padding: 6px 16px; font-size: 0.8rem;">
+            Print Admit Card
+          </button>
+          <button type="button" class="fx-btn-pill-light" style="padding: 6px 16px; font-size: 0.8rem;"
+            onclick="document.getElementById('modal-admit-card').style.display='none'">
+            Close
+          </button>
+        </div>
+      </div>
+
+      <div class="admit-card-box" id="admit-card-printable-area" style="padding: 1.5rem; position: relative;">
+        <div class="admit-watermark" id="admit-watermark" style="position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 4rem; font-weight: 900; color: rgba(15, 23, 42, 0.04); pointer-events: none; z-index: 0; text-transform: uppercase;">CONFIDENTIAL</div>
+
+        <!-- Header -->
+        <div
+          style="text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 0.75rem; margin-bottom: 1rem; position: relative; z-index: 1;">
+          <h1 style="font-size: 1.15rem; font-weight: 900; margin: 0; color: #0f172a; letter-spacing: 0.02em;"
+            id="admit-inst-name">
+            SSE CBT PLATFORM
+          </h1>
+          <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin: 2px 0;" id="admit-exam-title">
+            MCQ ASSESSMENT [ SSE CBT 2026 ]
+          </div>
+          <div style="font-size: 0.75rem; font-weight: 600; color: #0284c7;" id="admit-subtitle">
+            PROVISIONAL ADMIT CARD / HALL TICKET &bull; COMPUTER BASED TEST (CBT)
+          </div>
+        </div>
+
+        <!-- Barcode & Admit Card Number Block -->
+        <div id="admit-barcode-block"
+          style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 0.75rem; position: relative; z-index: 1;">
+          <div>
+            <div style="font-size: 0.72rem; color: #64748b; font-weight: 600;">ADMIT CARD NUMBER</div>
+            <div style="font-size: 0.95rem; font-weight: 800; font-family: monospace; color: #0f172a;"
+              id="admit-number">AC-2026-A-0001</div>
+          </div>
+          <div style="text-align: right;">
+            <div class="admit-barcode" id="admit-barcode" style="font-family: monospace; font-size: 1.1rem; letter-spacing: 2px; font-weight: 700;">SSEC*2026*CBT</div>
+            <div style="font-size: 0.68rem; color: #64748b; margin-top: 2px;">SECURE 2D SCANNER DATA</div>
+          </div>
+        </div>
+
+        <!-- Candidate Details Grid -->
+        <div id="admit-cand-details-grid"
+          style="display: grid; grid-template-columns: 120px 1fr 1fr; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 1rem; position: relative; z-index: 1;">
+          <div id="admit-photo-block" style="text-align: center;">
+            <img src="/user.png" id="admit-photo" alt="Photo"
+              style="width: 100px; height: 110px; border: 1px solid #94a3b8; object-fit: cover; border-radius: 4px;" />
+            <div style="font-size: 0.65rem; color: #10b981; font-weight: 700; margin-top: 4px;">BIOMETRIC VERIFIED</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div>
+              <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">CANDIDATE'S NAME</div>
+              <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;" id="admit-name">--</div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">ROLL NUMBER</div>
+              <div style="font-size: 0.9rem; font-weight: 800; font-family: monospace; color: #2563eb;"
+                id="admit-roll">--</div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">REGISTRATION NUMBER</div>
+              <div style="font-size: 0.85rem; font-weight: 700; font-family: monospace;" id="admit-reg">--</div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div>
+              <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">GENDER / CATEGORY</div>
+              <div style="font-size: 0.85rem; font-weight: 700;" id="admit-cat-gen">Male</div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">PwD ACCOMMODATION</div>
+              <div style="font-size: 0.85rem; font-weight: 700;" id="admit-pwd">No (Standard)</div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">COMPENSATORY TIME</div>
+              <div style="font-size: 0.85rem; font-weight: 700;" id="admit-extra-time">0 Minutes</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedule & Venue Details -->
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 1rem; position: relative; z-index: 1;">
+          <table id="admit-slots-table"
+            style="width: 100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #cbd5e1;">
+            <tr style="background: #f8fafc;">
+              <th
+                style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: left; font-size: 0.72rem; color: #475569;">
+                EXAMINATION SLOT</th>
+              <th
+                style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: left; font-size: 0.72rem; color: #475569;">
+                REPORTING TIME</th>
+              <th
+                style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: left; font-size: 0.72rem; color: #475569;">
+                GATE CLOSURE</th>
+              <th
+                style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: left; font-size: 0.72rem; color: #475569;">
+                EXAM TIMINGS</th>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 800; color: #2563eb;" id="admit-slot">
+                Subject Slot A</td>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;" id="admit-reporting">08:30 AM IST</td>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #dc2626;" id="admit-gate-close">09:15 AM IST</td>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;" id="admit-exam-timings">09:30 AM - 12:30 PM IST</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Venue & Terminal -->
+        <div id="admit-venue-block"
+          style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.8rem; position: relative; z-index: 1;">
+          <div style="font-weight: 800; color: #0f172a; margin-bottom: 2px;">
+            TEST VENUE: <span id="admit-venue-name">SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105</span>
+          </div>
+          <div style="color: #475569; display: flex; gap: 1.5rem; margin-top: 4px; flex-wrap: wrap;">
+            <span><strong>Center Code:</strong> <span id="admit-center-code">SSEC-TN-042</span></span>
+            <span><strong>Lab Room:</strong> <span id="admit-lab">LAB-01 (Block-A)</span></span>
+            <span><strong>Assigned Terminal:</strong> <span id="admit-terminal"
+                style="font-family: monospace; font-weight: 800;">T-A-0004</span></span>
+          </div>
+        </div>
+
+        <!-- Candidate Instructions / Regulations Box -->
+        <div id="admit-instructions-block"
+          style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.78rem; color: #1e40af; line-height: 1.5; position: relative; z-index: 1;">
+          <div style="font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <span>RULES &amp; INSTRUCTIONS FOR CANDIDATES</span>
+          </div>
+          <div id="admit-instructions-content" style="white-space: pre-line;">1. Government photo ID card mandatory for physical entrance.
+2. Electronic devices, smartwatches, and calculators strictly prohibited.
+3. Continuous webcam biometric tracking and screen proctoring active.
+4. Candidates must report at the allocated test center prior to gate closure.</div>
+        </div>
+
+        <!-- Official Signatures -->
+        <div id="admit-signatures-block"
+          style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #cbd5e1; position: relative; z-index: 1;">
+          <div style="text-align: center;">
+            <div style="width: 140px; height: 35px; border-bottom: 1px solid #64748b;"></div>
+            <div style="font-size: 0.72rem; color: #475569; font-weight: 600; margin-top: 4px;">Candidate's Signature</div>
+            <div style="font-size: 0.65rem; color: #94a3b8;">(To be signed in presence of Invigilator)</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-family: 'Brush Script MT', cursive, sans-serif; font-size: 1.25rem; color: #1e3a8a; font-weight: 700;" id="admit-controller-name">
+              ADMIN@SSE.IN</div>
+            <div
+              style="font-size: 0.72rem; color: #0f172a; font-weight: 800; border-top: 1px solid #64748b; padding-top: 4px;" id="admit-controller-desig">
+              Examination Directorate</div>
+            <div style="font-size: 0.65rem; color: #475569;" id="admit-controller-inst">SSE CBT PLATFORM</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

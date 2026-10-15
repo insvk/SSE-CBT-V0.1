@@ -1289,6 +1289,14 @@ async function fetchRemoteQuestions(): Promise<void> {
                     : (exInfo.config?.ai_camera_enabled !== undefined ? Boolean(exInfo.config.ai_camera_enabled) : true);
                 applyAiCameraState(camEnabled);
 
+                // Marking Scheme sync
+                const corMarks = exInfo.config?.correct_marks !== undefined ? exInfo.config.correct_marks : 4.0;
+                const negMarks = exInfo.config?.negative_marks !== undefined ? exInfo.config.negative_marks : 1.0;
+                const markingEl = document.getElementById('marking-scheme-display');
+                if (markingEl) {
+                    markingEl.textContent = `Marks: +${Number(corMarks).toFixed(2)}, -${Number(negMarks).toFixed(2)}`;
+                }
+
                 // Section Headers sync
                 const secs = exInfo.sections || exInfo.config?.sections;
                 if (secs && Array.isArray(secs)) {

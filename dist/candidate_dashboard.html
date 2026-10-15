@@ -19,7 +19,7 @@
       }
     })();
   </script>
-  <script type="module" crossorigin src="/assets/candidate_dashboard-d02c11d0.js"></script>
+  <script type="module" crossorigin src="/assets/candidate_dashboard-365153df.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
   <link rel="stylesheet" href="/assets/finexy-theme-f3294019.css">
 </head>
@@ -521,41 +521,49 @@
         </div>
         <button type="button" id="btn-close-admit" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--fx-text-muted);">&times;</button>
       </div>
-      <div style="padding: 1.5rem;">
-        <div style="display: grid; grid-template-columns: 1fr 130px; gap: 1.5rem; margin-bottom: 1.5rem;" id="admit-cand-main-grid">
+      <div style="padding: 1.5rem; position: relative;">
+        <!-- Dynamic Watermark Overlay -->
+        <div id="admit-cand-watermark" style="position: absolute; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 900; color: rgba(148, 163, 184, 0.06); transform: rotate(-25deg); text-transform: uppercase; user-select: none; z-index: 0;">CONFIDENTIAL</div>
+
+        <div style="position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 130px; gap: 1.5rem; margin-bottom: 1.5rem;" id="admit-cand-main-grid">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.85rem;">
             <div>
               <div style="color: var(--fx-text-muted); font-size: 0.75rem;">Candidate Name</div>
-              <strong id="admit-name">Candidate Name</strong>
+              <strong id="admit-name">--</strong>
             </div>
             <div>
               <div style="color: var(--fx-text-muted); font-size: 0.75rem;">Roll Number / Reg No</div>
               <strong id="admit-reg" style="font-family: var(--fx-font-mono); color: var(--fx-coral);">--</strong>
+            </div>
+            <div>
+              <div style="color: var(--fx-text-muted); font-size: 0.75rem;">Category &amp; Gender</div>
+              <strong><span id="admit-cand-cat">General</span> &bull; <span id="admit-cand-gen">Male</span></strong>
             </div>
             <div id="admit-cand-slot-block-1">
               <div style="color: var(--fx-text-muted); font-size: 0.75rem;">Subject Slot</div>
               <strong id="admit-slot">Subject Slot A</strong>
             </div>
             <div id="admit-cand-slot-block-2">
-              <div style="color: var(--fx-text-muted); font-size: 0.75rem;">Reporting Shift</div>
-              <strong id="admit-reporting">Slot A Cohort (Subject Paper Slot A)</strong>
+              <div style="color: var(--fx-text-muted); font-size: 0.75rem;">Reporting Shift &amp; Gate Closure</div>
+              <strong id="admit-reporting">--</strong>
             </div>
             <div id="admit-cand-venue-block-1" style="grid-column: 1 / -1;">
               <div style="color: var(--fx-text-muted); font-size: 0.75rem;">Examination Venue</div>
-              <strong id="admit-cand-venue">SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105</strong>
+              <strong id="admit-cand-venue">--</strong>
             </div>
             <div id="admit-cand-venue-block-2">
               <div style="color: var(--fx-text-muted); font-size: 0.75rem;">Center / Room</div>
-              <strong id="admit-cand-center-lab">Center: SSEC-TN-042 | Room: LAB-01</strong>
+              <strong id="admit-cand-center-lab">Center: -- | Room: --</strong>
             </div>
             <div id="admit-cand-venue-block-3">
               <div style="color: var(--fx-text-muted); font-size: 0.75rem;">Assigned Terminal Node</div>
-              <strong id="admit-cand-terminal" style="font-family: var(--fx-font-mono); color: var(--fx-coral);">T-A-0004</strong>
+              <strong id="admit-cand-terminal" style="font-family: var(--fx-font-mono); color: var(--fx-coral);">--</strong>
             </div>
             <div id="admit-cand-sig-block" style="grid-column: 1 / -1; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--fx-border); display: flex; justify-content: space-between; align-items: center;">
               <div>
                 <div style="font-size: 0.7rem; color: var(--fx-text-muted);">Controller of Examinations</div>
                 <div id="admit-cand-controller" style="font-weight: 800; color: var(--fx-text-heading);">ADMIN@SSE.IN</div>
+                <div id="admit-cand-controller-desig" style="font-size: 0.68rem; color: var(--fx-text-muted);">Examination Directorate</div>
               </div>
               <div style="font-size: 0.7rem; color: #10b981; font-weight: 700;">✓ Digitally Certified &amp; Watermarked</div>
             </div>
@@ -564,18 +572,22 @@
             <div style="letter-spacing: 2px; font-family: var(--fx-font-mono); font-size: 0.75rem; writing-mode: vertical-rl; transform: rotate(180deg); color: var(--fx-text-muted); margin: 0.5rem 0;">
               ||| | || |||| | ||| ||
             </div>
-            <div style="font-size: 0.65rem; color: var(--fx-text-muted); text-align: center;">SECURITY BARCODE</div>
+            <div id="admit-cand-barcode-text" style="font-size: 0.62rem; font-family: var(--fx-font-mono); color: var(--fx-text-muted); text-align: center; word-break: break-all;">SSEC*2026*CBT</div>
+            <div style="font-size: 0.6rem; color: var(--fx-text-muted); text-align: center; margin-top: 2px;">SECURITY BARCODE</div>
           </div>
         </div>
 
-        <div id="admit-cand-instructions-block" style="background: rgba(255, 87, 51, 0.08); border: 1px solid rgba(255, 87, 51, 0.2); border-radius: 12px; padding: 0.75rem 1rem; font-size: 0.75rem; color: var(--fx-coral); margin-bottom: 1.5rem;">
+        <div id="admit-cand-instructions-block" style="position: relative; z-index: 1; background: rgba(255, 87, 51, 0.08); border: 1px solid rgba(255, 87, 51, 0.2); border-radius: 12px; padding: 0.75rem 1rem; font-size: 0.75rem; color: var(--fx-coral); margin-bottom: 1.5rem;">
           <strong>Important Instructions:</strong>
           <span id="admit-cand-instructions-text" style="white-space: pre-line; display: block; margin-top: 4px; color: var(--fx-text-body);">Government photo ID card mandatory. Electronic devices and smartwatches strictly prohibited. Continuous webcam biometric tracking active during assessment.</span>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-          <button type="button" class="fx-btn-pill-light" onclick="window.print()">Print Admit Card</button>
-          <a href="/instructions.html" class="fx-btn-pill-coral" id="btn-admit-proceed" style="text-decoration: none;">Proceed to Exam &rarr;</a>
+        <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+          <div style="font-size: 0.72rem; color: var(--fx-text-muted);" id="admit-cand-number">AC-2026-A-0001</div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button type="button" class="fx-btn-pill-light" onclick="window.print()">Print Admit Card</button>
+            <a href="/instructions.html" class="fx-btn-pill-coral" id="btn-admit-proceed" style="text-decoration: none;">Proceed to Exam &rarr;</a>
+          </div>
         </div>
       </div>
     </div>

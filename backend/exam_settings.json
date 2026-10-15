@@ -35,6 +35,7 @@
     "controller_designation": "Examination Directorate",
     "test_venue_name": "SSE Digital Assessment Hub Node 01",
     "footer_disclaimer": "© 2026 Saveetha Testing Directorate. Verification hash active.",
+    "watermark_text": "CONFIDENTIAL",
     "show_score_banner": true,
     "show_percentage": true,
     "show_accuracy": true,

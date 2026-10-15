@@ -80,6 +80,7 @@ DEFAULT_SCORECARD_TEMPLATE = {
     "controller_designation": "Examination Directorate",
     "test_venue_name": "SSE Digital Assessment HUB",
     "footer_disclaimer": "© 2026 Saveetha School of Engineering • CBT Examination Directorate. All rights reserved.",
+    "watermark_text": "CONFIDENTIAL",
     "show_score_banner": True,
     "show_percentage": True,
     "show_accuracy": True,
@@ -3785,6 +3786,15 @@ def get_exam_result(
         except Exception:
             pass
 
+    # Resolve actual exam title dynamically from Supabase Cloud DB or settings
+    actual_exam_title = CURRENT_EXAM_SETTINGS.get("examination_title") or "MCQ ASSESSMENT [ SSE CBT 2026 ]"
+    try:
+        ex_db_res = db.table("exams").select("title, config").eq("id", norm_id).limit(1).execute()
+        if ex_db_res.data and ex_db_res.data[0].get("title"):
+            actual_exam_title = ex_db_res.data[0]["title"]
+    except Exception:
+        pass
+
     # If candidate is not yet identified by DB lookup, check candidate-specific in-memory cache only
     if not target_cand:
         cand_specific_cache = (
@@ -3798,13 +3808,20 @@ def get_exam_result(
             "disqualified": False,
             "candidate_name": "Registered Candidate",
             "registration_number": reg_no or "Awaiting Submission",
-            "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
+            "roll_number": reg_no or "Awaiting Submission",
+            "application_number": f"260310{reg_no.replace('-', '')[-6:]}" if reg_no else "260310000001",
+            "category": "General",
+            "gender": "Male",
+            "exam_title": actual_exam_title,
+            "test_center_name": CURRENT_EXAM_SETTINGS.get("test_venue_name"),
+            "test_center_code": CURRENT_EXAM_SETTINGS.get("test_center_code"),
             "score": "-- / --",
             "percentage": 0.0,
             "accuracy": None,
             "accuracy_display": "N/A",
             "percentile": None,
             "time_taken": "--",
+            "time_taken_display": "--",
             "submitted_at": "--",
             "reference": "N/A",
             "scoring_details": None,
@@ -3814,6 +3831,12 @@ def get_exam_result(
         meta = target_cand.get("metadata") or {}
         cand_name = target_cand.get("full_name") or "Candidate"
         cand_reg = target_cand.get("registration_number") or ""
+        cand_roll = meta.get("roll_number") or cand_reg
+        cand_app_no = meta.get("application_number") or (f"260310{cand_reg.replace('-', '')[-6:]}" if cand_reg else "260310000001")
+        cand_cat = meta.get("category") or "General"
+        cand_gen = meta.get("gender") or "Male"
+        cand_venue = meta.get("test_center_name") or CURRENT_EXAM_SETTINGS.get("test_venue_name")
+        cand_center_code = meta.get("test_center_code") or CURRENT_EXAM_SETTINGS.get("test_center_code")
 
         # If candidate was disqualified due to violation:
         if (
@@ -3828,7 +3851,13 @@ def get_exam_result(
                 "reason": disq_reason,
                 "candidate_name": cand_name,
                 "registration_number": cand_reg,
-                "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
+                "roll_number": cand_roll,
+                "application_number": cand_app_no,
+                "category": cand_cat,
+                "gender": cand_gen,
+                "test_center_name": cand_venue,
+                "test_center_code": cand_center_code,
+                "exam_title": actual_exam_title,
                 "reference": meta.get("submission_reference") or f"DISQ-{str(target_cand['id'])[:6].upper()}",
                 "score": 0.0,
                 "max_possible": 0.0,
@@ -3837,6 +3866,7 @@ def get_exam_result(
                 "accuracy_display": "0.0%",
                 "percentile": None,
                 "time_taken": "--",
+                "time_taken_display": "--",
                 "submitted_at": meta.get("disqualified_at") or format_ist_now(),
                 "scoring_details": {
                     "total_score": 0.0,
@@ -3909,7 +3939,7 @@ def get_exam_result(
             sc_max = float(meta_max) if meta_max is not None else float(sc["max_possible_score"])
             sc_pct = float(meta_pct) if meta_pct is not None else float(sc["percentage"])
             sc_acc = sc["accuracy"] if sc["accuracy"] is not None else (float(meta_acc) if meta_acc is not None else 0.0)
-            time_display = meta.get("time_taken_display") or meta.get("time_taken") or "42 mins 18 secs"
+            time_display = meta.get("time_taken_display") or meta.get("time_taken") or (f"{round(att_row.get('duration_seconds', 0) / 60)} mins" if att_row and att_row.get('duration_seconds') else "42 mins 18 secs")
             sub_at = meta.get("submitted_at") or (att_row.get("end_time") if att_row else None) or format_ist_now()
 
             return {
@@ -3917,7 +3947,13 @@ def get_exam_result(
                 "disqualified": False,
                 "candidate_name": cand_name,
                 "registration_number": cand_reg,
-                "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
+                "roll_number": cand_roll,
+                "application_number": cand_app_no,
+                "category": cand_cat,
+                "gender": cand_gen,
+                "test_center_name": cand_venue,
+                "test_center_code": cand_center_code,
+                "exam_title": actual_exam_title,
                 "score": sc_tot,
                 "max_possible": sc_max,
                 "percentage": sc_pct,
@@ -3926,6 +3962,7 @@ def get_exam_result(
                 "percentile": None,
                 "reference": meta.get("submission_reference") or f"SSE-{str(target_cand['id'])[:6].upper()}",
                 "time_taken": time_display,
+                "time_taken_display": time_display,
                 "submitted_at": sub_at,
                 "scoring_details": sc,
             }
@@ -3935,13 +3972,20 @@ def get_exam_result(
             "disqualified": False,
             "candidate_name": cand_name,
             "registration_number": cand_reg,
-            "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
+            "roll_number": cand_roll,
+            "application_number": cand_app_no,
+            "category": cand_cat,
+            "gender": cand_gen,
+            "test_center_name": cand_venue,
+            "test_center_code": cand_center_code,
+            "exam_title": actual_exam_title,
             "score": "-- / --",
             "percentage": 0.0,
             "accuracy": None,
             "accuracy_display": "N/A",
             "percentile": None,
             "time_taken": "--",
+            "time_taken_display": "--",
             "submitted_at": "--",
             "reference": "N/A",
             "scoring_details": None,

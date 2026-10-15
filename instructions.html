@@ -139,7 +139,7 @@
             <p style="font-size: 0.85rem; color: var(--fx-text-muted); margin-top: 4px;">Computer Based Assessment Examination Guidelines &bull; Candidate Instructions</p>
           </div>
           <div style="font-size: 0.82rem; color: var(--fx-text-muted);">
-            Candidate: <strong id="inst-cand-name" style="color: var(--fx-coral);">Registered Candidate</strong> &bull; Terminal: <code style="color: #0284c7; font-family: var(--fx-font-mono);">C-042</code>
+            Candidate: <strong id="inst-cand-name" style="color: var(--fx-coral);">Registered Candidate</strong> &bull; Terminal: <code id="inst-cand-terminal" style="color: #0284c7; font-family: var(--fx-font-mono);">--</code>
           </div>
         </div>
 
@@ -147,9 +147,9 @@
         <div style="margin-bottom: 24px;">
           <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--fx-text-heading); margin-bottom: 10px;">1. General Information &amp; Authoritative Server Clock</h3>
           <ul style="padding-left: 1.5rem; line-height: 1.7; font-size: 0.9rem; color: var(--fx-text-body);">
-            <li>Total duration of examination is <strong>180 minutes</strong> (3 hours).</li>
+            <li>Total duration of examination is <strong id="inst-exam-duration">180 minutes</strong>. Total questions: <strong id="inst-exam-qcount">104</strong>.</li>
             <li>The clock is synchronized with the central examination server using Google NTP. The timer in the top banner displays the remaining time available. When the timer reaches zero, the test will automatically submit.</li>
-            <li>Each correct answer awards <strong>+4.0 marks</strong>. Each incorrect response incurs <strong>-1.0 mark</strong>. Unanswered questions receive <strong>0 marks</strong>.</li>
+            <li>Each correct answer awards <strong id="inst-exam-correct-marks" style="color: #10b981;">+4.0 marks</strong>. Each incorrect response incurs <strong id="inst-exam-negative-marks" style="color: #ef4444;">-1.0 mark</strong>. Unanswered questions receive <strong>0 marks</strong>.</li>
           </ul>
         </div>
 
@@ -244,6 +244,29 @@
       if (storedName) candNameSpan.textContent = storedName + (storedReg ? ` (${storedReg})` : '');
     }
 
+    const termSpan = document.getElementById('inst-cand-terminal');
+    if (termSpan) {
+      termSpan.textContent = localStorage.getItem('terminal_id') || localStorage.getItem('device_node') || 'T-A-0001';
+    }
+
+    function applyExamDataToInstructions(data) {
+      const h1 = document.querySelector('.inst-header h1');
+      const durEl = document.getElementById('inst-exam-duration');
+      const qCountEl = document.getElementById('inst-exam-qcount');
+      const corEl = document.getElementById('inst-exam-correct-marks');
+      const negEl = document.getElementById('inst-exam-negative-marks');
+
+      if (data.title && h1) h1.textContent = data.title;
+      if (durEl && data.duration_minutes) durEl.textContent = `${data.duration_minutes} minutes`;
+      if (qCountEl) {
+        const qCount = data.question_count || data.config?.question_ids?.length || (Array.isArray(data.questions) ? data.questions.length : 104);
+        qCountEl.textContent = String(qCount);
+      }
+      const cfg = data.config || {};
+      if (corEl && cfg.correct_marks !== undefined) corEl.textContent = `+${cfg.correct_marks} marks`;
+      if (negEl && cfg.negative_marks !== undefined) negEl.textContent = `-${cfg.negative_marks} mark`;
+    }
+
     async function loadActiveExam() {
       const h1 = document.querySelector('.inst-header h1');
       const pSub = document.querySelector('.inst-header p');
@@ -268,7 +291,7 @@
           const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}`);
           if (res.ok) {
             const data = await res.json();
-            if (data && data.title && h1) h1.textContent = data.title;
+            if (data) applyExamDataToInstructions(data);
             return;
           }
         } catch (_) {}
@@ -282,7 +305,7 @@
             const active = exams.find(e => e.state === 'active') || exams[0];
             examId = active.id;
             localStorage.setItem('active_exam_id', examId);
-            if (active.title && h1) h1.textContent = active.title;
+            applyExamDataToInstructions(active);
             return;
           }
         }

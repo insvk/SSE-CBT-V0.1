@@ -134,6 +134,7 @@ class ScorecardStructure(BaseModel):
     controller_designation: Optional[str] = "Examination Directorate"
     test_venue_name: Optional[str] = "SSE Digital Assessment Hub Node 01"
     footer_disclaimer: Optional[str] = "© 2026 Saveetha School of Engineering • CBT Examination Directorate. All rights reserved."
+    watermark_text: Optional[str] = "CONFIDENTIAL"
     show_score_banner: Optional[bool] = True
     show_percentage: Optional[bool] = True
     show_accuracy: Optional[bool] = True

@@ -349,91 +349,119 @@ if (btnViewAdmit && modalAdmit) {
     btnViewAdmit.addEventListener('click', async () => {
         const name = localStorage.getItem('candidate_name') || 'Candidate Name';
         const reg = localStorage.getItem('reg_no') || '';
+        const candId = localStorage.getItem('candidate_id') || 'me';
         if (admitName) admitName.textContent = name;
         if (admitReg) admitReg.textContent = reg;
 
         try {
             const token = localStorage.getItem('access_token') || '';
-            const res = await fetch('/api/v1/exams/settings', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const s = await res.json();
-                const elAgency = document.getElementById('admit-cand-agency');
-                const elExam = document.getElementById('admit-cand-exam');
-                const elVenue = document.getElementById('admit-cand-venue');
-                const elCenterLab = document.getElementById('admit-cand-center-lab');
-                const elController = document.getElementById('admit-cand-controller');
-                const elTerminal = document.getElementById('admit-cand-terminal');
+            // 1. Fetch authoritative admit card for this candidate
+            let cardData: any = null;
+            try {
+                const resCard = await fetch(`/api/v1/candidates/${encodeURIComponent(candId)}/admit-card?reg_no=${encodeURIComponent(reg)}`, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'x-tenant-id': getTenantId() }
+                });
+                if (resCard.ok) {
+                    cardData = await resCard.json();
+                }
+            } catch (_) {}
 
-                if (elAgency && (s.admit_card?.institution_name || s.institution_name)) {
-                    elAgency.textContent = s.admit_card?.institution_name || s.institution_name;
+            // 2. Fetch center and document settings
+            let settingsData: any = {};
+            try {
+                const resSettings = await fetch('/api/v1/exams/settings', {
+                    headers: { 'Authorization': `Bearer ${token}`, 'x-tenant-id': getTenantId() }
+                });
+                if (resSettings.ok) {
+                    settingsData = await resSettings.json();
                 }
-                if (elExam && (s.admit_card?.examination_title || s.examination_title)) {
-                    elExam.textContent = s.admit_card?.examination_title || s.examination_title;
-                }
-                if (elVenue && (s.admit_card?.test_venue_name || s.test_venue_name)) {
-                    elVenue.textContent = s.admit_card?.test_venue_name || s.test_venue_name;
-                }
-                if (elCenterLab) {
-                    elCenterLab.textContent = `Center: ${s.admit_card?.test_center_code || s.test_center_code || 'SSEC-TN-042'} | Room: ${s.admit_card?.default_lab_room || s.default_lab_room || 'LAB-01'}`;
-                }
-                if (elController && (s.admit_card?.controller_name || s.controller_name)) {
-                    elController.textContent = s.admit_card?.controller_name || s.controller_name;
-                }
-                if (elTerminal) {
-                    elTerminal.textContent = `${s.admit_card?.terminal_prefix || s.terminal_prefix || 'T-A-'}0004`;
-                }
+            } catch (_) {}
 
-                const admitCard = s.admit_card || {};
-                const elSubtitle = document.getElementById('admit-cand-subtitle');
-                if (elSubtitle && admitCard.header_subtitle) {
-                    elSubtitle.textContent = admitCard.header_subtitle;
-                }
+            const s = settingsData;
+            const admitTmpl = s.admit_card || {};
+            const d = cardData || {};
 
-                // Instructions
-                const elInstBlock = document.getElementById('admit-cand-instructions-block');
-                const elInstText = document.getElementById('admit-cand-instructions-text');
-                if (elInstBlock) {
-                    elInstBlock.style.display = admitCard.show_instructions !== false ? 'block' : 'none';
-                }
-                if (elInstText && admitCard.instructions_text) {
-                    elInstText.textContent = admitCard.instructions_text;
-                }
+            const elAgency = document.getElementById('admit-cand-agency');
+            const elExam = document.getElementById('admit-cand-exam');
+            const elSubtitle = document.getElementById('admit-cand-subtitle');
+            const elWatermark = document.getElementById('admit-cand-watermark');
+            const elVenue = document.getElementById('admit-cand-venue');
+            const elCenterLab = document.getElementById('admit-cand-center-lab');
+            const elTerminal = document.getElementById('admit-cand-terminal');
+            const elController = document.getElementById('admit-cand-controller');
+            const elControllerDesig = document.getElementById('admit-cand-controller-desig');
+            const elAdmitNum = document.getElementById('admit-cand-number');
+            const elBarcodeText = document.getElementById('admit-cand-barcode-text');
+            const elCat = document.getElementById('admit-cand-cat');
+            const elGen = document.getElementById('admit-cand-gen');
+            const elSlot = document.getElementById('admit-slot');
+            const elReporting = document.getElementById('admit-reporting');
 
-                // Barcode block
-                const elBarcode = document.getElementById('admit-cand-barcode-block');
-                const elMainGrid = document.getElementById('admit-cand-main-grid');
-                if (elBarcode) {
-                    const showBarcode = admitCard.show_barcode !== false;
-                    elBarcode.style.display = showBarcode ? 'flex' : 'none';
-                    if (elMainGrid) {
-                        elMainGrid.style.gridTemplateColumns = showBarcode ? '1fr 130px' : '1fr';
-                    }
-                }
-
-                // Slots block
-                const elSlot1 = document.getElementById('admit-cand-slot-block-1');
-                const elSlot2 = document.getElementById('admit-cand-slot-block-2');
-                const showSlots = admitCard.show_slot_timings !== false;
-                if (elSlot1) elSlot1.style.display = showSlots ? 'block' : 'none';
-                if (elSlot2) elSlot2.style.display = showSlots ? 'block' : 'none';
-
-                // Venue block
-                const elVenue1 = document.getElementById('admit-cand-venue-block-1');
-                const elVenue2 = document.getElementById('admit-cand-venue-block-2');
-                const elVenue3 = document.getElementById('admit-cand-venue-block-3');
-                const showVenue = admitCard.show_venue_details !== false;
-                if (elVenue1) elVenue1.style.display = showVenue ? 'block' : 'none';
-                if (elVenue2) elVenue2.style.display = showVenue ? 'block' : 'none';
-                if (elVenue3) elVenue3.style.display = showVenue ? 'block' : 'none';
-
-                // Signature block
-                const elSig = document.getElementById('admit-cand-sig-block');
-                if (elSig) {
-                    elSig.style.display = admitCard.show_signature_block !== false ? 'flex' : 'none';
-                }
+            if (d.full_name && admitName) admitName.textContent = d.full_name;
+            if ((d.roll_number || d.registration_number) && admitReg) admitReg.textContent = d.roll_number || d.registration_number;
+            if (elCat) elCat.textContent = d.category || 'General';
+            if (elGen) elGen.textContent = d.gender || 'Male';
+            if (elSlot) elSlot.textContent = d.slot || 'Subject Slot A';
+            if (elReporting) {
+                const rep = d.reporting_time_ist || 'Subject Slot A';
+                const gate = d.gate_closure_ist ? ` (Gate Closes: ${d.gate_closure_ist})` : '';
+                elReporting.textContent = `${rep}${gate}`;
             }
+
+            if (elAgency) elAgency.textContent = d.institution_name || admitTmpl.institution_name || s.institution_name || 'SSE CBT PLATFORM';
+            if (elExam) elExam.textContent = d.examination_title || admitTmpl.examination_title || s.examination_title || 'MCQ ASSESSMENT [ SSE CBT 2026 ]';
+            if (elSubtitle) elSubtitle.textContent = d.header_subtitle || admitTmpl.header_subtitle || 'PROVISIONAL ADMIT CARD / HALL TICKET • COMPUTER BASED TEST (CBT)';
+            if (elWatermark) {
+                const wm = d.watermark_text || admitTmpl.watermark_text || 'CONFIDENTIAL';
+                elWatermark.textContent = wm;
+                elWatermark.style.display = wm ? 'flex' : 'none';
+            }
+            if (elVenue) elVenue.textContent = d.test_center_name || admitTmpl.test_venue_name || s.test_venue_name || 'SSE Digital Assessment Hub';
+            if (elCenterLab) {
+                const cCode = d.test_center_code || admitTmpl.test_center_code || s.test_center_code || 'SSEC-TN-042';
+                const cLab = d.lab_number || admitTmpl.default_lab_room || s.default_lab_room || 'LAB-01';
+                elCenterLab.textContent = `Center: ${cCode} | Room: ${cLab}`;
+            }
+            if (elTerminal) elTerminal.textContent = d.assigned_terminal || `${admitTmpl.terminal_prefix || s.terminal_prefix || 'T-A-'}0001`;
+            if (elController) elController.textContent = d.controller_name || admitTmpl.controller_name || s.controller_name || 'ADMIN@SSE.IN';
+            if (elControllerDesig) elControllerDesig.textContent = d.controller_designation || admitTmpl.controller_designation || s.controller_designation || 'Examination Directorate';
+            if (elAdmitNum) elAdmitNum.textContent = d.admit_card_number || `AC-2026-${reg.slice(-4) || '0001'}`;
+            if (elBarcodeText) elBarcodeText.textContent = d.barcode_data || `SSEC*2026*${reg}`;
+
+            // Instructions block
+            const elInstBlock = document.getElementById('admit-cand-instructions-block');
+            const elInstText = document.getElementById('admit-cand-instructions-text');
+            const showInst = d.show_instructions !== undefined ? d.show_instructions : (admitTmpl.show_instructions !== false);
+            if (elInstBlock) elInstBlock.style.display = showInst ? 'block' : 'none';
+            if (elInstText) elInstText.textContent = d.instructions_text || admitTmpl.instructions_text || 'Government photo ID card mandatory. Electronic devices strictly prohibited.';
+
+            // Barcode block
+            const elBarcode = document.getElementById('admit-cand-barcode-block');
+            const elMainGrid = document.getElementById('admit-cand-main-grid');
+            const showBarcode = d.show_barcode !== undefined ? d.show_barcode : (admitTmpl.show_barcode !== false);
+            if (elBarcode) elBarcode.style.display = showBarcode ? 'flex' : 'none';
+            if (elMainGrid) elMainGrid.style.gridTemplateColumns = showBarcode ? '1fr 130px' : '1fr';
+
+            // Slots block
+            const elSlot1 = document.getElementById('admit-cand-slot-block-1');
+            const elSlot2 = document.getElementById('admit-cand-slot-block-2');
+            const showSlots = d.show_slot_timings !== undefined ? d.show_slot_timings : (admitTmpl.show_slot_timings !== false);
+            if (elSlot1) elSlot1.style.display = showSlots ? 'block' : 'none';
+            if (elSlot2) elSlot2.style.display = showSlots ? 'block' : 'none';
+
+            // Venue block
+            const elVenue1 = document.getElementById('admit-cand-venue-block-1');
+            const elVenue2 = document.getElementById('admit-cand-venue-block-2');
+            const elVenue3 = document.getElementById('admit-cand-venue-block-3');
+            const showVenue = d.show_venue_details !== undefined ? d.show_venue_details : (admitTmpl.show_venue_details !== false);
+            if (elVenue1) elVenue1.style.display = showVenue ? 'block' : 'none';
+            if (elVenue2) elVenue2.style.display = showVenue ? 'block' : 'none';
+            if (elVenue3) elVenue3.style.display = showVenue ? 'block' : 'none';
+
+            // Signature block
+            const elSig = document.getElementById('admit-cand-sig-block');
+            const showSig = d.show_signature_block !== undefined ? d.show_signature_block : (admitTmpl.show_signature_block !== false);
+            if (elSig) elSig.style.display = showSig ? 'flex' : 'none';
         } catch (_) {}
 
         modalAdmit.style.display = 'flex';

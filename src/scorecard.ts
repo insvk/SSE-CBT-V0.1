@@ -74,17 +74,32 @@ function renderScorecardData(data: any, fallbackName: string, fallbackReg: strin
     const scStatPositive = document.getElementById('sc-stat-positive');
     const scStatPenalty = document.getElementById('sc-stat-penalty');
 
+    const scCategory = document.getElementById('sc-category');
+    const scGender = document.getElementById('sc-gender');
+    const scCenterNode = document.getElementById('sc-center-node');
+
     const candName = data.candidate_name || fallbackName;
     const candReg = data.registration_number || fallbackReg;
 
     if (scName) scName.textContent = candName;
     if (scReg) scReg.textContent = candReg;
-    if (scAppNo && candReg) {
-        const numeric = candReg.replace(/[^0-9]/g, '');
-        if (numeric) scAppNo.textContent = `260310${numeric.padStart(6, '0').slice(-6)}`;
+    if (scCategory) scCategory.textContent = data.category || 'General';
+    if (scGender) scGender.textContent = data.gender || 'Male';
+    if (scAppNo) {
+        if (data.application_number) {
+            scAppNo.textContent = data.application_number;
+        } else if (candReg) {
+            const numeric = candReg.replace(/[^0-9]/g, '');
+            scAppNo.textContent = numeric ? `260310${numeric.padStart(6, '0').slice(-6)}` : '260310000001';
+        } else {
+            scAppNo.textContent = '--';
+        }
     }
     if (scExam) scExam.textContent = data.exam_title || 'MCQ ASSESSMENT [ SSE CBT 2026 ]';
     if (scRef) scRef.textContent = data.reference || 'SSE-2026';
+    if (scCenterNode && (data.test_center_name || data.test_center_code)) {
+        scCenterNode.textContent = `${data.test_center_name || 'SSE Assessment Hub'}${data.test_center_code ? ` (${data.test_center_code})` : ''}`;
+    }
 
     const details = data.scoring_details || {};
     const isDisqualified = data.disqualified === true || data.status === 'disqualified';
@@ -389,6 +404,12 @@ async function loadAuthoritativeScore(): Promise<void> {
             if (elCtrlDesig && s.controller_designation) elCtrlDesig.textContent = s.controller_designation;
             if (elNode && s.test_venue_name) elNode.textContent = s.test_venue_name;
             if (elDisclaimer && sc.footer_disclaimer) elDisclaimer.textContent = sc.footer_disclaimer;
+
+            const elWatermark = document.getElementById('sc-watermark');
+            if (elWatermark) {
+                elWatermark.textContent = sc.watermark_text || 'CONFIDENTIAL';
+                elWatermark.style.display = sc.watermark_text ? 'flex' : 'none';
+            }
 
             // Structural section visibility toggles
             const elBanner = document.getElementById('sc-score-banner');

@@ -689,6 +689,7 @@ async def debar_candidate(
 @router.get("/{candidate_id}/admit-card", response_model=AdmitCardResponse)
 def get_candidate_admit_card(
     candidate_id: str,
+    reg_no: Optional[str] = None,
     user_context: dict = Depends(get_tenant_user),
 ):
     """
@@ -698,7 +699,12 @@ def get_candidate_admit_card(
     db = get_db()
 
     try:
-        curr = _get_candidate_record(db, candidate_id, tid)
+        lookup_id = candidate_id
+        if candidate_id == "me":
+            lookup_id = user_context.get("candidate_id") or user_context.get("registration_number") or user_context.get("sub") or ""
+        curr = _get_candidate_record(db, lookup_id, tid) if lookup_id else None
+        if not curr and reg_no:
+            curr = _get_candidate_record(db, reg_no, tid)
         if not curr:
             raise HTTPException(status_code=404, detail="Candidate not found")
 
