@@ -229,9 +229,7 @@ def login(payload: LoginRequest):
             stored_pwd = cand_meta.get("password") or "12345678"
             emergency_pin = cand_meta.get("emergency_pin")
 
-            pwd_matches = verify_password(pwd, stored_pwd) or (emergency_pin and verify_password(pwd, emergency_pin))
-            if not pwd_matches and pwd in ("12345678", "Admin.sse@123"):
-                pwd_matches = True
+            pwd_matches = verify_password(pwd, stored_pwd) or (bool(emergency_pin) and verify_password(pwd, str(emergency_pin)))
 
             if pwd_matches:
                 cand_id = str(cand["id"])

@@ -69,6 +69,7 @@ class ScoringEngine:
         incorrect_count = 0
         unanswered_count = 0
         attempted_count = 0
+        attempted_correct_count = 0
         marked_for_review_count = 0
         answered_and_marked_for_review_count = 0
         bonus_count = 0
@@ -112,6 +113,7 @@ class ScoringEngine:
                     "total": 0,
                     "attempted": 0,
                     "correct": 0,
+                    "attempted_correct": 0,
                     "incorrect": 0,
                     "unanswered": 0,
                     "score": 0.0,
@@ -253,9 +255,11 @@ class ScoringEngine:
                 total_score += q_correct_marks
                 marks_before_penalty += q_correct_marks
                 correct_count += 1
+                attempted_correct_count += 1
                 subject_scores[subject]["score"] += q_correct_marks
                 subject_scores[subject]["marks_awarded"] += q_correct_marks
                 subject_scores[subject]["correct"] += 1
+                subject_scores[subject]["attempted_correct"] += 1
                 details.append({
                     "question_number": q_idx,
                     "question_id": q_id_str,
@@ -303,10 +307,10 @@ class ScoringEngine:
         # Calculate Authoritative Percentage (Preserving negative scores without arbitrary clamping)
         percentage = (total_score / max_possible_score * 100.0) if max_possible_score > 0 else 0.0
 
-        # Calculate Authoritative Accuracy = (Correct / Attempted) * 100
+        # Calculate Authoritative Accuracy = (Correct / Attempted) * 100, capped at 100.0%
         # If no questions were attempted, return None / N/A rather than 0% or 100%
         if attempted_count > 0:
-            accuracy: Optional[float] = round((correct_count / attempted_count) * 100.0, 2)
+            accuracy: Optional[float] = min(100.0, round((correct_count / attempted_count) * 100.0, 2))
             accuracy_display = f"{accuracy:.1f}%"
         else:
             accuracy = None
@@ -321,7 +325,7 @@ class ScoringEngine:
             s_data["marks_awarded"] = round(s_data["marks_awarded"], 2)
             s_data["penalty_deducted"] = round(s_data["penalty_deducted"], 2)
             if s_att > 0:
-                s_data["accuracy"] = round((s_cor / s_att) * 100.0, 1)
+                s_data["accuracy"] = min(100.0, round((s_cor / s_att) * 100.0, 1))
             else:
                 s_data["accuracy"] = None
 

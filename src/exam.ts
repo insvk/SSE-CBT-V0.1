@@ -831,7 +831,13 @@ async function performFinalSubmission(): Promise<void> {
             } catch (_) {}
         }
         if (!examIdToSubmit) {
-            examIdToSubmit = '00000000-0000-0000-0000-000000000101';
+            alert("No active examination session found to submit. Please contact your invigilator.");
+            if (ui.modalConfirmSubmit) {
+                ui.modalConfirmSubmit.textContent = 'Confirm Final Submit';
+                ui.modalConfirmSubmit.disabled = false;
+            }
+            isSubmitting = false;
+            return;
         }
 
         let candId = localStorage.getItem('candidate_id') || '';
