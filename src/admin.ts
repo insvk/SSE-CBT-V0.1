@@ -27,12 +27,14 @@ async function adminFetch(endpoint: string, options: RequestInit = {}): Promise<
 
     const buildHeaders = (): HeadersInit => {
         const h: any = {
-            'Content-Type': 'application/json',
             'x-tenant-id': getTenantId(),
             ...(options.headers || {}),
         };
+        if (!(options.body instanceof FormData) && !h['Content-Type']) {
+            h['Content-Type'] = 'application/json';
+        }
         const token = getAuthToken();
-        if (token) {
+        if (token && !h['Authorization']) {
             h['Authorization'] = `Bearer ${token}`;
         }
         return h;
@@ -702,7 +704,7 @@ if (ui.formCreate) {
         };
 
         try {
-            const res = await fetch('/api/v1/auth/create-account', {
+            const res = await adminFetch('/api/v1/auth/create-account', {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify(payload)
@@ -768,7 +770,7 @@ if (ui.formImport) {
             'x-tenant-id': getTenantId(),
         };
 
-        const res = await fetch(`${API_BASE}/bulk-import`, { method: 'POST', headers: importHeaders, body: formData });
+        const res = await adminFetch(`${API_BASE}/bulk-import`, { method: 'POST', headers: importHeaders, body: formData });
         
         if (res.ok) {
             const data = await res.json();
@@ -817,7 +819,7 @@ if (ui.btnExportCsv) {
 if (ui.btnExtendTime) {
     ui.btnExtendTime.onclick = async () => {
         try {
-            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/extend-time`, {
+            const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/extend-time`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -834,7 +836,7 @@ if (ui.btnExtendTime) {
 if (ui.btnUnlockSessions) {
     ui.btnUnlockSessions.onclick = async () => {
         try {
-            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/unlock-sessions`, {
+            const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/unlock-sessions`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -854,7 +856,7 @@ if (ui.btnEmergencyReset) {
             return;
         }
         try {
-            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/reset`, {
+            const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/reset`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -871,7 +873,7 @@ if (ui.btnEmergencyReset) {
 // --- ROW ACTIONS ---
 (window as any).toggleStatus = async (id: string) => {
     try {
-        const res = await fetch(`${API_BASE}/${id}/toggle-status`, { 
+        const res = await adminFetch(`${API_BASE}/${id}/toggle-status`, { 
             method: 'PATCH', 
             headers: getHeaders() 
         });
@@ -891,7 +893,7 @@ if (ui.btnEmergencyReset) {
 (window as any).resetAttempt = async (id: string) => {
     if (!confirm("Wipe exam attempt record for this candidate so they can take the test afresh?")) return;
     try {
-        const res = await fetch(`${API_BASE}/${id}/reset-attempt`, { 
+        const res = await adminFetch(`${API_BASE}/${id}/reset-attempt`, { 
             method: 'POST', 
             headers: getHeaders() 
         });
@@ -935,7 +937,7 @@ if (ui.checkAll) {
 if (ui.btnAssign) {
     ui.btnAssign.onclick = async () => {
         const selected = Array.from(document.querySelectorAll('.row-check:checked')).map((c: any) => c.value);
-        const res = await fetch(`${API_BASE}/bulk-assign`, { 
+        const res = await adminFetch(`${API_BASE}/bulk-assign`, { 
             method: 'POST', 
             headers: getHeaders(), 
             body: JSON.stringify({ candidate_ids: selected, exam_id: getActiveExamId() || undefined }) 
@@ -1002,7 +1004,7 @@ function openCandidateDossier(id: string): void {
 
 async function openAdmitCard(id: string): Promise<void> {
     try {
-        const res = await fetch(`${API_BASE}/${id}/admit-card`, { headers: getHeaders() });
+        const res = await adminFetch(`${API_BASE}/${id}/admit-card`, { headers: getHeaders() });
         if (!res.ok) {
             showToast("Failed to fetch official admit card", true);
             return;
@@ -1121,7 +1123,7 @@ function openAccommodationsManager(id: string): void {
 
 async function regenerateEmergencyPin(id: string): Promise<void> {
     try {
-        const res = await fetch(`${API_BASE}/${id}/regenerate-credentials`, {
+        const res = await adminFetch(`${API_BASE}/${id}/regenerate-credentials`, {
             method: 'POST',
             headers: getHeaders(),
         });
@@ -1174,7 +1176,7 @@ async function deleteCandidateRecord(id: string, name: string): Promise<void> {
         return;
     }
     try {
-        const res = await fetch(`${API_BASE}/${id}`, {
+        const res = await adminFetch(`${API_BASE}/${id}`, {
             method: 'DELETE',
             headers: getHeaders(),
         });
@@ -1294,7 +1296,7 @@ if (formReallocSlot) {
         const reason = (document.getElementById('realloc-reason') as HTMLSelectElement).value;
 
         try {
-            const res = await fetch(`${API_BASE}/${cid}/reallocate-slot`, {
+            const res = await adminFetch(`${API_BASE}/${cid}/reallocate-slot`, {
                 method: 'PATCH',
                 headers: getHeaders(),
                 body: JSON.stringify({ slot: targetSlot, reason: reason }),
@@ -1325,7 +1327,7 @@ if (formAccommodations) {
         const extraMins = parseInt((document.getElementById('acc-compensatory-mins') as HTMLInputElement).value, 10) || 0;
 
         try {
-            const res = await fetch(`${API_BASE}/${cid}/accommodations`, {
+            const res = await adminFetch(`${API_BASE}/${cid}/accommodations`, {
                 method: 'PATCH',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -1357,7 +1359,7 @@ if (formDebar) {
         const reason = (document.getElementById('debar-reason-select') as HTMLSelectElement).value;
 
         try {
-            const res = await fetch(`${API_BASE}/${cid}/debar`, {
+            const res = await adminFetch(`${API_BASE}/${cid}/debar`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ reason: reason }),
@@ -1387,7 +1389,7 @@ if (formBulkRealloc) {
         const reason = (document.getElementById('bulk-realloc-reason') as HTMLInputElement).value;
 
         try {
-            const res = await fetch(`${API_BASE}/bulk-reallocate`, {
+            const res = await adminFetch(`${API_BASE}/bulk-reallocate`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -1607,7 +1609,7 @@ if (formExtendCandidateTime) {
         const reason = (document.getElementById('ext-reason-select') as HTMLSelectElement).value;
 
         try {
-            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
+            const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -1659,7 +1661,7 @@ if (formReseatCandidate) {
         const reason = (document.getElementById('reseat-reason') as HTMLSelectElement).value;
 
         try {
-            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
+            const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -1692,7 +1694,7 @@ if (formReseatCandidate) {
     const reason = currentlyPaused ? 'Proctor inspection cleared' : 'Central Invigilator verification hold';
 
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({
@@ -1720,7 +1722,7 @@ if (btnHallPause) {
     btnHallPause.addEventListener('click', async () => {
         if (!confirm("Are you sure you want to PAUSE examination countdown for ALL connected test-takers?")) return;
         try {
-            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
+            const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -1744,7 +1746,7 @@ if (btnHallResume) {
     btnHallResume.addEventListener('click', async () => {
         if (!confirm("Resume examination countdown for all connected candidates?")) return;
         try {
-            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
+            const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -1799,7 +1801,7 @@ if (btnExportAttendance) {
     if (!isLocked && !confirm(`Are you sure you want to forcibly LOCK the terminal of ${name} (${regNo})?`)) return;
 
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/candidate-intervention`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({
@@ -2109,7 +2111,7 @@ function initAdminWebSocket(): void {
 // 1. Exam Lifecycle Phase Orchestrator
 async function loadExamPhase(): Promise<void> {
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/phase`, { headers: getHeaders() });
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/phase`, { headers: getHeaders() });
         if (!res.ok) return;
         const data = await res.json();
 
@@ -2177,7 +2179,7 @@ async function loadExamPhase(): Promise<void> {
 // 2. Telemetry & Anomaly Radar
 async function loadTelemetryRadar(): Promise<void> {
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/telemetry-radar`, { headers: getHeaders() });
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/telemetry-radar`, { headers: getHeaders() });
         if (!res.ok) return;
         const data = await res.json();
         const r = data.radar || {};
@@ -2197,7 +2199,7 @@ async function loadTelemetryRadar(): Promise<void> {
 // 3. Pre-Flight Infrastructure Audit
 async function loadInfrastructureAudit(): Promise<void> {
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/infrastructure-audit`, { headers: getHeaders() });
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/infrastructure-audit`, { headers: getHeaders() });
         if (!res.ok) throw new Error('Audit failed');
         const data = await res.json();
         const hashEl = document.getElementById('audit-cert-hash');
@@ -2213,7 +2215,7 @@ async function loadInfrastructureAudit(): Promise<void> {
 // 4. Center Closing Report (Form 24-B)
 async function loadClosingReport(): Promise<void> {
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/closing-report`, { headers: getHeaders() });
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/closing-report`, { headers: getHeaders() });
         if (!res.ok) throw new Error('Failed to generate report');
         const data = await res.json();
 
@@ -2259,7 +2261,7 @@ if (formPhaseAdvance) {
         const targetPhase = (document.getElementById('advance-target-phase') as HTMLSelectElement).value;
         const note = (document.getElementById('advance-phase-note') as HTMLInputElement).value;
         try {
-            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/phase/advance`, {
+            const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/phase/advance`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ target_phase: targetPhase, notes: note })
@@ -2294,7 +2296,7 @@ if (formPaperDecrypt) {
         e.preventDefault();
         const keyInput = (document.getElementById('input-custody-key') as HTMLInputElement).value;
         try {
-            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/paper/decrypt`, {
+            const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/paper/decrypt`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ custody_key: keyInput })
@@ -2344,7 +2346,7 @@ if (formAdmissionsCheckin) {
         const metalStatus = (document.getElementById('checkin-metal-status') as HTMLSelectElement).value;
         const terminal = (document.getElementById('checkin-terminal-input') as HTMLInputElement).value.trim();
         try {
-            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/admissions/check-in`, {
+            const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/admissions/check-in`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -2390,7 +2392,7 @@ if (formDisasterHold) {
         e.preventDefault();
         const reason = (document.getElementById('disaster-reason-select') as HTMLSelectElement).value;
         try {
-            const res = await fetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/emergency/disaster-hold`, {
+            const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(getActiveExamId() || 'active')}/emergency/disaster-hold`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ reason: reason, freeze_all_timers: true })
@@ -2637,7 +2639,7 @@ function addModalSection(): void {
 
 async function toggleExamAiCamera(examId: string): Promise<void> {
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/toggle-ai-camera`, {
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(examId)}/toggle-ai-camera`, {
             method: 'POST',
             headers: getHeaders()
         });
@@ -2978,7 +2980,7 @@ async function loadExamMonitoring(examId: string): Promise<void> {
     if (!container) return;
 
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/monitoring`, { headers: getHeaders() });
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(examId)}/monitoring`, { headers: getHeaders() });
         if (!res.ok) {
             container.innerHTML = `<div style="padding: 1.5rem; text-align: center; color: #dc2626;">Error retrieving monitoring feed from Cloud DB. Status: ${res.status}</div>`;
             return;
@@ -3238,7 +3240,7 @@ async function loadExamMonitoring(examId: string): Promise<void> {
 // 4. Load Question Bank from Cloud DB for Test Creation
 async function loadQuestionBank(): Promise<void> {
     try {
-        const res = await fetch('/api/v1/questions/', { headers: getHeaders() });
+        const res = await adminFetch('/api/v1/questions/', { headers: getHeaders() });
         if (res.ok) {
             cachedQuestionBank = await res.json();
             if (!Array.isArray(cachedQuestionBank)) cachedQuestionBank = [];
@@ -3438,8 +3440,8 @@ function openCreateExamModal(): void {
 
     (document.getElementById('exam-form-mode') as HTMLInputElement).value = 'create';
     (document.getElementById('exam-form-id') as HTMLInputElement).value = '';
-    (document.getElementById('exam-title-input') as HTMLInputElement).value = 'ALL INDIA CBT MOCK ASSESSMENT - ADVANCED';
-    (document.getElementById('exam-code-input') as HTMLInputElement).value = `AIMT-${new Date().getFullYear()}-M${cachedExams.length + 1}`;
+    (document.getElementById('exam-title-input') as HTMLInputElement).value = 'NATIONAL CBT ASSESSMENT - ADVANCED';
+    (document.getElementById('exam-code-input') as HTMLInputElement).value = `CBT-${new Date().getFullYear()}-T${cachedExams.length + 1}`;
     (document.getElementById('exam-duration-input') as HTMLInputElement).value = '180';
     (document.getElementById('exam-correct-marks-input') as HTMLInputElement).value = '4';
     (document.getElementById('exam-negative-marks-input') as HTMLInputElement).value = '1';
@@ -3591,7 +3593,7 @@ async function deleteExam(examId: string): Promise<void> {
     }
 
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}`, {
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(examId)}`, {
             method: 'DELETE',
             headers: getHeaders()
         });
@@ -3675,7 +3677,7 @@ if (formExamCreate) {
         try {
             let res: Response;
             if (mode === 'edit' && examId) {
-                res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}`, {
+                res = await adminFetch(`/api/v1/exams/${encodeURIComponent(examId)}`, {
                     method: 'PUT',
                     headers: getHeaders(),
                     body: JSON.stringify({
@@ -3711,7 +3713,7 @@ if (formExamCreate) {
                     })
                 });
             } else {
-                res = await fetch('/api/v1/exams/', {
+                res = await adminFetch('/api/v1/exams/', {
                     method: 'POST',
                     headers: getHeaders(),
                     body: JSON.stringify({
@@ -3793,7 +3795,7 @@ async function openExamSummaryModal(examId: string): Promise<void> {
     modal.style.display = 'flex';
 
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/results-summary`, { headers: getHeaders() });
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(examId)}/results-summary`, { headers: getHeaders() });
         if (res.ok) {
             const data = await res.json();
             if (totalEl) totalEl.textContent = String(data.total_appeared || 0);
@@ -4078,7 +4080,7 @@ const inputTermPrefix = document.getElementById('setting-terminal-prefix') as HT
 
 async function loadExamSettings(): Promise<void> {
     try {
-        const res = await fetch('/api/v1/exams/settings', { headers: getHeaders() });
+        const res = await adminFetch('/api/v1/exams/settings', { headers: getHeaders() });
         if (res.ok) {
             const s = await res.json();
             const adm = s.admit_card || {};
@@ -4232,7 +4234,7 @@ if (formExamSettings) {
         }
 
         try {
-            const res = await fetch('/api/v1/exams/settings', {
+            const res = await adminFetch('/api/v1/exams/settings', {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify(payload),
@@ -4376,7 +4378,7 @@ async function loadExamResults(examId: string, viewMode: 'normal' | 'advanced' =
     }
 
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/results?view_mode=${viewMode}`, {
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(examId)}/results?view_mode=${viewMode}`, {
             headers: getHeaders()
         });
         if (res.ok) {
@@ -4637,7 +4639,7 @@ async function openResultDossierModal(examId: string, candidateId: string): Prom
     modal.style.display = 'flex';
 
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/results/${encodeURIComponent(candidateId)}`, {
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(examId)}/results/${encodeURIComponent(candidateId)}`, {
             headers: getHeaders()
         });
         if (res.ok) {
@@ -4726,7 +4728,7 @@ async function deleteCandidateResult(examId: string, candidateId: string, candid
     }
 
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/results/${encodeURIComponent(candidateId)}`, {
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(examId)}/results/${encodeURIComponent(candidateId)}`, {
             method: 'DELETE',
             headers: getHeaders(),
         });
@@ -4750,7 +4752,7 @@ async function recalculateExamResults(examId: string): Promise<void> {
     }
 
     try {
-        const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/recalculate-results`, {
+        const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(examId)}/recalculate-results`, {
             method: 'POST',
             headers: getHeaders(),
         });
@@ -4893,7 +4895,7 @@ function initResultsManagementListeners(): void {
                     body.reason = remarksVal || 'Directorate Moderation';
                 }
 
-                const res = await fetch(`/api/v1/exams/${encodeURIComponent(examId)}/results/${encodeURIComponent(candId)}`, {
+                const res = await adminFetch(`/api/v1/exams/${encodeURIComponent(examId)}/results/${encodeURIComponent(candId)}`, {
                     method: 'PUT',
                     headers: getHeaders(),
                     body: JSON.stringify(body),

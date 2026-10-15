@@ -261,11 +261,16 @@ def get_question_bank(
 ):
     """Fetch user-uploaded / inputted questions from Supabase Cloud DB with optional subject/status filters."""
     tid = user_context["tenant_id"]
+    is_super_admin = user_context.get("god_mode") or user_context.get("role") in ("super_admin", "admin")
     db = get_db()
     ensure_tenant_exists(db, tid)
 
     try:
-        query = db.table("question_bank").select("*").eq("tenant_id", tid)
+        if is_super_admin:
+            query = db.table("question_bank").select("*")
+        else:
+            query = db.table("question_bank").select("*").eq("tenant_id", tid)
+
         if subject and subject.lower() not in ("all", "all subjects"):
             query = query.eq("subject", subject)
         if status_filter and status_filter.lower() not in ("all", "all statuses"):

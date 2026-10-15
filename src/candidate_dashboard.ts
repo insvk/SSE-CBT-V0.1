@@ -235,7 +235,14 @@ async function loadPortalData(): Promise<void> {
                     let statusBadge = '<span class="status-pill status-active">Ready to Launch</span>';
                     let actionBtn = `<a href="/instructions.html?exam_id=${encodeURIComponent(examId)}" class="btn btn-primary btn-sm">Start Exam &rarr;</a>`;
 
-                    if (schedStatus === 'scheduled') {
+                    if (ex.candidate_status === 'submitted') {
+                        const scoreText = (ex.candidate_score !== null && ex.candidate_score !== undefined) ? ` • Score: ${ex.candidate_score}` : '';
+                        statusBadge = `<span class="status-pill" style="background:#dcfce7; color:#15803d; font-weight:700;">Completed${scoreText}</span>`;
+                        actionBtn = `<a href="/scorecard.html?exam_id=${encodeURIComponent(examId)}" class="btn btn-outline btn-sm" style="color:#16a34a; border-color:#86efac; font-weight:700;">View Scorecard &rarr;</a>`;
+                    } else if (ex.candidate_status === 'invalidated') {
+                        statusBadge = `<span class="status-pill" style="background:#fee2e2; color:#b91c1c; font-weight:700;">Disqualified</span>`;
+                        actionBtn = `<a href="/scorecard.html?exam_id=${encodeURIComponent(examId)}" class="btn btn-outline btn-sm" style="color:#dc2626; border-color:#fca5a5; font-weight:700;">View Notice</a>`;
+                    } else if (schedStatus === 'scheduled') {
                         const startText = ex.start_time ? new Date(ex.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Scheduled';
                         statusBadge = `<span class="status-pill" style="background:#fef3c7; color:#92400e;">Starts at ${startText}</span>`;
                         actionBtn = `<a href="/instructions.html?exam_id=${encodeURIComponent(examId)}" class="btn btn-outline btn-sm" style="color:#d97706; border-color:#fde68a;">Scheduled &rarr;</a>`;

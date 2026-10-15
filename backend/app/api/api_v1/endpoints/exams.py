@@ -5,7 +5,7 @@ import time
 import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Body, status, Response
+from fastapi import APIRouter, Depends, HTTPException, Body, status, Response, Header
 from app.core.db import get_db
 from app.core.tenant import DEFAULT_TENANT_ID, ensure_tenant_exists
 from app.core.ws_manager import ws_manager
@@ -49,7 +49,7 @@ import json
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-DEFAULT_EXAM_UUID = "00000000-0000-0000-0000-000000000101"
+DEFAULT_EXAM_UUID = "00000000-0000-0000-0000-000000000002"
 
 DEFAULT_ADMIT_CARD_TEMPLATE = {
     "institution_name": "SSE CBT PLATFORM",
@@ -224,15 +224,25 @@ ACTIVE_EXAM_SESSIONS: Dict[str, Dict[str, Any]] = {}
 LATEST_SUBMISSION_RESULT: Dict[str, Dict[str, Any]] = {}
 
 
-def _resolve_exam_id(raw_id: str) -> str:
-    """Maps legacy IDs ('EX-1001', '1') or returns valid UUID."""
-    if raw_id in ("EX-1001", "1", "default", "default-exam"):
+def _resolve_exam_id(raw_id: Optional[str]) -> str:
+    """Maps legacy IDs ('EX-1001', '1', 'default', 'active') or returns valid UUID from Supabase."""
+    if not raw_id or raw_id in ("EX-1001", "1", "default", "default-exam", "active"):
+        try:
+            db = get_db()
+            res = db.table("exams").select("id").eq("state", "active").order("created_at", desc=True).limit(1).execute()
+            if res.data:
+                return str(res.data[0]["id"])
+            res_any = db.table("exams").select("id").order("created_at", desc=True).limit(1).execute()
+            if res_any.data:
+                return str(res_any.data[0]["id"])
+        except Exception:
+            pass
         return DEFAULT_EXAM_UUID
     try:
-        val = uuid.UUID(raw_id)
+        val = uuid.UUID(str(raw_id))
         return str(val)
     except (ValueError, AttributeError):
-        return str(uuid.uuid5(uuid.NAMESPACE_DNS, raw_id))
+        return str(uuid.uuid5(uuid.NAMESPACE_DNS, str(raw_id)))
 
 
 def parse_schedule_time(raw: Optional[str]) -> Optional[datetime]:
@@ -420,9 +430,19 @@ def _get_or_create_session(exam_id: str, duration_minutes: int = 180) -> Dict[st
 
 @router.get("", include_in_schema=False)
 @router.get("/")
-def get_exams():
+def get_exams(authorization: Optional[str] = Header(None)):
     """Lists available exams from Cloud Database with schedules and link sharing."""
     db = get_db()
+    cand_user_id = None
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            token = authorization.split("Bearer ", 1)[1].strip()
+            secret = settings.SUPABASE_JWT_SECRET or "super-secret-jwt-token-with-at-least-32-characters-long"
+            decoded = jwt.decode(token, secret, algorithms=["HS256"], audience="authenticated")
+            cand_user_id = decoded.get("sub")
+        except Exception:
+            pass
+
     try:
         c_res = db.table("candidates").select("id").execute()
         cand_count = len(c_res.data or []) or 1
@@ -430,11 +450,34 @@ def get_exams():
         cand_count = 1
 
     try:
-        res = db.table("exams").select("*").order("created_at", desc=False).execute()
+        res = db.table("exams").select("*").order("created_at", desc=True).execute()
         exams_data = res.data or []
         if not exams_data:
             return []
-        return [_format_exam_item(e, cand_count) for e in exams_data]
+
+        # Map candidate attempts if candidate is logged in
+        cand_attempts_map = {}
+        if cand_user_id:
+            try:
+                att_res = db.table("exam_attempts").select("exam_id, status, score").eq("candidate_id", cand_user_id).execute()
+                for a in (att_res.data or []):
+                    cand_attempts_map[str(a["exam_id"])] = a
+            except Exception:
+                pass
+
+        formatted_list = []
+        for e in exams_data:
+            item = _format_exam_item(e, cand_count)
+            ex_id_str = str(e["id"])
+            if ex_id_str in cand_attempts_map:
+                att = cand_attempts_map[ex_id_str]
+                item["candidate_status"] = att.get("status")
+                item["candidate_score"] = att.get("score")
+            else:
+                item["candidate_status"] = None
+                item["candidate_score"] = None
+            formatted_list.append(item)
+        return formatted_list
     except Exception as e:
         logger.warning("Error fetching exams from database: %s", e)
         return []
@@ -1817,7 +1860,7 @@ def _get_authoritative_exam_questions(db, exam_id: str) -> Dict[str, Dict[str, A
             rows = res.data or []
 
         if not rows:
-            res = db.table("question_bank").select("id, content, options, correct_answer, subject, difficulty, type, status").order("created_at", desc=True).limit(50).execute()
+            res = db.table("question_bank").select("id, content, options, correct_answer, subject, difficulty, type, status").order("created_at", desc=True).limit(500).execute()
             rows = res.data or []
     except Exception as e:
         logger.warning(f"Error querying question_bank: {e}")
@@ -3690,6 +3733,7 @@ def get_exam_result(
     exam_id: str,
     candidate_id: Optional[str] = None,
     reg_no: Optional[str] = None,
+    authorization: Optional[str] = Header(None),
 ):
     """
     Returns authoritative scorecard data for display on scorecard.html.
@@ -3699,13 +3743,17 @@ def get_exam_result(
     db = get_db()
     session = _get_or_create_session(norm_id)
 
-    # Check if submission is cached in memory for specific candidate or reg_no
-    if reg_no and reg_no in LATEST_SUBMISSION_RESULT:
-        return LATEST_SUBMISSION_RESULT[reg_no]
-    if candidate_id and candidate_id in LATEST_SUBMISSION_RESULT:
-        return LATEST_SUBMISSION_RESULT[candidate_id]
+    # Resolve candidate ID from JWT token if not provided in URL
+    if not candidate_id and not reg_no and authorization and authorization.startswith("Bearer "):
+        try:
+            token = authorization.split("Bearer ", 1)[1].strip()
+            secret = settings.SUPABASE_JWT_SECRET or "super-secret-jwt-token-with-at-least-32-characters-long"
+            decoded = jwt.decode(token, secret, algorithms=["HS256"], audience="authenticated")
+            candidate_id = decoded.get("sub")
+        except Exception:
+            pass
 
-    # 1. Resolve target candidate record strictly by identifier
+    # 1. Resolve target candidate record strictly by identifier from Supabase Cloud DB
     target_cand = None
     if candidate_id:
         try:
@@ -3717,7 +3765,7 @@ def get_exam_result(
             pass
     if not target_cand and reg_no:
         try:
-            c_res = db.table("candidates").select("*").eq("registration_number", reg_no.strip()).limit(1).execute()
+            c_res = db.table("candidates").select("*").ilike("registration_number", reg_no.strip()).limit(1).execute()
             if c_res.data:
                 target_cand = c_res.data[0]
         except Exception:
@@ -3731,30 +3779,25 @@ def get_exam_result(
             pass
     if not target_cand and session.get("reg_no"):
         try:
-            c_res = db.table("candidates").select("*").eq("registration_number", session.get("reg_no")).limit(1).execute()
+            c_res = db.table("candidates").select("*").ilike("registration_number", session.get("reg_no")).limit(1).execute()
             if c_res.data:
                 target_cand = c_res.data[0]
         except Exception:
             pass
 
-    # If candidate is not yet identified by DB lookup, check cached submission results or awaiting payload
+    # If candidate is not yet identified by DB lookup, check candidate-specific in-memory cache only
     if not target_cand:
-        cached = (
+        cand_specific_cache = (
             (reg_no and LATEST_SUBMISSION_RESULT.get(reg_no))
             or (candidate_id and LATEST_SUBMISSION_RESULT.get(candidate_id))
-            or (session.get("reg_no") and LATEST_SUBMISSION_RESULT.get(session.get("reg_no")))
-            or (session.get("candidate_id") and LATEST_SUBMISSION_RESULT.get(session.get("candidate_id")))
-            or LATEST_SUBMISSION_RESULT.get(norm_id)
-            or LATEST_SUBMISSION_RESULT.get(exam_id)
-            or LATEST_SUBMISSION_RESULT.get("latest")
         )
-        if cached:
-            return cached
+        if cand_specific_cache:
+            return cand_specific_cache
         return {
             "status": "pending",
             "disqualified": False,
             "candidate_name": "Registered Candidate",
-            "registration_number": "Awaiting Submission",
+            "registration_number": reg_no or "Awaiting Submission",
             "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
             "score": "-- / --",
             "percentage": 0.0,
@@ -3812,15 +3855,32 @@ def get_exam_result(
                 }
             }
 
-        # If candidate submitted: evaluate or retrieve full question-level response dossier
-        if "score" in meta and meta.get("exam_status") == "submitted":
+        # Check Cloud DB exam_attempts for authoritative submission status
+        att_row = None
+        try:
+            att_chk = db.table("exam_attempts").select("*").eq("exam_id", norm_id).eq("candidate_id", str(target_cand["id"])).limit(1).execute()
+            if att_chk.data:
+                att_row = att_chk.data[0]
+        except Exception:
+            pass
+
+        is_submitted = (
+            (att_row and att_row.get("status") in ("submitted", "completed"))
+            or meta.get("exam_status") == "submitted"
+            or "score" in meta
+        )
+
+        if is_submitted:
             questions_map = _get_authoritative_exam_questions(db, exam_id)
 
             cand_resps = []
             try:
-                att_res = db.table("exam_attempts").select("id").eq("exam_id", norm_id).eq("candidate_id", str(target_cand["id"])).limit(1).execute()
-                if att_res.data:
-                    att_id = att_res.data[0]["id"]
+                att_id = att_row.get("id") if att_row else None
+                if not att_id:
+                    att_res = db.table("exam_attempts").select("id").eq("exam_id", norm_id).eq("candidate_id", str(target_cand["id"])).limit(1).execute()
+                    if att_res.data:
+                        att_id = att_res.data[0]["id"]
+                if att_id:
                     r_res = db.table("responses").select("question_id, response_data, status").eq("attempt_id", att_id).execute()
                     for r in (r_res.data or []):
                         r_data = r.get("response_data")
@@ -3840,7 +3900,7 @@ def get_exam_result(
                     cand_resps = list(cand_s.values()) if isinstance(cand_s, dict) else cand_s
 
             sc = ScoringEngine.calculate_score(cand_resps, questions_map)
-            meta_score = meta.get("score")
+            meta_score = meta.get("score") if meta.get("score") is not None else (att_row.get("score") if att_row else None)
             meta_max = meta.get("max_possible")
             meta_pct = meta.get("percentage")
             meta_acc = meta.get("accuracy")
@@ -3850,7 +3910,7 @@ def get_exam_result(
             sc_pct = float(meta_pct) if meta_pct is not None else float(sc["percentage"])
             sc_acc = sc["accuracy"] if sc["accuracy"] is not None else (float(meta_acc) if meta_acc is not None else 0.0)
             time_display = meta.get("time_taken_display") or meta.get("time_taken") or "42 mins 18 secs"
-            sub_at = meta.get("submitted_at") or format_ist_now()
+            sub_at = meta.get("submitted_at") or (att_row.get("end_time") if att_row else None) or format_ist_now()
 
             return {
                 "status": "success",
@@ -3870,15 +3930,27 @@ def get_exam_result(
                 "scoring_details": sc,
             }
 
-    # 2. Check cached submission results
-    result = (
-        (reg_no and LATEST_SUBMISSION_RESULT.get(reg_no))
-        or (candidate_id and LATEST_SUBMISSION_RESULT.get(candidate_id))
-        or LATEST_SUBMISSION_RESULT.get(norm_id)
-        or LATEST_SUBMISSION_RESULT.get("latest")
-    )
-    if result:
-        return result
+        return {
+            "status": "pending",
+            "disqualified": False,
+            "candidate_name": cand_name,
+            "registration_number": cand_reg,
+            "exam_title": "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION",
+            "score": "-- / --",
+            "percentage": 0.0,
+            "accuracy": None,
+            "accuracy_display": "N/A",
+            "percentile": None,
+            "time_taken": "--",
+            "submitted_at": "--",
+            "reference": "N/A",
+            "scoring_details": None,
+        }
+
+    # 2. Check candidate-specific cached submission results only (never cross-contaminate between users)
+    cand_key = reg_no or candidate_id
+    if cand_key and cand_key in LATEST_SUBMISSION_RESULT:
+        return LATEST_SUBMISSION_RESULT[cand_key]
 
     # 3. Default awaiting submission payload
     return {

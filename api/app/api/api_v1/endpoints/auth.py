@@ -537,18 +537,48 @@ async def create_account(
             raise HTTPException(status_code=500, detail=f"Database insert error: {str(e)}")
 
     else:
-        new_user_id = str(uuid.uuid4())
-        return {
-            "status": "success",
-            "message": f"Staff account created for {req.full_name} ({req.role})",
-            "account": {
-                "id": new_user_id,
-                "full_name": req.full_name,
-                "email": req.email,
-                "role": req.role,
+        # Create administrative / staff account in Supabase Cloud DB
+        user_email = (req.email or f"{req.full_name.lower().replace(' ', '.')}@sse.cbt.in").strip().lower()
+        role_clean = req.role.strip().lower()
+        if role_clean not in ("admin", "teacher", "invigilator", "exam_controller"):
+            role_clean = "invigilator"
+
+        try:
+            auth_user = db.auth.admin.create_user({
+                "email": user_email,
                 "password": raw_pwd,
+                "email_confirm": True,
+                "user_metadata": {
+                    "full_name": req.full_name.strip(),
+                    "role": role_clean,
+                    "password": hashed_pwd,
+                }
+            })
+            new_user_id = str(auth_user.user.id)
+            try:
+                db.table("users").update({"global_role": role_clean, "full_name": req.full_name.strip()}).eq("id", new_user_id).execute()
+                db.table("tenant_memberships").upsert({
+                    "tenant_id": DEFAULT_TENANT_ID,
+                    "user_id": new_user_id,
+                    "role": role_clean
+                }, on_conflict="tenant_id,user_id").execute()
+            except Exception:
+                pass
+
+            return {
+                "status": "success",
+                "message": f"Staff account created and saved in Cloud DB for {req.full_name} ({role_clean})",
+                "account": {
+                    "id": new_user_id,
+                    "full_name": req.full_name.strip(),
+                    "email": user_email,
+                    "role": role_clean,
+                    "password": raw_pwd,
+                }
             }
-        }
+        except Exception as e:
+            logger.error("Error creating staff account in Supabase auth: %s", e)
+            raise HTTPException(status_code=500, detail=f"Failed to persist account in Cloud DB: {str(e)}")
 
 
 @router.get("/me")

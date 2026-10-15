@@ -8,7 +8,7 @@ from app.core.tenant import DEFAULT_TENANT_ID, ensure_tenant_exists
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_EXAM_UUID = "00000000-0000-0000-0000-000000000101"
+DEFAULT_EXAM_UUID = "00000000-0000-0000-0000-000000000002"
 
 # Mapping from client numeric states to database response_status_enum
 STATE_TO_STATUS = {
@@ -29,23 +29,29 @@ STATE_TO_STATUS = {
 }
 
 
-def resolve_exam_uuid(raw_id: str) -> str:
-    """Maps legacy IDs ('EX-1001', '1', 'default') or returns valid UUID."""
-    if raw_id in ("EX-1001", "1", "default", "default-exam"):
+def resolve_exam_uuid(raw_id: Optional[str], db=None) -> str:
+    """Maps legacy IDs ('EX-1001', '1', 'default', 'active') or returns valid UUID."""
+    if not raw_id or raw_id in ("EX-1001", "1", "default", "default-exam", "active"):
+        if db is not None:
+            try:
+                res = db.table("exams").select("id").eq("state", "active").order("created_at", desc=True).limit(1).execute()
+                if res.data:
+                    return str(res.data[0]["id"])
+            except Exception:
+                pass
         return DEFAULT_EXAM_UUID
     try:
-        val = uuid.UUID(raw_id)
+        val = uuid.UUID(str(raw_id))
         return str(val)
     except (ValueError, AttributeError):
-        return str(uuid.uuid5(uuid.NAMESPACE_DNS, raw_id))
+        return str(uuid.uuid5(uuid.NAMESPACE_DNS, str(raw_id)))
 
 
 def resolve_question_uuid(db, q_id: str, tenant_id: str = "00000000-0000-0000-0000-000000000001") -> str:
     """
     Resolves question ID into an authoritative question_bank UUID.
-    Guarantees that each question has its own distinct UUID and guarantees foreign key integrity
-    in public.responses by ensuring a record exists in question_bank without ever overwriting
-    other questions.
+    Guarantees that each question has its own distinct UUID from Supabase Cloud DB.
+    Never injects mock or synthetic question rows.
     """
     if not q_id:
         return ""
@@ -63,23 +69,6 @@ def resolve_question_uuid(db, q_id: str, tenant_id: str = "00000000-0000-0000-00
             return target_uuid
     except Exception:
         pass
-
-    # Ensure question exists in question_bank so foreign key in public.responses is satisfied
-    try:
-        db.table("question_bank").upsert({
-            "id": target_uuid,
-            "tenant_id": tenant_id,
-            "type": "mcq_single",
-            "content": {"statement": f"Assessment Question {q_id}"},
-            "options": ["A", "B", "C", "D"],
-            "correct_answer": "A",
-            "difficulty": "Medium",
-            "subject": "General",
-            "status": "approved",
-        }).execute()
-        return target_uuid
-    except Exception as e:
-        logger.warning(f"Could not upsert question_bank record for {target_uuid}: {e}")
 
     return target_uuid
 

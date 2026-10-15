@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
-  <title>National Examination Controller | SSE CBT PLATFORM V0.1</title>
+  <title>ADMIN COE | SSE CBT PLATFORM V0.1</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -22,7 +22,7 @@
       }
     })();
   </script>
-  <script type="module" crossorigin src="/assets/admin-f5985753.js"></script>
+  <script type="module" crossorigin src="/assets/admin-187ae2fd.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
   <link rel="stylesheet" href="/assets/finexy-theme-f3294019.css">
 </head>
@@ -34,8 +34,10 @@
     <aside class="fx-dock" id="sidebar">
       <!-- Top: Light / Dark Mode Toggle Pill -->
       <div class="fx-dock-theme">
-        <button type="button" class="fx-dock-theme-btn active" id="dock-theme-light" title="Light Theme" onclick="applyTheme('light')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" class="fx-dock-theme-btn active" id="dock-theme-light" title="Light Theme"
+          onclick="applyTheme('light')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="5"></circle>
             <line x1="12" y1="1" x2="12" y2="3"></line>
             <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -47,8 +49,10 @@
             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
           </svg>
         </button>
-        <button type="button" class="fx-dock-theme-btn" id="dock-theme-dark" title="Dark Theme" onclick="applyTheme('dark')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" class="fx-dock-theme-btn" id="dock-theme-dark" title="Dark Theme"
+          onclick="applyTheme('dark')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
           </svg>
         </button>
@@ -57,7 +61,8 @@
       <!-- Center: Navigation Icons Column -->
       <nav class="fx-dock-nav">
         <!-- 1. Overview (4-dot Grid) -->
-        <button type="button" class="fx-dock-item active" data-tab="overview" title="Central Command Overview" onclick="switchAdminTab('overview')">
+        <button type="button" class="fx-dock-item active" data-tab="overview" title="Central Command Overview"
+          onclick="switchAdminTab('overview')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <rect x="3" y="3" width="7" height="7" rx="2"></rect>
             <rect x="14" y="3" width="7" height="7" rx="2"></rect>
@@ -67,8 +72,10 @@
         </button>
 
         <!-- 2. Tests & Scheduling (Calendar) -->
-        <button type="button" class="fx-dock-item" data-tab="exams" title="Tests &amp; Exam Operations" onclick="switchAdminTab('exams')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" class="fx-dock-item" data-tab="exams" title="Tests &amp; Exam Operations"
+          onclick="switchAdminTab('exams')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="3" ry="3"></rect>
             <line x1="16" y1="2" x2="16" y2="6"></line>
             <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -77,8 +84,10 @@
         </button>
 
         <!-- 3. Candidates (Users Group) -->
-        <button type="button" class="fx-dock-item" data-tab="candidates" title="Candidate Management" onclick="switchAdminTab('candidates')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" class="fx-dock-item" data-tab="candidates" title="Candidate Management"
+          onclick="switchAdminTab('candidates')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
             <circle cx="9" cy="7" r="4"></circle>
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -87,32 +96,42 @@
         </button>
 
         <!-- 4. Question Bank (Archive / Database) -->
-        <button type="button" class="fx-dock-item" data-tab="questions" title="Question Bank Suite" onclick="switchAdminTab('questions')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" class="fx-dock-item" data-tab="questions" title="Question Bank Suite"
+          onclick="switchAdminTab('questions')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
-            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+            <path
+              d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z">
+            </path>
           </svg>
         </button>
 
         <!-- 5. Live Proctoring (Video Radar) -->
-        <button type="button" class="fx-dock-item" data-tab="proctor" title="Live Invigilator Telemetry" onclick="switchAdminTab('proctor')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" class="fx-dock-item" data-tab="proctor" title="Live Invigilator Telemetry"
+          onclick="switchAdminTab('proctor')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M23 7l-7 5 7 5V7z"></path>
             <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
           </svg>
         </button>
 
         <!-- 6. Scorecards (Medal / Certificate) -->
-        <button type="button" class="fx-dock-item" data-tab="scorecards" title="Audited Scorecards &amp; Results" onclick="switchAdminTab('scorecards')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" class="fx-dock-item" data-tab="scorecards" title="Audited Scorecards &amp; Results"
+          onclick="switchAdminTab('scorecards')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="8" r="7"></circle>
             <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
           </svg>
         </button>
 
         <!-- 7. System Settings (Sliders) -->
-        <button type="button" class="fx-dock-item" data-tab="settings" title="Document Structure &amp; Venue Settings" onclick="switchAdminTab('settings')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" class="fx-dock-item" data-tab="settings" title="Document Structure &amp; Venue Settings"
+          onclick="switchAdminTab('settings')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" y1="21" x2="4" y2="14"></line>
             <line x1="4" y1="10" x2="4" y2="3"></line>
             <line x1="12" y1="21" x2="12" y2="12"></line>
@@ -128,8 +147,10 @@
 
       <!-- Bottom: Help & Logout -->
       <div class="fx-dock-bottom">
-        <button type="button" class="fx-dock-item" title="Documentation &amp; Help" onclick="alert('SSE CBT National Assessment Platform V0.1 • Connected to Supabase Cloud DB.')">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" class="fx-dock-item" title="Documentation &amp; Help"
+          onclick="alert('SSE CBT National Assessment Platform V0.1 • Connected to Supabase Cloud DB.')">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
@@ -137,7 +158,8 @@
         </button>
         <a href="/login.html" class="fx-dock-item" title="Sign Out of Directorate" style="color: #ef4444;"
           onclick="localStorage.clear(); sessionStorage.clear(); window.location.href='/login.html'; return false;">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <polyline points="16 17 21 12 16 7"></polyline>
             <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -154,7 +176,8 @@
         <!-- Left: Brand Capsule -->
         <a href="/admin.html" class="fx-brand">
           <div class="fx-brand-logo">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
               <polyline points="2 17 12 22 22 17"></polyline>
               <polyline points="2 12 12 17 22 12"></polyline>
@@ -168,29 +191,40 @@
 
         <!-- Center: Floating Segmented Pill Tabs Navigation (Exact Replica of Reference) -->
         <div class="fx-pills-bar">
-          <button type="button" class="fx-pill active" data-tab="overview" onclick="switchAdminTab('overview')">Overview</button>
-          <button type="button" class="fx-pill" data-tab="exams" onclick="switchAdminTab('exams')">Exam Operations</button>
-          <button type="button" class="fx-pill" data-tab="candidates" onclick="switchAdminTab('candidates')">Candidates</button>
-          <button type="button" class="fx-pill" data-tab="questions" onclick="switchAdminTab('questions')">Question Bank</button>
-          <button type="button" class="fx-pill" data-tab="proctor" onclick="switchAdminTab('proctor')">Live Proctor</button>
-          <button type="button" class="fx-pill" data-tab="scorecards" onclick="switchAdminTab('scorecards')">Scorecards</button>
-          <button type="button" class="fx-pill" data-tab="settings" onclick="switchAdminTab('settings')">Settings</button>
+          <button type="button" class="fx-pill active" data-tab="overview"
+            onclick="switchAdminTab('overview')">Overview</button>
+          <button type="button" class="fx-pill" data-tab="exams" onclick="switchAdminTab('exams')">Exam
+            Operations</button>
+          <button type="button" class="fx-pill" data-tab="candidates"
+            onclick="switchAdminTab('candidates')">Candidates</button>
+          <button type="button" class="fx-pill" data-tab="questions" onclick="switchAdminTab('questions')">Question
+            Bank</button>
+          <button type="button" class="fx-pill" data-tab="proctor" onclick="switchAdminTab('proctor')">Live
+            Proctor</button>
+          <button type="button" class="fx-pill" data-tab="scorecards"
+            onclick="switchAdminTab('scorecards')">Scorecards</button>
+          <button type="button" class="fx-pill" data-tab="settings"
+            onclick="switchAdminTab('settings')">Settings</button>
         </div>
 
         <!-- Right Tools: Icons Pill + User Profile Capsule -->
         <div class="fx-top-tools">
           <div class="fx-tools-capsule">
             <!-- Search Trigger -->
-            <button type="button" class="fx-tool-btn" title="Quick Search" onclick="document.getElementById('top-search-input')?.focus()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" class="fx-tool-btn" title="Quick Search"
+              onclick="document.getElementById('top-search-input')?.focus()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
             </button>
 
             <!-- Alerts Notification with Red Dot -->
-            <button type="button" class="fx-tool-btn" title="Live Telemetry Incident Alerts" onclick="switchAdminTab('proctor')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" class="fx-tool-btn" title="Live Telemetry Incident Alerts"
+              onclick="switchAdminTab('proctor')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
@@ -198,7 +232,8 @@
             </button>
 
             <!-- Master Clock Sync Pill (time.google.com NTP in IST) -->
-            <div class="fx-clock-pill" id="master-clock-widget" title="Authoritative Examination Clock synced with Google NTP (time.google.com) in Indian Standard Time (IST)">
+            <div class="fx-clock-pill" id="master-clock-widget"
+              title="Authoritative Examination Clock synced with Google NTP (time.google.com) in Indian Standard Time (IST)">
               <span class="fx-clock-dot"></span>
               <span id="master-clock-time">--:--:-- IST</span>
             </div>
@@ -221,7 +256,8 @@
         <!-- Hero Greeting -->
         <div class="fx-hero">
           <h1 class="fx-hero-title" id="hero-greeting-title">Good evening, Administrator</h1>
-          <p class="fx-hero-sub">Stay on top of your examinations, monitor live invigilation telemetry, and track candidate progress.</p>
+          <p class="fx-hero-sub">Stay on top of your examinations, monitor live invigilation telemetry, and track
+            candidate progress.</p>
         </div>
 
         <!-- ================= TOP GRID (ROW 1 - EXACT MATCH) ================= -->
@@ -246,14 +282,16 @@
             <!-- Two Pill Action Buttons matching screenshot Transfer & Request -->
             <div class="fx-card-actions">
               <button type="button" class="fx-btn-pill-dark" id="btn-create">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
                 <span>Authorize Account</span>
               </button>
               <button type="button" class="fx-btn-pill-light" id="btn-open-create-exam-top">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                 </svg>
                 <span>Deploy Test</span>
@@ -300,8 +338,10 @@
               <div class="fx-coral-card">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span class="fx-card-label" style="font-weight: 700;">Active Sessions</span>
-                  <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <div
+                    style="width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round">
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
@@ -318,8 +358,10 @@
               <div class="fx-stat-box-light">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span class="fx-card-label">Security Strikes</span>
-                  <div style="width: 28px; height: 28px; border-radius: 50%; background: #f4f5f8; display: flex; align-items: center; justify-content: center;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <div
+                    style="width: 28px; height: 28px; border-radius: 50%; background: #f4f5f8; display: flex; align-items: center; justify-content: center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
                       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                     </svg>
                   </div>
@@ -364,9 +406,12 @@
           <div class="fx-card fx-chart-card">
             <div class="fx-chart-header">
               <div class="fx-card-title-row" style="margin-bottom: 4px;">
-                <span class="fx-card-label" style="font-weight: 700; color: var(--fx-text-heading); font-size: 1.05rem;">Shift Attendance &amp; Velocity</span>
+                <span class="fx-card-label"
+                  style="font-weight: 700; color: var(--fx-text-heading); font-size: 1.05rem;">Shift Attendance &amp;
+                  Velocity</span>
               </div>
-              <p style="font-size: 0.78rem; color: var(--fx-text-muted); margin: 0;">Distribution of submissions and live responses across subject paper slots.</p>
+              <p style="font-size: 0.78rem; color: var(--fx-text-muted); margin: 0;">Distribution of submissions and
+                live responses across subject paper slots.</p>
             </div>
 
             <div class="fx-chart-legend">
@@ -435,7 +480,8 @@
               <div class="fx-progress-track">
                 <div class="fx-progress-fill" style="width: 86%;"></div>
               </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--fx-text-muted); margin-top: 6px;">
+              <div
+                style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--fx-text-muted); margin-top: 6px;">
                 <span>WebSocket Live Stream: Connected</span>
                 <span>time.google.com: 0ms drift</span>
               </div>
@@ -443,8 +489,11 @@
 
             <!-- Digital Badges ("My Cards" equivalent) -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-              <span class="fx-card-label" style="font-weight: 700; color: var(--fx-text-heading); font-size: 0.95rem;">Assigned Terminal Fleet</span>
-              <button type="button" class="fx-btn-pill-light" style="padding: 5px 12px; font-size: 0.75rem;" onclick="switchAdminTab('proctor')">
+              <span class="fx-card-label"
+                style="font-weight: 700; color: var(--fx-text-heading); font-size: 0.95rem;">Assigned Terminal
+                Fleet</span>
+              <button type="button" class="fx-btn-pill-light" style="padding: 5px 12px; font-size: 0.75rem;"
+                onclick="switchAdminTab('proctor')">
                 + View Lab
               </button>
             </div>
@@ -490,7 +539,8 @@
               <div class="fx-table-controls">
                 <!-- Clean Pill Search -->
                 <div class="fx-pill-search">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                   </svg>
@@ -509,18 +559,23 @@
                   <option value="active">Active</option>
                   <option value="disqualified">Disqualified</option>
                 </select>
-                <button type="button" class="fx-btn-pill-coral" id="btn-export-csv" style="padding: 7px 14px; font-size: 0.78rem;">
+                <button type="button" class="fx-btn-pill-coral" id="btn-export-csv"
+                  style="padding: 7px 14px; font-size: 0.78rem;">
                   Export CSV
                 </button>
               </div>
             </div>
 
             <!-- Bulk Selection Toolbar -->
-            <div id="bulk-actions-toolbar" style="display: none; background: #f4f5f8; padding: 10px 16px; border-radius: 14px; margin-bottom: 12px; align-items: center; justify-content: space-between;">
-              <span id="bulk-selected-count" style="font-weight: 700; font-size: 0.8rem; color: var(--fx-text-heading);">0 selected</span>
+            <div id="bulk-actions-toolbar"
+              style="display: none; background: #f4f5f8; padding: 10px 16px; border-radius: 14px; margin-bottom: 12px; align-items: center; justify-content: space-between;">
+              <span id="bulk-selected-count"
+                style="font-weight: 700; font-size: 0.8rem; color: var(--fx-text-heading);">0 selected</span>
               <div style="display: flex; gap: 8px;">
-                <button type="button" class="fx-btn-pill-dark" id="btn-assign" style="padding: 6px 14px; font-size: 0.75rem;">Assign to Exam</button>
-                <button type="button" class="fx-btn-pill-light" id="btn-bulk-debar" style="padding: 6px 14px; font-size: 0.75rem; color: #ef4444;">Debar Selected</button>
+                <button type="button" class="fx-btn-pill-dark" id="btn-assign"
+                  style="padding: 6px 14px; font-size: 0.75rem;">Assign to Exam</button>
+                <button type="button" class="fx-btn-pill-light" id="btn-bulk-debar"
+                  style="padding: 6px 14px; font-size: 0.75rem; color: #ef4444;">Debar Selected</button>
               </div>
             </div>
 
@@ -556,8 +611,10 @@
         <div class="fx-card" style="margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <div>
-              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Test Lifecycle &amp; Exam Scheduling</h2>
-              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Deploy examinations, configure AI proctoring, manage custom section tabs, and set duration.</p>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Test Lifecycle &amp; Exam
+                Scheduling</h2>
+              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Deploy examinations,
+                configure AI proctoring, manage custom section tabs, and set duration.</p>
             </div>
             <button type="button" class="fx-btn-pill-coral" id="btn-open-create-exam">
               + Deploy New Test to Cloud DB
@@ -576,20 +633,26 @@
       <!-- ================= SECTION 3: CANDIDATES MANAGEMENT SUITE ================= -->
       <section class="fx-section-view" id="view-candidates">
         <div class="fx-card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
             <div>
-              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Candidate Enrollment &amp; Roster Suite</h2>
-              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Provision credentials, assign terminal slots, manage PWD compensatory time, and export attendance dossiers.</p>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Candidate Enrollment
+                &amp; Roster Suite</h2>
+              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Provision credentials, assign
+                terminal slots, manage PWD compensatory time, and export attendance dossiers.</p>
             </div>
             <div style="display: flex; gap: 10px;">
               <button type="button" class="fx-btn-pill-light" id="btn-import">📥 Bulk Import CSV</button>
               <button type="button" class="fx-btn-pill-light" id="btn-export-attendance">📋 Attendance Roster</button>
-              <button type="button" class="fx-btn-pill-coral" id="btn-quick-provision-nav">+ Authorize Candidate</button>
+              <button type="button" class="fx-btn-pill-coral" id="btn-quick-provision-nav">+ Authorize
+                Candidate</button>
             </div>
           </div>
 
           <div style="display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap;">
-            <input type="text" id="top-search-input" class="fx-pill-search" placeholder="Filter candidates by name, roll, email..." style="flex: 1; padding: 10px 16px; border-radius: 12px;" />
+            <input type="text" id="top-search-input" class="fx-pill-search"
+              placeholder="Filter candidates by name, roll, email..."
+              style="flex: 1; padding: 10px 16px; border-radius: 12px;" />
             <select id="filter-pwd" class="fx-pill-filter-btn" style="border-radius: 12px;">
               <option value="ALL">All Accommodations</option>
               <option value="STANDARD">Standard Candidates</option>
@@ -623,20 +686,25 @@
         <div class="fx-card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
             <div>
-              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Cloud Question Bank Inventory</h2>
-              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Inspect questions stored in Supabase, import multi-format packages, and manage authoritative answer keys.</p>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Cloud Question Bank
+                Inventory</h2>
+              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Inspect questions stored in
+                Supabase, import multi-format packages, and manage authoritative answer keys.</p>
             </div>
             <a href="/question_bank.html" class="fx-btn-pill-coral" style="text-decoration: none;">
               Open Full Question Bank Editor &rarr;
             </a>
           </div>
 
-          <div style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px; text-align: center;">
+          <div
+            style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px; text-align: center;">
             <div style="font-size: 1.1rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 6px;">
               Authoritative Assessment Item Bank
             </div>
             <p style="font-size: 0.85rem; color: var(--fx-text-muted); max-width: 600px; margin: 0 auto 16px;">
-              Questions are synchronized directly with Supabase <code style="font-family: var(--fx-font-mono);">public.question_bank</code> table with complete KaTeX formula rendering.
+              Questions are synchronized directly with Supabase <code
+                style="font-family: var(--fx-font-mono);">public.question_bank</code> table with complete KaTeX formula
+              rendering.
             </p>
             <a href="/question_bank.html" class="fx-btn-pill-dark" style="display: inline-flex; text-decoration: none;">
               Manage &amp; Upload Assessment Items
@@ -649,44 +717,61 @@
       <section class="fx-section-view" id="view-proctor">
         <div class="fx-card" style="margin-bottom: 20px;">
           <!-- Emergency Action Bar -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
             <div>
-              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 10px;">
+              <h2
+                style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 10px;">
                 <span>Live Proctoring &amp; Invigilation Console</span>
-                <span class="fx-brand-badge" style="background: rgba(16, 185, 129, 0.15); color: #047857;">ACTIVE STREAM</span>
+                <span class="fx-brand-badge" style="background: rgba(16, 185, 129, 0.15); color: #047857;">ACTIVE
+                  STREAM</span>
               </h2>
-              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Real-time anti-cheat surveillance, focus violation telemetry, and emergency hall controls.</p>
+              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Real-time anti-cheat
+                surveillance, focus violation telemetry, and emergency hall controls.</p>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button type="button" class="fx-btn-pill-light" id="btn-extend-time" title="Add 15 minutes to all active exams">+15m Extension</button>
-              <button type="button" class="fx-btn-pill-light" id="btn-hall-pause" style="color: #d97706;" title="Pause countdown timers">Hall Hold</button>
-              <button type="button" class="fx-btn-pill-light" id="btn-hall-resume" style="color: #10b981;" title="Resume countdown timers">Resume Hall</button>
-              <button type="button" class="fx-btn-pill-light" id="btn-unlock-sessions" title="Release tab collisions">Release Locks</button>
-              <button type="button" class="fx-btn-pill-light" id="btn-emergency-reset" style="color: #ef4444;" title="Reset exam sessions">Reset Sessions</button>
+              <button type="button" class="fx-btn-pill-light" id="btn-extend-time"
+                title="Add 15 minutes to all active exams">+15m Extension</button>
+              <button type="button" class="fx-btn-pill-light" id="btn-hall-pause" style="color: #d97706;"
+                title="Pause countdown timers">Hall Hold</button>
+              <button type="button" class="fx-btn-pill-light" id="btn-hall-resume" style="color: #10b981;"
+                title="Resume countdown timers">Resume Hall</button>
+              <button type="button" class="fx-btn-pill-light" id="btn-unlock-sessions"
+                title="Release tab collisions">Release Locks</button>
+              <button type="button" class="fx-btn-pill-light" id="btn-emergency-reset" style="color: #ef4444;"
+                title="Reset exam sessions">Reset Sessions</button>
             </div>
           </div>
 
           <!-- Announcement Broadcast Strip -->
           <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <input type="text" id="input-broadcast-msg" class="fx-pill-search" placeholder="Send live announcement to candidate screens (e.g. '5 minutes remaining in Physics Section')..." style="flex: 1; padding: 10px 16px; border-radius: 12px;" />
+            <input type="text" id="input-broadcast-msg" class="fx-pill-search"
+              placeholder="Send live announcement to candidate screens (e.g. '5 minutes remaining in Physics Section')..."
+              style="flex: 1; padding: 10px 16px; border-radius: 12px;" />
             <button type="button" class="fx-btn-pill-dark" id="btn-send-broadcast">Broadcast Alert</button>
           </div>
 
           <!-- Terminal Grid -->
           <div style="margin-bottom: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <span class="fx-card-label" style="font-weight: 700; color: var(--fx-text-heading);">Allocated Examination Terminals</span>
-              <span id="proctor-terminals-count" style="font-size: 0.8rem; font-weight: 700; color: var(--fx-text-muted);">Active Online</span>
+              <span class="fx-card-label" style="font-weight: 700; color: var(--fx-text-heading);">Allocated Examination
+                Terminals</span>
+              <span id="proctor-terminals-count"
+                style="font-size: 0.8rem; font-weight: 700; color: var(--fx-text-muted);">Active Online</span>
             </div>
-            <div id="proctor-terminals-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;">
+            <div id="proctor-terminals-grid"
+              style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;">
               <!-- Dynamic terminal chips -->
             </div>
           </div>
 
           <!-- Incident Telemetry Log -->
           <div>
-            <span class="fx-card-label" style="font-weight: 700; color: var(--fx-text-heading); margin-bottom: 10px; display: block;">Real-Time Malpractice &amp; Telemetry Feed</span>
-            <div id="telemetry-incident-log" style="background: #121418; color: #10b981; font-family: var(--fx-font-mono); font-size: 0.78rem; padding: 14px; border-radius: 14px; max-height: 200px; overflow-y: auto;">
+            <span class="fx-card-label"
+              style="font-weight: 700; color: var(--fx-text-heading); margin-bottom: 10px; display: block;">Real-Time
+              Malpractice &amp; Telemetry Feed</span>
+            <div id="telemetry-incident-log"
+              style="background: #121418; color: #10b981; font-family: var(--fx-font-mono); font-size: 0.78rem; padding: 14px; border-radius: 14px; max-height: 200px; overflow-y: auto;">
               [SYSTEM] Telemetry WebSocket channel initialized. Listening for candidate security events...
             </div>
           </div>
@@ -698,8 +783,10 @@
         <div class="fx-card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
             <div>
-              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Examination Results Dossier &amp; Audited Scorecards</h2>
-              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Inspect official calculated scores, download candidate dossiers, override remarks, and sign credentials.</p>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Examination Results
+                Dossier &amp; Audited Scorecards</h2>
+              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Inspect official calculated
+                scores, download candidate dossiers, override remarks, and sign credentials.</p>
             </div>
             <a href="/scorecard.html" class="fx-btn-pill-coral" style="text-decoration: none;">
               Open Official Scorecard View &rarr;
@@ -737,8 +824,10 @@
         <div class="fx-card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
             <div>
-              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Directorate Document Structure &amp; Test Center Config</h2>
-              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Configure official admit card templates, audited scorecard toggles, test venue details, and NTP synchronization.</p>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Directorate Document
+                Structure &amp; Test Center Config</h2>
+              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Configure official admit card
+                templates, audited scorecard toggles, test venue details, and NTP synchronization.</p>
             </div>
             <button type="button" class="fx-btn-pill-coral" id="btn-open-settings-modal">
               Open Settings Studio
@@ -747,18 +836,26 @@
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
             <div style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px;">
-              <h3 style="font-size: 1rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 6px;">Admit Card Badge Template</h3>
-              <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 14px;">Hall ticket layout, venue addresses, reporting slot timings, and candidate biometric badge.</p>
-              <button type="button" class="fx-btn-pill-dark" onclick="document.getElementById('btn-open-settings-modal').click();">Configure Admit Card</button>
+              <h3 style="font-size: 1rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 6px;">Admit
+                Card Badge Template</h3>
+              <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 14px;">Hall ticket layout, venue
+                addresses, reporting slot timings, and candidate biometric badge.</p>
+              <button type="button" class="fx-btn-pill-dark"
+                onclick="document.getElementById('btn-open-settings-modal').click();">Configure Admit Card</button>
             </div>
             <div style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px;">
-              <h3 style="font-size: 1rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 6px;">Audited Scorecard Certificate</h3>
-              <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 14px;">Scorecard sections, verification hash watermark, Directorate signature, and question breakdown.</p>
-              <button type="button" class="fx-btn-pill-dark" onclick="document.getElementById('btn-open-settings-modal').click();">Configure Scorecard</button>
+              <h3 style="font-size: 1rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 6px;">Audited
+                Scorecard Certificate</h3>
+              <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 14px;">Scorecard sections,
+                verification hash watermark, Directorate signature, and question breakdown.</p>
+              <button type="button" class="fx-btn-pill-dark"
+                onclick="document.getElementById('btn-open-settings-modal').click();">Configure Scorecard</button>
             </div>
             <div style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px;">
-              <h3 style="font-size: 1rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 6px;">Atomic Master Clock</h3>
-              <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 14px;">Synchronized with Google NTP (time.google.com) on UDP port 123 in Indian Standard Time (IST).</p>
+              <h3 style="font-size: 1rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 6px;">Atomic
+                Master Clock</h3>
+              <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 14px;">Synchronized with Google
+                NTP (time.google.com) on UDP port 123 in Indian Standard Time (IST).</p>
               <span class="fx-status-pill fx-status-completed">Active • 0ms Drift</span>
             </div>
           </div>
@@ -771,54 +868,80 @@
   <!-- ================= MODALS & UTILITIES ================= -->
 
   <!-- 1. AUTHORIZE CANDIDATE MODAL -->
-  <div class="modal-backdrop" id="modal-create" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 540px; width: 92%; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
+  <div class="modal-backdrop" id="modal-create"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+      style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 540px; width: 92%; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--fx-text-heading);">Authorize Candidate Account</h3>
-        <button type="button" class="fx-tool-btn" onclick="document.getElementById('modal-create').style.display='none'">✕</button>
+        <button type="button" class="fx-tool-btn"
+          onclick="document.getElementById('modal-create').style.display='none'">✕</button>
       </div>
       <form id="form-create">
         <div style="margin-bottom: 12px;">
-          <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Role Type</label>
+          <label
+            style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Role
+            Type</label>
           <select id="c-role" class="fx-pill-filter-btn" style="width: 100%; padding: 8px 12px; border-radius: 10px;">
             <option value="candidate">Candidate (Registered Student)</option>
             <option value="super_admin">Directorate Invigilator (Super Admin)</option>
           </select>
         </div>
         <div style="margin-bottom: 12px;">
-          <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Full Name</label>
-          <input type="text" id="c-name" class="fx-pill-search" placeholder="e.g. Priya Venkatesh" required style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+          <label
+            style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Full
+            Name</label>
+          <input type="text" id="c-name" class="fx-pill-search" placeholder="e.g. Priya Venkatesh" required
+            style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
           <div>
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Shift Batch</label>
-            <input type="text" id="c-batch" class="fx-pill-search" placeholder="A, B, C or D" value="A" required style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Shift
+              Batch</label>
+            <input type="text" id="c-batch" class="fx-pill-search" placeholder="A, B, C or D" value="A" required
+              style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
           </div>
           <div>
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Registration / Roll No</label>
-            <input type="text" id="c-regno" class="fx-pill-search" placeholder="Leave blank for auto SSE-A-CBT-xxxx" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Registration
+              / Roll No</label>
+            <input type="text" id="c-regno" class="fx-pill-search" placeholder="Leave blank for auto SSE-A-CBT-xxxx"
+              style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
           </div>
         </div>
         <div style="margin-bottom: 12px;">
-          <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Candidate Email</label>
-          <input type="email" id="c-email" class="fx-pill-search" placeholder="candidate@sse.cbt.in" required style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+          <label
+            style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Candidate
+            Email</label>
+          <input type="email" id="c-email" class="fx-pill-search" placeholder="candidate@sse.cbt.in" required
+            style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
         </div>
         <div style="margin-bottom: 16px;">
-          <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Access Password / PIN</label>
+          <label
+            style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Access
+            Password / PIN</label>
           <div style="display: flex; gap: 8px;">
-            <input type="password" id="c-password" class="fx-pill-search" placeholder="Candidate PIN" value="Candidate.2026@" required style="flex: 1; border-radius: 10px; padding: 8px 12px;" />
-            <button type="button" class="fx-btn-pill-light" id="btn-gen-pwd" style="padding: 6px 12px; font-size: 0.75rem;">Generate PIN</button>
+            <input type="password" id="c-password" class="fx-pill-search" placeholder="Candidate PIN"
+              value="Candidate.2026@" required style="flex: 1; border-radius: 10px; padding: 8px 12px;" />
+            <button type="button" class="fx-btn-pill-light" id="btn-gen-pwd"
+              style="padding: 6px 12px; font-size: 0.75rem;">Generate PIN</button>
           </div>
         </div>
 
-        <div id="cred-result-box" style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 12px; margin-bottom: 16px;">
-          <div style="font-weight: 700; color: #047857; font-size: 0.85rem; margin-bottom: 4px;">Candidate Account Provisioned!</div>
-          <div id="cred-result-text" style="font-family: var(--fx-font-mono); font-size: 0.78rem; color: #065f46;"></div>
-          <button type="button" class="fx-btn-pill-dark" id="btn-copy-cred" style="margin-top: 8px; padding: 4px 10px; font-size: 0.72rem;">Copy Credentials</button>
+        <div id="cred-result-box"
+          style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 12px; margin-bottom: 16px;">
+          <div style="font-weight: 700; color: #047857; font-size: 0.85rem; margin-bottom: 4px;">Candidate Account
+            Provisioned!</div>
+          <div id="cred-result-text" style="font-family: var(--fx-font-mono); font-size: 0.78rem; color: #065f46;">
+          </div>
+          <button type="button" class="fx-btn-pill-dark" id="btn-copy-cred"
+            style="margin-top: 8px; padding: 4px 10px; font-size: 0.72rem;">Copy Credentials</button>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button type="button" class="fx-btn-pill-light" onclick="document.getElementById('modal-create').style.display='none'">Cancel</button>
+          <button type="button" class="fx-btn-pill-light"
+            onclick="document.getElementById('modal-create').style.display='none'">Cancel</button>
           <button type="submit" class="fx-btn-pill-coral">Authorize &amp; Save</button>
         </div>
       </form>
@@ -826,17 +949,23 @@
   </div>
 
   <!-- 2. BULK IMPORT CSV MODAL -->
-  <div class="modal-backdrop" id="modal-import" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 500px; width: 92%; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
+  <div class="modal-backdrop" id="modal-import"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+      style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 500px; width: 92%; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--fx-text-heading);">Bulk Import Candidates (CSV)</h3>
-        <button type="button" class="fx-tool-btn" onclick="document.getElementById('modal-import').style.display='none'">✕</button>
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--fx-text-heading);">Bulk Import Candidates (CSV)
+        </h3>
+        <button type="button" class="fx-tool-btn"
+          onclick="document.getElementById('modal-import').style.display='none'">✕</button>
       </div>
       <form id="form-import">
-        <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-bottom: 12px;">Upload CSV containing: full_name, email, registration_number, batch, roll_number.</p>
+        <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-bottom: 12px;">Upload CSV containing:
+          full_name, email, registration_number, batch, roll_number.</p>
         <input type="file" id="c-csv-file" accept=".csv" required style="margin-bottom: 16px; width: 100%;" />
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button type="button" class="fx-btn-pill-light" onclick="document.getElementById('modal-import').style.display='none'">Cancel</button>
+          <button type="button" class="fx-btn-pill-light"
+            onclick="document.getElementById('modal-import').style.display='none'">Cancel</button>
           <button type="submit" class="fx-btn-pill-coral">Upload &amp; Enroll</button>
         </div>
       </form>
@@ -844,40 +973,62 @@
   </div>
 
   <!-- 3. CREATE EXAM MODAL -->
-  <div class="modal-backdrop" id="modal-create-exam" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 600px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
+  <div class="modal-backdrop" id="modal-create-exam"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+      style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 600px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--fx-text-heading);">Deploy &amp; Schedule Test</h3>
-        <button type="button" class="fx-tool-btn" id="btn-close-modal-create-exam" onclick="document.getElementById('modal-create-exam').style.display='none'">✕</button>
+        <button type="button" class="fx-tool-btn" id="btn-close-modal-create-exam"
+          onclick="document.getElementById('modal-create-exam').style.display='none'">✕</button>
       </div>
       <form id="form-create-exam">
         <div style="margin-bottom: 12px;">
-          <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Exam Title</label>
-          <input type="text" id="input-exam-title" class="fx-pill-search" placeholder="e.g. NATIONAL CBT MERIT TEST 2026" required style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+          <label
+            style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Exam
+            Title</label>
+          <input type="text" id="input-exam-title" class="fx-pill-search"
+            placeholder="e.g. NATIONAL CBT MERIT TEST 2026" required
+            style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
           <div>
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Duration (Minutes)</label>
-            <input type="number" id="input-exam-duration" class="fx-pill-search" value="180" required style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Duration
+              (Minutes)</label>
+            <input type="number" id="input-exam-duration" class="fx-pill-search" value="180" required
+              style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
           </div>
           <div>
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Exam Code</label>
-            <input type="text" id="input-exam-code" class="fx-pill-search" placeholder="AIMT-2026-M1" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Exam
+              Code</label>
+            <input type="text" id="input-exam-code" class="fx-pill-search" placeholder="AIMT-2026-M1"
+              style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
           </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
           <div>
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Start Time (IST)</label>
-            <input type="datetime-local" id="input-exam-start-time" class="fx-pill-search" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Start
+              Time (IST)</label>
+            <input type="datetime-local" id="input-exam-start-time" class="fx-pill-search"
+              style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
           </div>
           <div>
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">End Time (IST)</label>
-            <input type="datetime-local" id="input-exam-end-time" class="fx-pill-search" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">End
+              Time (IST)</label>
+            <input type="datetime-local" id="input-exam-end-time" class="fx-pill-search"
+              style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
           </div>
         </div>
         <div style="margin-bottom: 12px;">
-          <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Section Headers (Comma-separated)</label>
-          <input type="text" id="input-exam-sections" class="fx-pill-search" value="MATH-1, MATH-2, PHYSICS, CHEMISTRY" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+          <label
+            style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Section
+            Headers (Comma-separated)</label>
+          <input type="text" id="input-exam-sections" class="fx-pill-search" value="MATH-1, MATH-2, PHYSICS, CHEMISTRY"
+            style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
         </div>
         <div style="display: flex; gap: 16px; margin-bottom: 16px;">
           <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
@@ -890,7 +1041,8 @@
           </label>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button type="button" class="fx-btn-pill-light" id="btn-cancel-modal-create-exam" onclick="document.getElementById('modal-create-exam').style.display='none'">Cancel</button>
+          <button type="button" class="fx-btn-pill-light" id="btn-cancel-modal-create-exam"
+            onclick="document.getElementById('modal-create-exam').style.display='none'">Cancel</button>
           <button type="submit" class="fx-btn-pill-coral" id="btn-submit-exam">Deploy Test &rarr;</button>
         </div>
       </form>
@@ -898,11 +1050,15 @@
   </div>
 
   <!-- 4. DOCUMENT SETTINGS STUDIO MODAL -->
-  <div class="modal-backdrop" id="modal-document-settings" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 750px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
+  <div class="modal-backdrop" id="modal-document-settings"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+      style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 750px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading);">Directorate Document &amp; Center Settings</h3>
-        <button type="button" class="fx-tool-btn" id="btn-close-settings" onclick="document.getElementById('modal-document-settings').style.display='none'">✕</button>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading);">Directorate Document &amp;
+          Center Settings</h3>
+        <button type="button" class="fx-tool-btn" id="btn-close-settings"
+          onclick="document.getElementById('modal-document-settings').style.display='none'">✕</button>
       </div>
 
       <div class="fx-pills-bar" style="margin-bottom: 16px;">
@@ -916,31 +1072,49 @@
         <div id="tab-pane-admit" class="settings-tab-pane">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Institution Name</label>
-              <input type="text" id="setting-admit-institution" class="fx-pill-search" value="SAVEETHA DIGITAL TESTING AUTHORITY" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Institution
+                Name</label>
+              <input type="text" id="setting-admit-institution" class="fx-pill-search"
+                value="SAVEETHA DIGITAL TESTING AUTHORITY"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Examination Title</label>
-              <input type="text" id="setting-admit-title" class="fx-pill-search" value="NATIONAL CBT MERIT TEST 2026" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Examination
+                Title</label>
+              <input type="text" id="setting-admit-title" class="fx-pill-search" value="NATIONAL CBT MERIT TEST 2026"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
           </div>
           <div style="margin-bottom: 12px;">
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Candidate Instructions</label>
-            <textarea id="setting-admit-instructions" class="fx-pill-search" rows="3" style="width: 100%; border-radius: 10px; padding: 8px 12px;">1. Carry valid Aadhar or Passport. 2. Arrive 45 mins prior to test commencement.</textarea>
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Candidate
+              Instructions</label>
+            <textarea id="setting-admit-instructions" class="fx-pill-search" rows="3"
+              style="width: 100%; border-radius: 10px; padding: 8px 12px;">1. Carry valid Aadhar or Passport. 2. Arrive 45 mins prior to test commencement.</textarea>
           </div>
         </div>
 
         <!-- Scorecard Pane -->
         <div id="tab-pane-scorecard" class="settings-tab-pane" style="display: none;">
           <div style="margin-bottom: 12px;">
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Official Certificate Title</label>
-            <input type="text" id="setting-sc-title" class="fx-pill-search" value="OFFICIAL AUDITED SCORECARD [ NATIONAL CBT 2026 ]" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Official
+              Certificate Title</label>
+            <input type="text" id="setting-sc-title" class="fx-pill-search"
+              value="OFFICIAL AUDITED SCORECARD [ NATIONAL CBT 2026 ]"
+              style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="setting-sc-show-banner" checked /> Show Overall Banner</label>
-            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="setting-sc-show-metrics-grid" checked /> Show Performance Grid</label>
-            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="setting-sc-show-subject-breakdown" checked /> Show Subject Breakdown</label>
-            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="setting-sc-show-seal" checked /> Show Verification Seal</label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;"><input type="checkbox"
+                id="setting-sc-show-banner" checked /> Show Overall Banner</label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;"><input type="checkbox"
+                id="setting-sc-show-metrics-grid" checked /> Show Performance Grid</label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;"><input type="checkbox"
+                id="setting-sc-show-subject-breakdown" checked /> Show Subject Breakdown</label>
+            <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;"><input type="checkbox"
+                id="setting-sc-show-seal" checked /> Show Verification Seal</label>
           </div>
         </div>
 
@@ -948,36 +1122,55 @@
         <div id="tab-pane-authority" class="settings-tab-pane" style="display: none;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate Official Name</label>
-              <input type="text" id="setting-controller-name" class="fx-pill-search" value="ADMIN@SSE.IN" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate
+                Official Name</label>
+              <input type="text" id="setting-controller-name" class="fx-pill-search" value="ADMIN@SSE.IN"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate Designation</label>
-              <input type="text" id="setting-controller-desig" class="fx-pill-search" value="Examination Directorate" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate
+                Designation</label>
+              <input type="text" id="setting-controller-desig" class="fx-pill-search" value="Examination Directorate"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
           </div>
           <div style="margin-bottom: 12px;">
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Venue Name &amp; Full Address</label>
-            <textarea id="setting-venue-name" class="fx-pill-search" rows="2" style="width: 100%; border-radius: 10px; padding: 8px 12px;">SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105</textarea>
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Venue
+              Name &amp; Full Address</label>
+            <textarea id="setting-venue-name" class="fx-pill-search" rows="2"
+              style="width: 100%; border-radius: 10px; padding: 8px 12px;">SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105</textarea>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Center Code</label>
-              <input type="text" id="setting-center-code" class="fx-pill-search" value="SSEC-TN-042" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Center
+                Code</label>
+              <input type="text" id="setting-center-code" class="fx-pill-search" value="SSEC-TN-042"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Default Lab Room</label>
-              <input type="text" id="setting-lab-room" class="fx-pill-search" value="LAB-01 (Block-A)" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Default
+                Lab Room</label>
+              <input type="text" id="setting-lab-room" class="fx-pill-search" value="LAB-01 (Block-A)"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Terminal Prefix</label>
-              <input type="text" id="setting-terminal-prefix" class="fx-pill-search" value="T-A-" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Terminal
+                Prefix</label>
+              <input type="text" id="setting-terminal-prefix" class="fx-pill-search" value="T-A-"
+                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
           </div>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-          <button type="button" class="fx-btn-pill-light" id="btn-cancel-settings" onclick="document.getElementById('modal-document-settings').style.display='none'">Cancel</button>
+          <button type="button" class="fx-btn-pill-light" id="btn-cancel-settings"
+            onclick="document.getElementById('modal-document-settings').style.display='none'">Cancel</button>
           <button type="submit" class="fx-btn-pill-coral" id="btn-save-settings">Save to Cloud DB</button>
         </div>
       </form>
@@ -985,13 +1178,18 @@
   </div>
 
   <!-- 5. RESULT DOSSIER MODAL -->
-  <div class="modal-backdrop" id="modal-result-dossier" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 800px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
+  <div class="modal-backdrop" id="modal-result-dossier"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+      style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 800px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading);">Candidate Examination Dossier</h3>
-        <button type="button" class="fx-tool-btn" onclick="document.getElementById('modal-result-dossier').style.display='none'">✕</button>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading);">Candidate Examination Dossier
+        </h3>
+        <button type="button" class="fx-tool-btn"
+          onclick="document.getElementById('modal-result-dossier').style.display='none'">✕</button>
       </div>
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; text-align: center;">
+      <div
+        style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; text-align: center;">
         <div class="fx-card" style="padding: 12px;">
           <div style="font-size: 0.7rem; color: var(--fx-text-muted);">RAW SCORE</div>
           <div id="dossier-raw-score" style="font-size: 1.25rem; font-weight: 800; color: #10b981;">--</div>
@@ -1006,10 +1204,12 @@
         </div>
         <div class="fx-card" style="padding: 12px;">
           <div style="font-size: 0.7rem; color: var(--fx-text-muted);">CORRECT/INCORRECT</div>
-          <div id="dossier-breakdown-counts" style="font-size: 1rem; font-weight: 800; color: var(--fx-text-heading);">--</div>
+          <div id="dossier-breakdown-counts" style="font-size: 1rem; font-weight: 800; color: var(--fx-text-heading);">
+            --</div>
         </div>
       </div>
-      <div style="max-height: 350px; overflow-y: auto; border: 1px solid var(--fx-border); border-radius: 14px; margin-bottom: 16px;">
+      <div
+        style="max-height: 350px; overflow-y: auto; border: 1px solid var(--fx-border); border-radius: 14px; margin-bottom: 16px;">
         <table class="fx-table">
           <thead>
             <tr>
@@ -1022,34 +1222,46 @@
             </tr>
           </thead>
           <tbody id="dossier-questions-body">
-            <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading dossier responses...</td></tr>
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 2rem;">Loading dossier responses...</td>
+            </tr>
           </tbody>
         </table>
       </div>
       <div style="display: flex; justify-content: flex-end;">
-        <button type="button" class="fx-btn-pill-coral" onclick="document.getElementById('modal-result-dossier').style.display='none'">Close</button>
+        <button type="button" class="fx-btn-pill-coral"
+          onclick="document.getElementById('modal-result-dossier').style.display='none'">Close</button>
       </div>
     </div>
   </div>
 
   <!-- 6. EDIT RESULT MODAL -->
-  <div class="modal-backdrop" id="modal-edit-result" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 500px; width: 92%; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
+  <div class="modal-backdrop" id="modal-edit-result"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+      style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 500px; width: 92%; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--fx-text-heading);">Edit Candidate Result</h3>
-        <button type="button" class="fx-tool-btn" onclick="document.getElementById('modal-edit-result').style.display='none'">✕</button>
+        <button type="button" class="fx-tool-btn"
+          onclick="document.getElementById('modal-edit-result').style.display='none'">✕</button>
       </div>
       <form id="form-edit-result">
         <input type="hidden" id="edit-result-cand-id" />
         <input type="hidden" id="edit-result-exam-id" />
-        <div style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+        <div
+          style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
           <div style="font-size: 0.72rem; color: var(--fx-text-muted);">Candidate:</div>
-          <div id="edit-result-cand-name" style="font-weight: 800; font-size: 0.95rem; color: var(--fx-text-heading);">--</div>
-          <div id="edit-result-cand-reg" style="font-family: var(--fx-font-mono); font-size: 0.78rem; color: var(--fx-coral);">--</div>
+          <div id="edit-result-cand-name" style="font-weight: 800; font-size: 0.95rem; color: var(--fx-text-heading);">
+            --</div>
+          <div id="edit-result-cand-reg"
+            style="font-family: var(--fx-font-mono); font-size: 0.78rem; color: var(--fx-coral);">--</div>
         </div>
         <div style="margin-bottom: 12px;">
-          <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Status Override</label>
-          <select id="edit-result-status-select" class="fx-pill-filter-btn" style="width: 100%; padding: 8px 12px; border-radius: 10px;">
+          <label
+            style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Status
+            Override</label>
+          <select id="edit-result-status-select" class="fx-pill-filter-btn"
+            style="width: 100%; padding: 8px 12px; border-radius: 10px;">
             <option value="submitted">Submitted (Valid)</option>
             <option value="validated">Validated (Directorate Approved)</option>
             <option value="disqualified">Disqualified</option>
@@ -1057,15 +1269,23 @@
           </select>
         </div>
         <div style="margin-bottom: 12px;">
-          <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate Remarks</label>
-          <textarea id="edit-result-remarks" class="fx-pill-search" rows="2" style="width: 100%; border-radius: 10px; padding: 8px 12px;"></textarea>
+          <label
+            style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate
+            Remarks</label>
+          <textarea id="edit-result-remarks" class="fx-pill-search" rows="2"
+            style="width: 100%; border-radius: 10px; padding: 8px 12px;"></textarea>
         </div>
         <div style="margin-bottom: 16px;">
-          <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Score Override</label>
-          <input type="number" step="0.5" id="edit-result-score-override" class="fx-pill-search" placeholder="Leave blank to retain raw score" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+          <label
+            style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Score
+            Override</label>
+          <input type="number" step="0.5" id="edit-result-score-override" class="fx-pill-search"
+            placeholder="Leave blank to retain raw score"
+            style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button type="button" class="fx-btn-pill-light" onclick="document.getElementById('modal-edit-result').style.display='none'">Cancel</button>
+          <button type="button" class="fx-btn-pill-light"
+            onclick="document.getElementById('modal-edit-result').style.display='none'">Cancel</button>
           <button type="submit" class="fx-btn-pill-coral" id="btn-save-result-edit">Save Override</button>
         </div>
       </form>
@@ -1073,43 +1293,62 @@
   </div>
 
   <!-- 7. EMERGENCY PIN MODAL -->
-  <div class="modal-backdrop" id="modal-emergency-pin" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 440px; width: 92%; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border); text-align: center;">
-      <div style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading); margin-bottom: 6px;">Emergency Single-Use PIN</div>
-      <div style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 14px;">Valid for single-terminal re-authentication during network disruption.</div>
-      <div id="pin-display-text" style="font-family: var(--fx-font-mono); font-size: 2rem; font-weight: 800; color: var(--fx-coral); letter-spacing: 0.15em; margin-bottom: 14px;">-- -- --</div>
-      <button type="button" class="fx-btn-pill-coral" onclick="document.getElementById('modal-emergency-pin').style.display='none'">Done</button>
+  <div class="modal-backdrop" id="modal-emergency-pin"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+      style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 440px; width: 92%; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border); text-align: center;">
+      <div style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading); margin-bottom: 6px;">Emergency
+        Single-Use PIN</div>
+      <div style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 14px;">Valid for single-terminal
+        re-authentication during network disruption.</div>
+      <div id="pin-display-text"
+        style="font-family: var(--fx-font-mono); font-size: 2rem; font-weight: 800; color: var(--fx-coral); letter-spacing: 0.15em; margin-bottom: 14px;">
+        -- -- --</div>
+      <button type="button" class="fx-btn-pill-coral"
+        onclick="document.getElementById('modal-emergency-pin').style.display='none'">Done</button>
     </div>
   </div>
 
   <!-- 8. DEBAR CANDIDATE MODAL -->
-  <div class="modal-backdrop" id="modal-debar-candidate" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 480px; width: 92%; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
-      <h3 style="font-size: 1.2rem; font-weight: 800; color: #ef4444; margin-bottom: 8px;">Deregister / Debar Candidate</h3>
-      <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-bottom: 14px;">Candidate attempt will be immediately terminated, scores nullified, and terminal locked.</p>
+  <div class="modal-backdrop" id="modal-debar-candidate"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+      style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 480px; width: 92%; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
+      <h3 style="font-size: 1.2rem; font-weight: 800; color: #ef4444; margin-bottom: 8px;">Deregister / Debar Candidate
+      </h3>
+      <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-bottom: 14px;">Candidate attempt will be
+        immediately terminated, scores nullified, and terminal locked.</p>
       <input type="hidden" id="debar-cand-id" />
       <div style="background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 12px;">
         <div id="debar-cand-name" style="font-weight: 700; color: var(--fx-text-heading);">--</div>
-        <div id="debar-cand-reg" style="font-size: 0.78rem; font-family: var(--fx-font-mono); color: var(--fx-text-muted);">--</div>
+        <div id="debar-cand-reg"
+          style="font-size: 0.78rem; font-family: var(--fx-font-mono); color: var(--fx-text-muted);">--</div>
       </div>
       <div style="margin-bottom: 16px;">
-        <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Debarment Reason</label>
-        <select id="debar-reason-select" class="fx-pill-filter-btn" style="width: 100%; padding: 8px 12px; border-radius: 10px;">
-          <option value="4 Security Violations Exceeded">4 Security Violations Exceeded (Tab Switching Malpractice)</option>
+        <label
+          style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Debarment
+          Reason</label>
+        <select id="debar-reason-select" class="fx-pill-filter-btn"
+          style="width: 100%; padding: 8px 12px; border-radius: 10px;">
+          <option value="4 Security Violations Exceeded">4 Security Violations Exceeded (Tab Switching Malpractice)
+          </option>
           <option value="Unauthorized Device Detection">Unauthorized Electronic Device Detected</option>
           <option value="Identity Impersonation">Identity Impersonation Malpractice</option>
           <option value="Hall Disruption">Hall Disruption / Non-Compliance</option>
         </select>
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="fx-btn-pill-light" onclick="document.getElementById('modal-debar-candidate').style.display='none'">Cancel</button>
-        <button type="button" class="fx-btn-pill-coral" id="btn-confirm-debar" style="background: #ef4444;">Debar Candidate</button>
+        <button type="button" class="fx-btn-pill-light"
+          onclick="document.getElementById('modal-debar-candidate').style.display='none'">Cancel</button>
+        <button type="button" class="fx-btn-pill-coral" id="btn-confirm-debar" style="background: #ef4444;">Debar
+          Candidate</button>
       </div>
     </div>
   </div>
 
   <!-- TOAST NOTIFICATION -->
-  <div id="toast" style="display: none; position: fixed; bottom: 24px; right: 24px; background: #121418; color: #fff; padding: 12px 20px; border-radius: 9999px; font-size: 0.84rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 9999; border-left: 4px solid var(--fx-coral);">
+  <div id="toast"
+    style="display: none; position: fixed; bottom: 24px; right: 24px; background: #121418; color: #fff; padding: 12px 20px; border-radius: 9999px; font-size: 0.84rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 9999; border-left: 4px solid var(--fx-coral);">
     Operation successful
   </div>
 

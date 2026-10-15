@@ -110,12 +110,10 @@ const ui = {
 
 async function fetchQuestionsFromUrl(targetUrl: string): Promise<any[]> {
     let res = await fetch(targetUrl, { headers: getAuthHeaders() });
-    if (!res.ok) {
-        if (res.status === 401 && localStorage.getItem('access_token')) {
-            console.warn('[Question Bank] Auth rejected; clearing expired token from localStorage and retrying...');
-            localStorage.removeItem('access_token');
-            res = await fetch(targetUrl, { headers: getAuthHeaders() });
-        }
+    if (res.status === 401 || res.status === 403) {
+        console.warn('[Question Bank] Administrator authentication required or expired; redirecting to login...');
+        window.location.replace('/login.html?redirect=question_bank.html');
+        return [];
     }
     if (!res.ok) {
         let errorDetail = '';
