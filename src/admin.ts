@@ -3944,6 +3944,9 @@ if (btnCopyInviteMsg) {
 const btnCreateExamModal = document.getElementById('btn-create-exam-modal');
 if (btnCreateExamModal) btnCreateExamModal.addEventListener('click', openCreateExamModal);
 
+const btnOpenCreateExam = document.getElementById('btn-open-create-exam');
+if (btnOpenCreateExam) btnOpenCreateExam.addEventListener('click', openCreateExamModal);
+
 const btnOpenCreateExamTop = document.getElementById('btn-open-create-exam-top');
 if (btnOpenCreateExamTop) btnOpenCreateExamTop.addEventListener('click', openCreateExamModal);
 
