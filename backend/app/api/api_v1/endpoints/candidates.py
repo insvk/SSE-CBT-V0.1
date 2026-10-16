@@ -12,6 +12,7 @@ from app.core.db import get_db
 from app.core.tenant import ensure_tenant_exists
 from app.core.ws_manager import ws_manager
 from app.api.api_v1.endpoints.exams import CURRENT_EXAM_SETTINGS, load_templates_from_cloud_db
+from app.api.api_v1.endpoints.auth import hash_password
 from app.core.master_clock import (
     format_ist_now,
     format_timestamp_to_ist,
@@ -231,6 +232,7 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
     db = get_db()
     ensure_tenant_exists(db, tid)
 
+    t_start = time.time()
     try:
         # Real candidates from database
         if is_super_admin:
@@ -248,9 +250,10 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
         total_candidates = len(cands)
         active_candidates = sum(1 for c in cands if (c.get("metadata") or {}).get("status", "active") == "active")
         pwd_candidates = sum(1 for c in cands if (c.get("metadata") or {}).get("is_pwd", False))
+        debarred_count = sum(1 for c in cands if (c.get("metadata") or {}).get("status") in ("debarred", "suspended"))
 
         # Batch slot breakdown
-        batch_counts = {}
+        batch_counts = {"A": 0, "B": 0, "C": 0, "D": 0}
         for c in cands:
             b = (c.get("metadata") or {}).get("batch", "A").upper()
             batch_counts[b] = batch_counts.get(b, 0) + 1
@@ -267,6 +270,36 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
             subj = q.get("subject") or "General"
             subject_breakdown[subj] = subject_breakdown.get(subj, 0) + 1
 
+        # Real exams metadata
+        active_exams_count = 0
+        active_exam_duration = 180
+        active_exam_venue = "SIMATS ENGINEERING • LAB-01"
+        active_exam_terminal_prefix = "NODE-L4-C"
+        active_exam_room = "LAB-01"
+        active_exam_title = "None"
+        try:
+            ex_res = db.table("exams").select("*").execute()
+            all_exams = ex_res.data or []
+            active_list = [e for e in all_exams if e.get("state") == "active"]
+            active_exams_count = len(active_list)
+            if active_list:
+                primary = active_list[0]
+                active_exam_title = primary.get("title") or "Active Assessment"
+                active_exam_duration = int(primary.get("duration_minutes") or 180)
+                cfg = primary.get("config") or {}
+                active_exam_venue = cfg.get("test_venue_name") or "SIMATS ENGINEERING"
+                active_exam_terminal_prefix = cfg.get("terminal_prefix") or "NODE-L4-C"
+                active_exam_room = cfg.get("default_lab_room") or "LAB-01"
+            elif all_exams:
+                primary = all_exams[0]
+                active_exam_duration = int(primary.get("duration_minutes") or 180)
+                cfg = primary.get("config") or {}
+                active_exam_venue = cfg.get("test_venue_name") or "SIMATS ENGINEERING"
+                active_exam_terminal_prefix = cfg.get("terminal_prefix") or "NODE-L4-C"
+                active_exam_room = cfg.get("default_lab_room") or "LAB-01"
+        except Exception as ex_err:
+            logger.warning("Error fetching exams for dashboard summary: %s", ex_err)
+
         # Real exam attempts
         try:
             if is_super_admin:
@@ -282,7 +315,6 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
         completion_rate = round((completed_attempts / max(total_attempts, 1)) * 100, 1) if total_attempts > 0 else 0.0
 
         # Monthly registration distribution
-        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
         monthly_trend = [0] * 12
         for c in cands:
             c_at = c.get("created_at")
@@ -293,8 +325,6 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
                         monthly_trend[m_idx] += 1
                 except Exception:
                     pass
-            else:
-                monthly_trend[9] += 1
 
         slot_traffic = []
         for slot in ["A", "B", "C", "D"]:
@@ -305,18 +335,28 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
                 "completed": min(count, completed_attempts),
             })
 
+        db_latency_ms = max(4, int((time.time() - t_start) * 1000))
+
         return {
             "status": "success",
             "server_time_ist": format_ist_now(),
             "total_candidates": total_candidates,
             "active_candidates": active_candidates,
             "pwd_candidates": pwd_candidates,
+            "debarred_count": debarred_count,
             "batch_breakdown": batch_counts,
             "total_questions": total_questions,
             "subject_breakdown": subject_breakdown,
+            "active_exams_count": active_exams_count,
+            "active_exam_duration": active_exam_duration,
+            "active_exam_venue": active_exam_venue,
+            "active_exam_terminal_prefix": active_exam_terminal_prefix,
+            "active_exam_room": active_exam_room,
+            "active_exam_title": active_exam_title,
             "total_attempts": total_attempts,
             "completed_attempts": completed_attempts,
             "completion_rate": completion_rate,
+            "db_latency_ms": db_latency_ms,
             "monthly_trend": monthly_trend,
             "slot_traffic": slot_traffic,
         }
@@ -328,12 +368,20 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
             "total_candidates": 0,
             "active_candidates": 0,
             "pwd_candidates": 0,
-            "batch_breakdown": {},
+            "debarred_count": 0,
+            "batch_breakdown": {"A": 0, "B": 0, "C": 0, "D": 0},
             "total_questions": 0,
             "subject_breakdown": {},
+            "active_exams_count": 0,
+            "active_exam_duration": 180,
+            "active_exam_venue": "SIMATS ENGINEERING • LAB-01",
+            "active_exam_terminal_prefix": "NODE-L4-C",
+            "active_exam_room": "LAB-01",
+            "active_exam_title": "None",
             "total_attempts": 0,
             "completed_attempts": 0,
             "completion_rate": 0.0,
+            "db_latency_ms": 12,
             "monthly_trend": [0] * 12,
             "slot_traffic": [],
         }
@@ -415,6 +463,7 @@ async def create_candidate(cand: CandidateCreate, user_context: dict = Depends(r
     slot_info = SLOT_SCHEDULE.get(slot, SLOT_SCHEDULE["A"])
 
     candidate_data = {
+        "id": str(uuid.uuid4()),
         "tenant_id": tid,
         "registration_number": reg_number,
         "full_name": cand.full_name.strip(),
@@ -422,7 +471,7 @@ async def create_candidate(cand: CandidateCreate, user_context: dict = Depends(r
             "batch": slot,
             "status": "active",
             "email": email,
-            "password": pwd,
+            "password": hash_password(pwd),
             "roll_number": cand.roll_number or reg_number,
             "category": cand.category or "General",
             "gender": cand.gender or "Male",
@@ -430,16 +479,17 @@ async def create_candidate(cand: CandidateCreate, user_context: dict = Depends(r
             "has_scribe": bool(cand.has_scribe),
             "disability_type": cand.disability_type,
             "compensatory_minutes": int(cand.compensatory_minutes or (60 if cand.is_pwd else 0)),
-            "assigned_terminal": cand.assigned_terminal,
-            "test_center_name": cand.test_center_name,
-            "test_center_code": cand.test_center_code,
-            "room_number": cand.room_number,
+            "assigned_terminal": cand.assigned_terminal or f"T-{slot}-{reg_number[-4:]}",
+            "test_center_name": cand.test_center_name or "SSE Digital Assessment Hub, Chennai",
+            "test_center_code": cand.test_center_code or "SSEC-TN-042",
+            "room_number": cand.room_number or "LAB-01",
             "device_details": cand.device_details,
             "reporting_time_ist": slot_info["reporting"],
             "slot_timing_ist": slot_info["timing"],
             "biometric_status": "verified",
             "biometric_score": 98.4,
             "exam_status": "assigned",
+            "registered_at_ist": format_ist_now(),
         },
     }
 
@@ -853,6 +903,9 @@ async def bulk_import_candidates(
     pwd_idx = -1
     cat_idx = -1
 
+    email_idx = -1
+    pwd_val_idx = -1
+
     for i, col in enumerate(header):
         if col in ("fullname", "full_name", "name", "candidate_name"):
             name_idx = i
@@ -862,15 +915,37 @@ async def bulk_import_candidates(
             pwd_idx = i
         elif col in ("category", "caste"):
             cat_idx = i
+        elif col in ("email", "mail", "email_address"):
+            email_idx = i
+        elif col in ("password", "pwd", "initial_password", "pass") and pwd_idx != i:
+            pwd_val_idx = i
 
     if name_idx == -1:
         name_idx = 0
     if slot_idx == -1 and len(rows[0]) > 1:
         slot_idx = 1
 
+    # Pre-fetch existing registration sequences per slot in one single query to prevent duplicates
+    slot_seqs = {"A": [], "B": [], "C": [], "D": []}
+    try:
+        ex_res = db.table("candidates").select("registration_number").execute()
+        for c in (ex_res.data or []):
+            reg = c.get("registration_number", "")
+            for s in ("A", "B", "C", "D"):
+                for pfx in (f"SSE-{s}-CBT-", f"SSEC-{s}-CBT-"):
+                    if reg.startswith(pfx):
+                        try:
+                            slot_seqs[s].append(int(reg[len(pfx):]))
+                        except ValueError:
+                            pass
+    except Exception as fetch_err:
+        logger.warning("Error pre-fetching registration sequences: %s", fetch_err)
+
+    next_seq_by_slot = {s: max(slot_seqs[s], default=0) for s in ("A", "B", "C", "D")}
+
     imported_candidates = []
     skipped_count = 0
-    start_row = 1 if any(h in header for h in ("name", "fullname", "slot", "batch")) else 0
+    start_row = 1 if any(h in header for h in ("name", "fullname", "slot", "batch", "email")) else 0
 
     for row in rows[start_row:]:
         if not row or not any(row):
@@ -895,9 +970,19 @@ async def bulk_import_candidates(
                 category = cat_val
 
         slot_info = SLOT_SCHEDULE.get(slot, SLOT_SCHEDULE["A"])
-        reg_number = _generate_reg_number(db, tid, slot)
+
+        # Generate strictly sequential unique roll number
+        next_seq_by_slot[slot] += 1
+        seq = next_seq_by_slot[slot]
+        reg_number = f"SSE-{slot}-CBT-{seq:04d}"
+        terminal_node = f"T-{slot}-{seq:04d}"
+
+        cand_email = (row[email_idx].strip() if email_idx != -1 and len(row) > email_idx else "") or f"{reg_number.lower()}@ssecbt.in"
+        cand_pwd = (row[pwd_val_idx].strip() if pwd_val_idx != -1 and len(row) > pwd_val_idx else "") or "12345678"
+        hashed_pwd = hash_password(cand_pwd)
 
         item = {
+            "id": str(uuid.uuid4()),
             "tenant_id": tid,
             "registration_number": reg_number,
             "full_name": full_name,
@@ -906,12 +991,20 @@ async def bulk_import_candidates(
                 "status": "active",
                 "category": category,
                 "is_pwd": is_pwd,
+                "password": hashed_pwd,
+                "email": cand_email,
+                "roll_number": reg_number,
+                "assigned_terminal": terminal_node,
                 "compensatory_minutes": 60 if is_pwd else 0,
                 "reporting_time_ist": slot_info["reporting"],
                 "slot_timing_ist": slot_info["timing"],
                 "biometric_status": "verified",
                 "biometric_score": 98.4,
                 "exam_status": "assigned",
+                "registered_at_ist": format_ist_now(),
+                "test_center_name": "SSE Digital Assessment Hub, Chennai",
+                "test_center_code": "SSEC-TN-042",
+                "room_number": "LAB-01",
             },
         }
         imported_candidates.append(item)
@@ -920,18 +1013,25 @@ async def bulk_import_candidates(
         return {"status": "success", "imported": 0, "skipped": skipped_count}
 
     try:
-        res = db.table("candidates").insert(imported_candidates).execute()
-        count = len(res.data) if res.data else len(imported_candidates)
+        # Insert in batches of 40 to protect against payload limit
+        total_inserted = 0
+        for i in range(0, len(imported_candidates), 40):
+            chunk = imported_candidates[i:i + 40]
+            ins_res = db.table("candidates").insert(chunk).execute()
+            if ins_res.data:
+                total_inserted += len(ins_res.data)
+            else:
+                total_inserted += len(chunk)
 
         await ws_manager.broadcast("admin_feed", {
             "type": "CANDIDATES_BULK_IMPORTED",
-            "count": count,
+            "count": total_inserted,
             "timestamp_ist": format_ist_now(),
         })
 
         return {
             "status": "success",
-            "imported": count,
+            "imported": total_inserted,
             "skipped": skipped_count,
             "total_processed": len(imported_candidates) + skipped_count,
         }

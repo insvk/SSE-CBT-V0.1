@@ -270,10 +270,10 @@
               </div>
             </div>
 
-            <div class="fx-big-number" id="dash-total-candidates-hero">245 Candidates</div>
+            <div class="fx-big-number" id="dash-total-candidates-hero">0 Candidates</div>
             <div class="fx-trend-tag">
-              <span>↑ 100%</span>
-              <span style="color: var(--fx-text-muted); font-weight: 500;">verified in Supabase Cloud DB</span>
+              <span id="dash-cand-trend-badge">↑ 100%</span>
+              <span style="color: var(--fx-text-muted); font-weight: 500;" id="dash-cand-trend-sub">synchronized with Supabase Cloud DB</span>
             </div>
 
             <!-- Two Pill Action Buttons matching screenshot Transfer & Request -->
@@ -298,7 +298,7 @@
             <!-- Wallets / Shift Batches Sub-row -->
             <div class="fx-slots-subhead">
               <span>Shift Allocations</span>
-              <span>Total 4 Cohorts</span>
+              <span id="dash-slots-subhead">Total 0 Enrolled</span>
             </div>
             <div class="fx-slots-row">
               <div class="fx-slot-item">
@@ -306,23 +306,23 @@
                   <span>Slot A</span>
                   <span>🇮🇳</span>
                 </div>
-                <div class="fx-slot-val" id="slot-a-count">100 Cand.</div>
-                <div class="fx-slot-status">LAB-01 • Active</div>
+                <div class="fx-slot-val" id="slot-a-count">0 Cand.</div>
+                <div class="fx-slot-status">LAB-01 • Standby</div>
               </div>
               <div class="fx-slot-item">
                 <div class="fx-slot-header">
                   <span>Slot B</span>
                   <span>🇮🇳</span>
                 </div>
-                <div class="fx-slot-val" id="slot-b-count">85 Cand.</div>
-                <div class="fx-slot-status">LAB-02 • Active</div>
+                <div class="fx-slot-val" id="slot-b-count">0 Cand.</div>
+                <div class="fx-slot-status">LAB-02 • Standby</div>
               </div>
               <div class="fx-slot-item">
                 <div class="fx-slot-header">
                   <span>Slot C</span>
                   <span>🇮🇳</span>
                 </div>
-                <div class="fx-slot-val" id="slot-c-count">60 Cand.</div>
+                <div class="fx-slot-val" id="slot-c-count">0 Cand.</div>
                 <div class="fx-slot-status" style="color: #64748b;">LAB-03 • Standby</div>
               </div>
             </div>
@@ -344,10 +344,10 @@
                     </svg>
                   </div>
                 </div>
-                <div class="fx-big-number" id="dash-active-sessions">180 Mins</div>
+                <div class="fx-big-number" id="dash-active-sessions">0 Mins</div>
                 <div class="fx-trend-tag">
-                  <span>↑ 98.6%</span>
-                  <span>Biometric Verified</span>
+                  <span id="dash-active-trend">⚡ Live Status</span>
+                  <span id="dash-active-subtitle">Cloud Synced</span>
                 </div>
               </div>
 
@@ -378,9 +378,9 @@
                   <span class="fx-card-label">Cloud DB Synced</span>
                   <span style="font-size: 1.1rem;">🗄️</span>
                 </div>
-                <div class="fx-big-number" id="dash-completion-rate">99.9%</div>
+                <div class="fx-big-number" id="dash-completion-rate">100%</div>
                 <div class="fx-trend-tag">
-                  <span>↑ 100%</span>
+                  <span id="dash-sync-badge">↑ 100%</span>
                   <span style="color: var(--fx-text-muted); font-weight: 500;">Zero Data Loss</span>
                 </div>
               </div>
@@ -390,9 +390,9 @@
                   <span class="fx-card-label">Question Bank</span>
                   <span style="font-size: 1.1rem;">📚</span>
                 </div>
-                <div class="fx-big-number" id="dash-total-questions">100 Items</div>
+                <div class="fx-big-number" id="dash-total-questions">0 Items</div>
                 <div class="fx-trend-tag">
-                  <span>↑ 4 Sections</span>
+                  <span id="dash-questions-sub">📚 Cloud DB</span>
                   <span style="color: var(--fx-text-muted); font-weight: 500;">KaTeX Math</span>
                 </div>
               </div>
@@ -414,7 +414,7 @@
             <div class="fx-chart-legend">
               <div class="fx-legend-item">
                 <span class="fx-legend-dot-dark"></span>
-                <span>Submitted</span>
+                <span>Question Items</span>
               </div>
               <div class="fx-legend-item">
                 <span class="fx-legend-dot-coral"></span>
@@ -422,43 +422,9 @@
               </div>
             </div>
 
-            <!-- Striped Bars Graphic matching the reference chart -->
-            <div class="fx-bars-container">
-              <div class="fx-bar-col">
-                <div class="fx-bar-composite" style="height: 100%;">
-                  <div class="fx-bar-top" style="height: 35%;"></div>
-                  <div class="fx-bar-bottom" style="height: 50%;"></div>
-                </div>
-                <span class="fx-bar-label">MATH-1</span>
-              </div>
-              <div class="fx-bar-col">
-                <div class="fx-bar-composite" style="height: 100%;">
-                  <div class="fx-bar-top" style="height: 45%;"></div>
-                  <div class="fx-bar-bottom" style="height: 40%;"></div>
-                </div>
-                <span class="fx-bar-label">MATH-2</span>
-              </div>
-              <div class="fx-bar-col">
-                <div class="fx-bar-composite" style="height: 100%;">
-                  <div class="fx-bar-top" style="height: 30%;"></div>
-                  <div class="fx-bar-bottom" style="height: 60%;"></div>
-                </div>
-                <span class="fx-bar-label">PHYS</span>
-              </div>
-              <div class="fx-bar-col">
-                <div class="fx-bar-composite" style="height: 100%;">
-                  <div class="fx-bar-top" style="height: 50%;"></div>
-                  <div class="fx-bar-bottom" style="height: 45%;"></div>
-                </div>
-                <span class="fx-bar-label">CHEM</span>
-              </div>
-              <div class="fx-bar-col">
-                <div class="fx-bar-composite" style="height: 100%;">
-                  <div class="fx-bar-top" style="height: 40%;"></div>
-                  <div class="fx-bar-bottom" style="height: 55%;"></div>
-                </div>
-                <span class="fx-bar-label">BIO</span>
-              </div>
+            <!-- Striped Bars Graphic matching the reference chart (Dynamically Rendered) -->
+            <div class="fx-bars-container" id="fx-overview-bars-container">
+              <!-- Rendered via renderDynamicOverviewBars() in admin.ts -->
             </div>
           </div>
         </div>
@@ -472,15 +438,15 @@
             <div class="fx-progress-container">
               <div class="fx-progress-meta">
                 <span>Infrastructure &amp; Supabase DB Load</span>
-                <span style="font-family: var(--fx-font-mono); color: var(--fx-coral);">0.04s / 100% OK</span>
+                <span style="font-family: var(--fx-font-mono); color: var(--fx-coral);" id="dash-infra-load">0.02s / 100% OK</span>
               </div>
               <div class="fx-progress-track">
-                <div class="fx-progress-fill" style="width: 86%;"></div>
+                <div class="fx-progress-fill" id="dash-infra-bar" style="width: 100%;"></div>
               </div>
               <div
                 style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--fx-text-muted); margin-top: 6px;">
-                <span>WebSocket Live Stream: Connected</span>
-                <span>time.google.com: 0ms drift</span>
+                <span id="dash-ws-status">WebSocket Live Stream: Connected</span>
+                <span id="dash-ntp-drift">time.google.com: 0ms drift</span>
               </div>
             </div>
 
@@ -499,16 +465,16 @@
               <!-- Card 1: Matte Dark Card -->
               <div class="fx-card-badge-dark">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span class="fx-badge-chip-tag">NODE C-049</span>
-                  <span style="font-size: 0.7rem; font-weight: 700; color: #10b981;">• Online</span>
+                  <span class="fx-badge-chip-tag" id="dash-card-terminal-node">NODE L4</span>
+                  <span style="font-size: 0.7rem; font-weight: 700; color: #10b981;" id="dash-card-terminal-status">• Online</span>
                 </div>
                 <div style="margin: 10px 0;">
                   <div style="font-size: 0.7rem; color: #94a3b8;">Terminal Allocation</div>
-                  <div class="fx-badge-num">SIMATS ENGINEERING • LAB-04</div>
+                  <div class="fx-badge-num" id="dash-card-terminal-venue">SIMATS ENGINEERING • LAB-01</div>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #94a3b8;">
-                  <span>IP: 192.168.1.104</span>
-                  <span>Port 8000</span>
+                  <span id="dash-card-terminal-ip">Cloud DB Live</span>
+                  <span id="dash-card-terminal-port">Port 8000</span>
                 </div>
               </div>
 
@@ -519,10 +485,11 @@
                   <span style="font-size: 0.8rem;">🔒</span>
                 </div>
                 <div style="margin: 10px 0;">
-                  <div style="font-size: 0.7rem; color: rgba(255,255,255,0.85);">Directorate Key</div>
-                  <div class="fx-badge-num" style="font-size: 0.78rem;">GOD-MAXX • AUTH</div>
+                  <div style="font-size: 0.7rem; color: rgba(255,255,255,0.85);">Directorate Session</div>
+                  <div class="fx-badge-num" id="dash-admin-email-badge" style="font-size: 0.78rem;">admin@sse.cbt.in</div>
                 </div>
-                <div style="font-size: 0.72rem; color: rgba(255,255,255,0.9);">
+                <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: rgba(255,255,255,0.9);">
+                  <span id="dash-admin-mode-text">AUTHORITATIVE</span>
                   <span>SSE CBT 2026</span>
                 </div>
               </div>
