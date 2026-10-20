@@ -48,6 +48,9 @@ try:
 except Exception as e:
     import logging
     logging.exception("Failed to initialize main app in api/index.py: %s", e)
+    # The `as e` binding is cleared once the except block exits, so capture the
+    # message now for the deferred fallback handlers to reference later.
+    init_error = str(e)
     from fastapi import FastAPI
     app = FastAPI(title="SSE CBT Platform Fallback")
 
@@ -55,11 +58,11 @@ except Exception as e:
     @app.get("/")
     @app.get("/api/health")
     def fallback_health():
-        return {"status": "error", "message": f"Server initialization error: {str(e)}"}
+        return {"status": "error", "message": f"Server initialization error: {init_error}"}
 
     @app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
     def fallback_any(full_path: str):
-        return {"error": "Server initialization error", "detail": str(e), "path": full_path}
+        return {"error": "Server initialization error", "detail": init_error, "path": full_path}
 
 # Authoritative top-level exports for Vercel discovery
 application = app

@@ -6,6 +6,8 @@ import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Body, status, Response, Header
+import jwt
+from app.core.config import settings
 from app.core.db import get_db
 from app.core.tenant import DEFAULT_TENANT_ID, ensure_tenant_exists
 from app.core.ws_manager import ws_manager
@@ -3459,15 +3461,14 @@ async def disqualify_exam_candidate(exam_id: str, payload: Optional[Dict[str, An
     """
     payload = payload or {}
     norm_id = _resolve_exam_id(exam_id)
+    db = get_db()
+    session = _get_or_create_session(norm_id)
     cand_id = payload.get("candidate_id")
     cand_name = payload.get("candidate_name") or "Candidate"
     reg_no = payload.get("reg_no") or session.get("reg_no") or f"SSE-A-CBT-{uuid.uuid4().hex[:4].upper()}"
     reason = payload.get("reason") or "4 Security Violations Exceeded"
     v_count = payload.get("violation_count", 4)
     ref = f"DISQ-{uuid.uuid4().hex[:6].upper()}"
-
-    db = get_db()
-    session = _get_or_create_session(norm_id)
 
     # 1. Update session state
     if "disqualified_candidates" not in session:
