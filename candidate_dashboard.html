@@ -578,15 +578,15 @@
   </div>
 
   <!-- ================= ADMIT CARD MODAL (ALL EXISTING IDS PRESERVED) ================= -->
-  <div class="modal-backdrop" id="modal-admit-card" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(6px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
-    <div style="background: var(--fx-card); border-radius: 24px; max-width: 650px; width: 100%; border: 1px solid var(--fx-border); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; max-height: 90vh; overflow-y: auto;">
-      <div style="padding: 1.5rem; border-bottom: 1px solid var(--fx-border); display: flex; justify-content: space-between; align-items: flex-start; background: var(--fx-border-subtle);">
+  <div class="modal-backdrop" id="modal-admit-card" style="display: none;">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
         <div>
           <div id="admit-cand-agency" style="font-size: 0.75rem; font-weight: 800; color: var(--fx-coral); letter-spacing: 0.08em; text-transform: uppercase;">SSE CBT PLATFORM</div>
-          <h2 id="admit-cand-exam" style="font-size: 1.15rem; font-weight: 800; color: var(--fx-text-heading); margin-top: 0.25rem;">MCQ ASSESSMENT [ SSE CBT 2026 ]</h2>
-          <div id="admit-cand-subtitle" style="font-size: 0.8rem; color: var(--fx-text-muted);">PROVISIONAL ADMIT CARD / HALL TICKET &bull; COMPUTER BASED TEST</div>
+          <h2 id="admit-cand-exam" class="modal-title" style="margin-top: 0.25rem;">MCQ ASSESSMENT [ SSE CBT 2026 ]</h2>
+          <div id="admit-cand-subtitle" class="modal-subtitle">PROVISIONAL ADMIT CARD / HALL TICKET &bull; COMPUTER BASED TEST</div>
         </div>
-        <button type="button" id="btn-close-admit" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--fx-text-muted);">&times;</button>
+        <button type="button" class="modal-close-btn" id="btn-close-admit" title="Close">&times;</button>
       </div>
       <div style="padding: 1.5rem; position: relative;">
         <!-- Dynamic Watermark Overlay -->

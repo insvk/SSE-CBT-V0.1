@@ -383,8 +383,8 @@
           </div>
 
           <div style="margin-bottom: 14px;">
-            <label style="font-size: 0.78rem; font-weight: 600; color: var(--fx-text-muted); display: block; margin-bottom: 5px;">Subject Filter</label>
-            <select id="filter-subject" class="fx-pill-filter-btn" style="width: 100%; border-radius: 12px; outline: none;">
+            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 5px;">Subject Filter</label>
+            <select id="filter-subject" class="fx-select" style="width: 100%;">
               <option value="All">All Subjects</option>
               <option value="Physics">Physics</option>
               <option value="Chemistry">Chemistry</option>
@@ -395,8 +395,8 @@
           </div>
 
           <div style="margin-bottom: 14px;">
-            <label style="font-size: 0.78rem; font-weight: 600; color: var(--fx-text-muted); display: block; margin-bottom: 5px;">Difficulty</label>
-            <select id="filter-difficulty" class="fx-pill-filter-btn" style="width: 100%; border-radius: 12px; outline: none;">
+            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 5px;">Difficulty</label>
+            <select id="filter-difficulty" class="fx-select" style="width: 100%;">
               <option value="All">All Difficulties</option>
               <option value="Easy">Easy</option>
               <option value="Medium">Medium</option>
@@ -405,8 +405,8 @@
           </div>
 
           <div style="margin-bottom: 20px;">
-            <label style="font-size: 0.78rem; font-weight: 600; color: var(--fx-text-muted); display: block; margin-bottom: 5px;">Status</label>
-            <select id="filter-status" class="fx-pill-filter-btn" style="width: 100%; border-radius: 12px; outline: none;">
+            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 5px;">Status</label>
+            <select id="filter-status" class="fx-select" style="width: 100%;">
               <option value="All">All Statuses</option>
               <option value="approved">Approved</option>
               <option value="draft">Draft</option>
@@ -448,16 +448,19 @@
   </div>
 
   <!-- ================= 1. MULTI-OPTION IMPORT HUB MODAL ================= -->
-  <div class="modal-backdrop" id="modal-import-q" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(6px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
-    <div style="background: var(--fx-card); border-radius: 24px; max-width: 780px; width: 100%; border: 1px solid var(--fx-border); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; max-height: 90vh; overflow-y: auto;">
-      <div style="padding: 1.5rem; border-bottom: 1px solid var(--fx-border); display: flex; justify-content: space-between; align-items: center; background: var(--fx-border-subtle);">
-        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading);">Import Question Bank Hub</h3>
-        <button type="button" id="btn-close-import-modal" style="background: none; border: none; font-size: 1.5rem; color: var(--fx-text-muted); cursor: pointer;">&times;</button>
+  <div class="modal-backdrop" id="modal-import-q" style="display: none;">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Import Question Bank Hub</h3>
+          <p class="modal-subtitle">Batch ingest syllabus items into Supabase Cloud DB via CSV, JSON, or formatted text.</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="btn-close-import-modal" title="Close">&times;</button>
       </div>
 
-      <div style="padding: 1.5rem;">
+      <div class="modal-body" style="padding: 0;">
         <!-- Tab Navigation -->
-        <div style="display: flex; gap: 8px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--fx-border); padding-bottom: 10px;">
+        <div class="fx-pills-bar" style="margin-bottom: 1.25rem;">
           <button type="button" class="tab-btn fx-pill active" data-tab="tab-csv">CSV / Excel</button>
           <button type="button" class="tab-btn fx-pill" data-tab="tab-json">JSON Array</button>
           <button type="button" class="tab-btn fx-pill" data-tab="tab-paste">Text Paste</button>
@@ -521,8 +524,8 @@
           </p>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
             <div>
-              <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Default Subject</label>
-              <select id="paste-default-subject" class="fx-pill-filter-btn" style="width: 100%; border-radius: 10px;">
+              <label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Default Subject</label>
+              <select id="paste-default-subject" class="fx-select" style="width: 100%;">
                 <option value="Physics">Physics</option>
                 <option value="Chemistry">Chemistry</option>
                 <option value="Mathematics">Mathematics</option>
@@ -531,8 +534,8 @@
               </select>
             </div>
             <div>
-              <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Default Difficulty</label>
-              <select id="paste-default-difficulty" class="fx-pill-filter-btn" style="width: 100%; border-radius: 10px;">
+              <label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Default Difficulty</label>
+              <select id="paste-default-difficulty" class="fx-select" style="width: 100%;">
                 <option value="Easy">Easy</option>
                 <option value="Medium" selected>Medium</option>
                 <option value="Hard">Hard</option>
@@ -588,27 +591,30 @@ Answer: B" style="width: 100%; border: 1px solid var(--fx-border); border-radius
   </div>
 
   <!-- ================= 2. CREATE QUESTION MODAL ================= -->
-  <div class="modal-backdrop" id="modal-create-q" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(6px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
-    <div style="background: var(--fx-card); border-radius: 24px; max-width: 680px; width: 100%; border: 1px solid var(--fx-border); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; max-height: 90vh; overflow-y: auto;">
-      <div style="padding: 1.5rem; border-bottom: 1px solid var(--fx-border); display: flex; justify-content: space-between; align-items: center; background: var(--fx-border-subtle);">
-        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading);">Create New Question</h3>
-        <button type="button" id="btn-close-create-modal" style="background: none; border: none; font-size: 1.5rem; color: var(--fx-text-muted); cursor: pointer;">&times;</button>
+  <div class="modal-backdrop" id="modal-create-q" style="display: none;">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Create New Question</h3>
+          <p class="modal-subtitle">Authoritative syllabus formulation with LaTeX support</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="btn-close-create-modal" title="Close">&times;</button>
       </div>
-      <form id="form-create-q" style="padding: 1.5rem;">
+      <form id="form-create-q" style="padding: 0;">
         <div style="margin-bottom: 1rem;">
-          <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Question Statement <span style="font-size: 0.75rem; color: var(--fx-text-muted);">(LaTeX supported: $\frac{a}{b}$, $x^2$)</span></label>
-          <textarea id="q-stmt" rows="3" required placeholder="Enter the complete question text..." style="width: 100%; border: 1px solid var(--fx-border); border-radius: 12px; padding: 10px; font-family: inherit; font-size: 0.9rem; background: var(--fx-canvas); color: var(--fx-text-heading);"></textarea>
+          <label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Question Statement <span style="font-size: 0.75rem; color: var(--fx-text-muted);">(LaTeX supported: $\frac{a}{b}$, $x^2$)</span></label>
+          <textarea id="q-stmt" rows="3" required placeholder="Enter the complete question text..." class="fx-textarea" style="font-size: 0.9rem;"></textarea>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-          <div><label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Option A</label><input type="text" id="q-opta" required placeholder="Option A text" style="width: 100%; border: 1px solid var(--fx-border); border-radius: 10px; padding: 8px 12px; background: var(--fx-canvas); color: var(--fx-text-heading);"></div>
-          <div><label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Option B</label><input type="text" id="q-optb" required placeholder="Option B text" style="width: 100%; border: 1px solid var(--fx-border); border-radius: 10px; padding: 8px 12px; background: var(--fx-canvas); color: var(--fx-text-heading);"></div>
-          <div><label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Option C</label><input type="text" id="q-optc" required placeholder="Option C text" style="width: 100%; border: 1px solid var(--fx-border); border-radius: 10px; padding: 8px 12px; background: var(--fx-canvas); color: var(--fx-text-heading);"></div>
-          <div><label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Option D</label><input type="text" id="q-optd" required placeholder="Option D text" style="width: 100%; border: 1px solid var(--fx-border); border-radius: 10px; padding: 8px 12px; background: var(--fx-canvas); color: var(--fx-text-heading);"></div>
+          <div><label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Option A</label><input type="text" id="q-opta" required placeholder="Option A text" class="fx-input"></div>
+          <div><label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Option B</label><input type="text" id="q-optb" required placeholder="Option B text" class="fx-input"></div>
+          <div><label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Option C</label><input type="text" id="q-optc" required placeholder="Option C text" class="fx-input"></div>
+          <div><label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Option D</label><input type="text" id="q-optd" required placeholder="Option D text" class="fx-input"></div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
           <div>
-            <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Correct Answer</label>
-            <select id="q-correct" required class="fx-pill-filter-btn" style="width: 100%; border-radius: 10px;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Correct Answer</label>
+            <select id="q-correct" required class="fx-select" style="width: 100%;">
               <option value="A">Option A</option>
               <option value="B">Option B</option>
               <option value="C">Option C</option>
@@ -616,8 +622,8 @@ Answer: B" style="width: 100%; border: 1px solid var(--fx-border); border-radius
             </select>
           </div>
           <div>
-            <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Subject</label>
-            <select id="q-subj" class="fx-pill-filter-btn" style="width: 100%; border-radius: 10px;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Subject</label>
+            <select id="q-subj" class="fx-select" style="width: 100%;">
               <option value="Physics">Physics</option>
               <option value="Chemistry">Chemistry</option>
               <option value="Mathematics">Mathematics</option>
@@ -628,16 +634,16 @@ Answer: B" style="width: 100%; border: 1px solid var(--fx-border); border-radius
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
           <div>
-            <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Difficulty</label>
-            <select id="q-diff" class="fx-pill-filter-btn" style="width: 100%; border-radius: 10px;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Difficulty</label>
+            <select id="q-diff" class="fx-select" style="width: 100%;">
               <option value="Easy">Easy</option>
               <option value="Medium" selected>Medium</option>
               <option value="Hard">Hard</option>
             </select>
           </div>
           <div>
-            <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Marks</label>
-            <input type="number" id="q-marks" value="4" step="0.5" required style="width: 100%; border: 1px solid var(--fx-border); border-radius: 10px; padding: 8px 12px; background: var(--fx-canvas); color: var(--fx-text-heading);">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Marks</label>
+            <input type="number" id="q-marks" value="4" step="0.5" required class="fx-input">
           </div>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
@@ -649,28 +655,31 @@ Answer: B" style="width: 100%; border: 1px solid var(--fx-border); border-radius
   </div>
 
   <!-- ================= 3. EDIT QUESTION MODAL ================= -->
-  <div class="modal-backdrop" id="modal-edit-q" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(6px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
-    <div style="background: var(--fx-card); border-radius: 24px; max-width: 680px; width: 100%; border: 1px solid var(--fx-border); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; max-height: 90vh; overflow-y: auto;">
-      <div style="padding: 1.5rem; border-bottom: 1px solid var(--fx-border); display: flex; justify-content: space-between; align-items: center; background: var(--fx-border-subtle);">
-        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading);">Edit Question</h3>
-        <button type="button" id="btn-close-edit-modal" style="background: none; border: none; font-size: 1.5rem; color: var(--fx-text-muted); cursor: pointer;">&times;</button>
+  <div class="modal-backdrop" id="modal-edit-q" style="display: none;">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Edit Question</h3>
+          <p class="modal-subtitle">Update live item keys, options, and difficulty in Cloud DB</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="btn-close-edit-modal" title="Close">&times;</button>
       </div>
-      <form id="form-edit-q" style="padding: 1.5rem;">
+      <form id="form-edit-q" style="padding: 0;">
         <input type="hidden" id="edit-q-id">
         <div style="margin-bottom: 1rem;">
-          <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Question Statement</label>
-          <textarea id="edit-q-stmt" rows="3" required style="width: 100%; border: 1px solid var(--fx-border); border-radius: 12px; padding: 10px; font-family: inherit; font-size: 0.9rem; background: var(--fx-canvas); color: var(--fx-text-heading);"></textarea>
+          <label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Question Statement</label>
+          <textarea id="edit-q-stmt" rows="3" required class="fx-textarea" style="font-size: 0.9rem;"></textarea>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-          <div><label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Option A</label><input type="text" id="edit-q-opta" required style="width: 100%; border: 1px solid var(--fx-border); border-radius: 10px; padding: 8px 12px; background: var(--fx-canvas); color: var(--fx-text-heading);"></div>
-          <div><label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Option B</label><input type="text" id="edit-q-optb" required style="width: 100%; border: 1px solid var(--fx-border); border-radius: 10px; padding: 8px 12px; background: var(--fx-canvas); color: var(--fx-text-heading);"></div>
-          <div><label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Option C</label><input type="text" id="edit-q-optc" required style="width: 100%; border: 1px solid var(--fx-border); border-radius: 10px; padding: 8px 12px; background: var(--fx-canvas); color: var(--fx-text-heading);"></div>
-          <div><label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Option D</label><input type="text" id="edit-q-optd" required style="width: 100%; border: 1px solid var(--fx-border); border-radius: 10px; padding: 8px 12px; background: var(--fx-canvas); color: var(--fx-text-heading);"></div>
+          <div><label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Option A</label><input type="text" id="edit-q-opta" required class="fx-input"></div>
+          <div><label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Option B</label><input type="text" id="edit-q-optb" required class="fx-input"></div>
+          <div><label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Option C</label><input type="text" id="edit-q-optc" required class="fx-input"></div>
+          <div><label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Option D</label><input type="text" id="edit-q-optd" required class="fx-input"></div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
           <div>
-            <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Authoritative Correct Answer</label>
-            <select id="edit-q-correct" required class="fx-pill-filter-btn" style="width: 100%; border-radius: 10px;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Authoritative Correct Answer</label>
+            <select id="edit-q-correct" required class="fx-select" style="width: 100%;">
               <option value="A">Option A</option>
               <option value="B">Option B</option>
               <option value="C">Option C</option>
@@ -678,8 +687,8 @@ Answer: B" style="width: 100%; border: 1px solid var(--fx-border); border-radius
             </select>
           </div>
           <div>
-            <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Subject</label>
-            <select id="edit-q-subj" class="fx-pill-filter-btn" style="width: 100%; border-radius: 10px;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Subject</label>
+            <select id="edit-q-subj" class="fx-select" style="width: 100%;">
               <option value="Physics">Physics</option>
               <option value="Chemistry">Chemistry</option>
               <option value="Mathematics">Mathematics</option>

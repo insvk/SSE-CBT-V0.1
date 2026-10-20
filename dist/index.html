@@ -369,8 +369,9 @@
         position: fixed;
         inset: 0;
         background: rgba(15, 23, 42, 0.65);
-        backdrop-filter: blur(4px);
-        z-index: 1000;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 1100;
         align-items: center;
         justify-content: center;
         padding: 1.5rem;
@@ -378,17 +379,18 @@
 
       .modal-card {
         background: white;
-        border-radius: 12px;
+        border-radius: 20px;
         width: 100%;
-        max-width: 460px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        max-width: 480px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 24px 60px -12px rgba(15, 23, 42, 0.25);
         overflow: hidden;
-        animation: scaleIn 0.2s ease-out;
+        animation: scaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
       @keyframes scaleIn {
-        from { opacity: 0; transform: scale(0.96); }
-        to { opacity: 1; transform: scale(1); }
+        from { opacity: 0; transform: scale(0.96) translateY(8px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
       }
 
       .modal-header {
@@ -397,26 +399,38 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        background: #fafbfd;
       }
 
       .modal-title {
-        font-size: 1.1rem;
-        font-weight: 700;
+        font-size: 1.15rem;
+        font-weight: 800;
         color: var(--text-dark);
+        letter-spacing: -0.02em;
       }
 
       .modal-close-btn {
-        background: none;
-        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1px solid #e2e8f0;
+        background: white;
         font-size: 1.25rem;
         cursor: pointer;
         color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
         line-height: 1;
-        padding: 4px;
+        transition: all 0.2s ease;
       }
 
       .modal-close-btn:hover {
-        color: #1e293b;
+        color: #0f172a;
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        transform: rotate(90deg);
       }
 
       .modal-body {
@@ -429,15 +443,25 @@
         border-top: 1px solid #e2e8f0;
         display: flex;
         justify-content: flex-end;
+        align-items: center;
         gap: 0.75rem;
       }
 
       .btn-secondary {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        padding: 0.65rem 1.25rem;
+        border-radius: 10px;
+        font-weight: 700;
+        color: #475569;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .btn-secondary:hover {
         background: #e2e8f0;
-        border: none;
-        padding: 0.6rem 1.25rem;
-        border-radius: 6px;
-        font-weight: 600;
+        color: #0f172a;
+      }
         font-size: 0.85rem;
         cursor: pointer;
         color: #334155;

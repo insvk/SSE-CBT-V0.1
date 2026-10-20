@@ -20,9 +20,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
-  <script type="module" crossorigin src="/assets/exam-78b9b0f7.js"></script>
+  <script type="module" crossorigin src="/assets/exam-9c309da0.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
-  <link rel="stylesheet" href="/assets/exam-3b05e1ef.css">
+  <link rel="stylesheet" href="/assets/exam-5a417ac2.css">
 </head>
 
 <body>
@@ -200,8 +200,8 @@
             <div class="lang-selector-wrap"
               style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--text-heading);">
               <label for="select-lang-view">Lang:</label>
-              <select id="select-lang-view"
-                style="font-size: 0.75rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color); background: white;">
+              <select id="select-lang-view" class="fx-select"
+                style="height: 32px; font-size: 0.75rem; font-weight: 600; padding: 2px 30px 2px 10px !important; border-radius: 8px;">
                 <option value="en" selected>English</option>
                 <option value="hi">Hindi (हिंदी)</option>
               </select>
@@ -332,8 +332,7 @@
     <div class="modal-content" style="max-width: 680px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
         <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">Master Question Bank Live Item Editor</h3>
-        <button type="button" id="btn-close-edit-q"
-          style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #94a3b8;">&times;</button>
+        <button type="button" id="btn-close-edit-q" class="modal-close-btn" aria-label="Close modal">&times;</button>
       </div>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
         Directly update syllabus question formulation, formulas, options, or authoritative answer keys in the central
@@ -380,8 +379,8 @@
           <div class="form-group">
             <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.25rem;">Correct Answer
               Key</label>
-            <select id="edit-q-ans"
-              style="width: 100%; padding: 0.55rem; border: 1.5px solid var(--border-color); border-radius: var(--radius); font-size: 0.85rem; font-weight: 700;">
+            <select id="edit-q-ans" class="fx-select"
+              style="width: 100%; border-radius: 12px; font-weight: 700;">
               <option value="A">Option A</option>
               <option value="B">Option B</option>
               <option value="C">Option C</option>
@@ -444,8 +443,7 @@
       <div
         style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
         <h3 style="font-weight: 800; font-size: 1.2rem;">Complete Question Paper</h3>
-        <button type="button" id="btn-close-paper"
-          style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #94a3b8;">&times;</button>
+        <button type="button" id="btn-close-paper" class="modal-close-btn" aria-label="Close modal">&times;</button>
       </div>
       <div id="paper-list-container" style="overflow-y: auto; flex: 1; padding-right: 0.5rem;">
         <!-- Injected via JS -->
@@ -470,8 +468,7 @@
           <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Candidate working space for formulas
             and calculation scratchwork.</p>
         </div>
-        <button type="button" id="btn-close-scratchpad"
-          style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8;">&times;</button>
+        <button type="button" id="btn-close-scratchpad" class="modal-close-btn" aria-label="Close modal">&times;</button>
       </div>
 
       <!-- Scratchpad Toolbar -->
@@ -510,8 +507,7 @@
     <div class="modal-content" style="max-width: 650px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h3 style="font-weight: 800; font-size: 1.2rem;">Candidate Instructions</h3>
-        <button type="button" id="btn-close-inst"
-          style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #94a3b8;">&times;</button>
+        <button type="button" id="btn-close-inst" class="modal-close-btn" aria-label="Close modal">&times;</button>
       </div>
       <div style="font-size: 0.9rem; line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 0.5rem;">
         <p><strong>1. General Guidelines:</strong></p>
