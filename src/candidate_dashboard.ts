@@ -89,6 +89,15 @@ function applyTheme(theme: string): void {
 }
 (window as any).applyTheme = applyTheme;
 
+function escapeHtml(str: any): string {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 function switchCandTab(tabName: string): void {
     document.querySelectorAll('.fx-dock-item').forEach((item) => {
         if (item.getAttribute('data-tab') === tabName) {
@@ -113,6 +122,10 @@ function switchCandTab(tabName: string): void {
             sec.classList.remove('active');
         }
     });
+
+    if (tabName === 'history') {
+        loadCandidateExamHistory();
+    }
 }
 (window as any).switchCandTab = switchCandTab;
 
@@ -130,9 +143,9 @@ function updateGreeting(): void {
 function updateClock(): void {
     const el = document.getElementById('master-clock-time');
     if (!el) return;
-    const now = new Date();
-    // Format IST
-    const istMs = now.getTime() + (5.5 * 3600 * 1000) + (now.getTimezoneOffset() * 60 * 1000);
+    const nowWithOffset = Date.now() + masterNtpOffsetMs;
+    // Format IST (UTC+05:30)
+    const istMs = nowWithOffset + (5.5 * 3600 * 1000) + (new Date().getTimezoneOffset() * 60 * 1000);
     const ist = new Date(istMs);
     const h = String(ist.getHours()).padStart(2, '0');
     const m = String(ist.getMinutes()).padStart(2, '0');
@@ -179,15 +192,211 @@ if (toggleBtnEl && sidebarEl) {
     });
 }
 
-// Load candidate profile
-function loadCandidateProfile(): void {
-    const name = localStorage.getItem('candidate_name') || 'Registered Candidate';
-    const regNo = localStorage.getItem('reg_no') || '';
-    const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'CD';
+let currentCandidate: any = null;
+let currentExam: any = null;
+let masterNtpOffsetMs = 0;
 
-    if (ui.headerCandName) ui.headerCandName.textContent = name;
-    if (ui.headerCandAvatar) ui.headerCandAvatar.textContent = initials;
-    if (ui.sidebarCandRegno) ui.sidebarCandRegno.textContent = regNo;
+// Synchronize Authoritative Master Clock with Google NTP (IST)
+async function syncMasterClock(): Promise<void> {
+    try {
+        const tStart = Date.now();
+        const res = await fetch('/api/v1/system/time', { headers: getHeaders() });
+        const tEnd = Date.now();
+        if (res.ok) {
+            const data = await res.json();
+            const clock = data.clock || {};
+            const serverTsMs = (clock.unix_timestamp || Date.now() / 1000) * 1000;
+            const roundTrip = tEnd - tStart;
+            masterNtpOffsetMs = (serverTsMs + roundTrip / 2) - tEnd;
+
+            const driftMs = Math.abs(roundTrip / 2).toFixed(1);
+            const driftEl = document.getElementById('cand-stat-clock-drift');
+            if (driftEl) {
+                driftEl.textContent = `${driftMs}ms drift`;
+            }
+        }
+    } catch (_) {}
+}
+
+// Render dynamic candidate reporting slots row
+function renderCandidateSlotsRow(candBatch: string): void {
+    const container = document.getElementById('cand-slots-row');
+    if (!container) return;
+
+    const slots = [
+        { slot: 'Slot A', time: '09:00 AM', reporting: 'Reporting 08:00 AM', batch: 'A', room: 'LAB-01' },
+        { slot: 'Slot B', time: '12:30 PM', reporting: 'Reporting 11:30 AM', batch: 'B', room: 'LAB-02' },
+        { slot: 'Slot C', time: '04:00 PM', reporting: 'Reporting 03:00 PM', batch: 'C', room: 'LAB-03' },
+        { slot: 'Slot D', time: '07:30 PM', reporting: 'Reporting 06:30 PM', batch: 'D', room: 'LAB-04' },
+    ];
+
+    container.innerHTML = slots.map(s => {
+        const isMySlot = s.batch === (candBatch || 'A').toUpperCase();
+        const borderStyle = isMySlot ? 'border: 2px solid var(--fx-coral); background: rgba(255, 107, 74, 0.08);' : '';
+        const tag = isMySlot ? '<span style="font-size: 0.65rem; background: var(--fx-coral); color: white; padding: 2px 7px; border-radius: 9999px; font-weight: 800;">YOUR SLOT</span>' : '<span>🇮🇳</span>';
+        return `
+            <div class="fx-slot-item" style="${borderStyle}">
+                <div class="fx-slot-header">
+                    <span style="font-weight: 800;">${s.slot}</span>
+                    ${tag}
+                </div>
+                <div class="fx-slot-val" style="font-weight: 800;">${s.time}</div>
+                <div class="fx-slot-status" style="${isMySlot ? 'color: var(--fx-coral); font-weight: 700;' : ''}">${s.reporting}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Render dynamic Section Distribution striped bar chart from real exam sections
+function renderDynamicSectionBars(sections: any[]): void {
+    const container = document.getElementById('cand-section-bars-container');
+    if (!container) return;
+
+    let secList = ['MATH-1', 'MATH-2', 'PHYSICS', 'CHEMISTRY'];
+    if (Array.isArray(sections) && sections.length > 0) {
+        secList = sections.map(s => typeof s === 'string' ? s : (s.name || '')).filter(Boolean);
+    }
+    if (secList.length === 0) {
+        secList = ['CORE-1', 'CORE-2', 'ASSESSMENT'];
+    }
+
+    const heights = [
+        { top: 40, bottom: 50 },
+        { top: 50, bottom: 40 },
+        { top: 35, bottom: 55 },
+        { top: 45, bottom: 45 },
+        { top: 30, bottom: 60 },
+    ];
+
+    container.innerHTML = secList.slice(0, 5).map((sec, i) => {
+        const h = heights[i % heights.length];
+        const shortName = sec.length > 6 ? sec.substring(0, 5).toUpperCase() : sec.toUpperCase();
+        return `
+            <div class="fx-bar-col">
+                <div class="fx-bar-composite" style="height: 100%;">
+                    <div class="fx-bar-top" style="height: ${h.top}%;"></div>
+                    <div class="fx-bar-bottom" style="height: ${h.bottom}%;"></div>
+                </div>
+                <span class="fx-bar-label" title="${sec}">${shortName}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// Real-Time WebSocket for Live Sync & Interventions
+let candSocket: WebSocket | null = null;
+function initCandidateWebSocket(examId: string): void {
+    if (candSocket && candSocket.readyState === WebSocket.OPEN) return;
+    try {
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}/ws/exam/${encodeURIComponent(examId)}`;
+        candSocket = new WebSocket(wsUrl);
+
+        candSocket.onopen = () => {
+            console.log('[WebSocket] Candidate Dashboard connected to live channel:', examId);
+        };
+
+        candSocket.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                const myReg = currentCandidate?.registration_number || localStorage.getItem('reg_no') || '';
+
+                if (msg.type === 'TERMINAL_RESEATED') {
+                    if (myReg && msg.reg_no === myReg) {
+                        const termBadge = document.getElementById('cand-terminal-badge');
+                        if (termBadge) termBadge.textContent = msg.new_terminal;
+                        showToast(`Terminal migrated to ${msg.new_terminal} by Invigilator.`);
+                    }
+                } else if (msg.type === 'EXAM_UPDATED' || msg.type === 'SECTIONS_UPDATED') {
+                    loadPortalData();
+                    showToast('Examination schedule updated in real-time by Administrator.');
+                } else if (msg.type === 'FORCE_LOCK_TERMINAL' || msg.type === 'CANDIDATE_DISQUALIFIED') {
+                    if (!msg.reg_no || msg.reg_no === 'ALL' || msg.reg_no === myReg) {
+                        loadCandidateProfile();
+                        loadPortalData();
+                        showToast('Notice: Account status updated.');
+                    }
+                } else if (msg.type === 'BROADCAST_ANNOUNCEMENT') {
+                    showToast(`[ANNOUNCEMENT] ${msg.message}`);
+                }
+            } catch (_) {}
+        };
+
+        candSocket.onclose = () => {
+            setTimeout(() => {
+                if (currentExam?.id) initCandidateWebSocket(currentExam.id);
+            }, 5000);
+        };
+    } catch (_) {}
+}
+
+// Load candidate profile from Supabase Cloud DB (/api/v1/auth/me)
+async function loadCandidateProfile(): Promise<void> {
+    try {
+        const res = await fetch('/api/v1/auth/me', { headers: getHeaders() });
+        if (res.ok) {
+            const data = await res.json();
+            currentCandidate = data;
+            
+            const name = data.full_name || localStorage.getItem('candidate_name') || 'Registered Candidate';
+            const regNo = data.registration_number || data.roll_number || localStorage.getItem('reg_no') || '';
+            const initials = name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'CD';
+            const role = (data.role || 'CANDIDATE').toUpperCase();
+
+            // Cache in localStorage to ensure fast reload
+            localStorage.setItem('candidate_name', name);
+            if (regNo) localStorage.setItem('reg_no', regNo);
+            if (data.candidate_id) localStorage.setItem('candidate_id', data.candidate_id);
+            if (data.batch) localStorage.setItem('batch_slot', data.batch);
+
+            if (ui.headerCandName) ui.headerCandName.textContent = name;
+            if (ui.headerCandAvatar) ui.headerCandAvatar.textContent = initials;
+            if (ui.headerCandRole) ui.headerCandRole.textContent = role;
+            if (ui.sidebarCandRegno) ui.sidebarCandRegno.textContent = regNo;
+
+            updateGreeting();
+
+            // Biometric Verification live display
+            const bioVal = document.getElementById('cand-stat-biometric-val');
+            const bioSub = document.getElementById('cand-stat-biometric-sub');
+            if (bioVal) {
+                bioVal.textContent = data.biometric_score ? `Verified ${data.biometric_score}%` : 'Verified';
+            }
+            if (bioSub) {
+                bioSub.textContent = data.disqualified ? 'Invalidated' : 'Active Session';
+                bioSub.style.color = data.disqualified ? '#ef4444' : '#10b981';
+            }
+
+            // Digital Hall Ticket Badges
+            const termBadge = document.getElementById('cand-terminal-badge');
+            if (termBadge) termBadge.textContent = data.assigned_terminal || 'T-A-0001';
+
+            const centerBadge = document.getElementById('cand-center-badge');
+            if (centerBadge) centerBadge.textContent = (data.test_center_name || 'SSE DIGITAL ASSESSMENT HUB • CHENNAI').toUpperCase();
+
+            const shiftBadge = document.getElementById('cand-shift-badge');
+            if (shiftBadge) shiftBadge.textContent = `Shift: Slot ${data.batch || 'A'}`;
+
+            const roomBadge = document.getElementById('cand-room-badge');
+            if (roomBadge) roomBadge.textContent = `Room: ${data.room_number || 'LAB-01'}`;
+
+            const statusBadge = document.getElementById('cand-status-badge');
+            if (statusBadge) {
+                if (data.disqualified) {
+                    statusBadge.textContent = 'DISQUALIFIED';
+                    statusBadge.style.color = '#ef4444';
+                } else if (data.exam_status === 'submitted') {
+                    statusBadge.textContent = 'COMPLETED';
+                } else {
+                    statusBadge.textContent = 'OFFICIALLY SEATED';
+                }
+            }
+
+            renderCandidateSlotsRow(data.batch || 'A');
+        }
+    } catch (e) {
+        console.warn('Failed to fetch authoritative candidate profile from Cloud DB:', e);
+    }
 }
 
 // Load live questions count and attempt history from database
@@ -221,6 +430,41 @@ async function loadPortalData(): Promise<void> {
                         ui.candStatStatus.textContent = "0 Tests Enrolled";
                     }
                     return;
+                }
+
+                currentExam = exams[0];
+                const activeExamId = currentExam.id;
+                localStorage.setItem('active_exam_id', activeExamId);
+
+                // Update primary examination assignment hero card
+                const activeTitleEl = document.getElementById('dash-active-exam-title');
+                if (activeTitleEl) {
+                    activeTitleEl.textContent = currentExam.title || 'Computer Based Test';
+                }
+
+                const btnHeroStart = document.getElementById('btn-hero-start-exam') as HTMLAnchorElement;
+                if (btnHeroStart) {
+                    if (currentExam.candidate_status === 'submitted') {
+                        btnHeroStart.href = `/scorecard.html?exam_id=${encodeURIComponent(activeExamId)}`;
+                        btnHeroStart.innerHTML = '<span>View Scorecard &rarr;</span>';
+                    } else {
+                        btnHeroStart.href = `/instructions.html?exam_id=${encodeURIComponent(activeExamId)}`;
+                        btnHeroStart.innerHTML = '<span>Proceed to Exam &rarr;</span>';
+                    }
+                }
+
+                const examBadge = document.getElementById('cand-exam-badge');
+                if (examBadge) {
+                    examBadge.textContent = currentExam.title || 'SSE CBT 2026';
+                }
+
+                // Render dynamic section distribution bars from active exam
+                const secs = currentExam.sections || currentExam.config?.sections || [];
+                renderDynamicSectionBars(secs);
+
+                const subtitle = document.getElementById('cand-sections-subtitle');
+                if (subtitle && secs.length > 0) {
+                    subtitle.textContent = `${secs.length} examination paper sections configured`;
                 }
 
                 let html = '';
@@ -260,7 +504,7 @@ async function loadPortalData(): Promise<void> {
                                     Duration: ${duration} Mins &bull; ${qCount} Questions
                                 </div>
                             </td>
-                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot ${localStorage.getItem('batch_slot') || ex.slot_batch || 'A'}</span></td>
+                            <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot ${currentCandidate?.batch || localStorage.getItem('batch_slot') || ex.slot_batch || 'A'}</span></td>
                             <td>${statusBadge}</td>
                             <td style="text-align: right; white-space: nowrap;">
                                 ${actionBtn}
@@ -272,12 +516,18 @@ async function loadPortalData(): Promise<void> {
                 if (ui.candStatStatus) {
                     ui.candStatStatus.textContent = `${exams.length} Test${exams.length > 1 ? 's' : ''} Enrolled`;
                 }
+
+                // Initialize real-time WebSocket connection
+                initCandidateWebSocket(activeExamId);
                 return;
             }
         }
     } catch (_) {}
 
-    // If candidate has an active exam id stored, check their official result
+    // Authoritative Cloud DB sync for past exam history and evaluated scores
+    await loadCandidateExamHistory();
+
+    // If candidate has an active exam id stored, check their official result for hero action
     const activeExamId = localStorage.getItem('active_exam_id');
     if (activeExamId) {
         try {
@@ -290,53 +540,101 @@ async function loadPortalData(): Promise<void> {
             const resRes = await fetch(`/api/v1/exams/${encodeURIComponent(activeExamId)}/result?${qParams.toString()}`, { headers: getHeaders() });
             if (resRes.ok) {
                 const resultData = await resRes.json();
-                if (resultData && resultData.score !== '-- / --' && ui.candAttemptsBody) {
-                    if (resultData.disqualified === true || resultData.status === 'disqualified') {
-                        if (ui.candStatStatus) {
-                            ui.candStatStatus.textContent = "Attempt Invalidated (Disqualified)";
-                        }
-                        ui.candAttemptsBody.innerHTML = `
-                            <tr>
-                                <td style="font-family: var(--font-mono); font-weight: 700; color: #dc2626;">${resultData.exam_code || 'EXAM'}</td>
-                                <td><strong>${resultData.exam_title || 'Examination Assessment'}</strong></td>
-                                <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(239, 68, 68, 0.1); color: #dc2626; border-radius: 4px;">Disqualified</span></td>
-                                <td>
-                                    <span class="status-pill status-suspended" style="background: #fee2e2; color: #b91c1c; font-weight: 700;">
-                                        Scores Annulled (Security Infraction)
-                                    </span>
-                                </td>
-                                <td style="text-align: right; white-space: nowrap;">
-                                    <a href="/scorecard.html?exam_id=${encodeURIComponent(activeExamId)}" class="btn btn-outline btn-sm">View Status</a>
-                                </td>
-                            </tr>
-                        `;
-                    } else {
-                        if (ui.candStatStatus) {
-                            ui.candStatStatus.textContent = "Attempt Completed";
-                        }
-
-                        ui.candAttemptsBody.innerHTML = `
-                            <tr>
-                                <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-blue);">${resultData.exam_code || 'EXAM'}</td>
-                                <td><strong>${resultData.exam_title || 'Examination Assessment'}</strong></td>
-                                <td><span style="font-weight: 700; padding: 2px 8px; background: rgba(50, 31, 219, 0.1); border-radius: 4px;">Subject Slot A</span></td>
-                                <td>
-                                    <span class="status-pill status-active" style="background: #ecfdf5; color: #047857;">
-                                        Score: ${resultData.score} ${resultData.percentage != null ? `(${resultData.percentage}%)` : ''}
-                                    </span>
-                                </td>
-                                <td style="text-align: right; white-space: nowrap;">
-                                    <a href="/scorecard.html?exam_id=${encodeURIComponent(activeExamId)}" class="btn btn-outline btn-sm" style="margin-right: 0.35rem;">View Scorecard</a>
-                                    <a href="/instructions.html?exam_id=${encodeURIComponent(activeExamId)}" class="btn btn-primary btn-sm">Retake Exam</a>
-                                </td>
-                            </tr>
-                        `;
+                if (resultData && resultData.score !== '-- / --') {
+                    const btnHeroStart = document.getElementById('btn-hero-start-exam') as HTMLAnchorElement;
+                    if (btnHeroStart) {
+                        btnHeroStart.href = `/scorecard.html?exam_id=${encodeURIComponent(activeExamId)}`;
+                        btnHeroStart.innerHTML = '<span>View Scorecard &rarr;</span>';
+                    }
+                    if (ui.candStatStatus && !resultData.disqualified) {
+                        ui.candStatStatus.textContent = "Attempt Completed";
                     }
                 }
             }
         } catch (_) {}
     }
 }
+
+// Load authoritative past exam history and evaluated scores from Supabase Cloud DB
+async function loadCandidateExamHistory(): Promise<void> {
+    const tbody = document.getElementById('cand-history-table-body');
+    const elTotal = document.getElementById('hist-total-attempts');
+    const elBest = document.getElementById('hist-best-score');
+    const elAvg = document.getElementById('hist-avg-score');
+
+    try {
+        const res = await fetch('/api/v1/candidates/me/attempts', { headers: getHeaders() });
+        if (res.ok) {
+            const data = await res.json();
+            const attempts = data.attempts || [];
+            const summary = data.summary || {};
+
+            if (elTotal) elTotal.textContent = `${attempts.length} Test${attempts.length === 1 ? '' : 's'}`;
+            if (elBest) elBest.textContent = summary.best_score !== undefined && summary.best_score !== null && summary.best_score > 0 ? `${summary.best_score}` : '--';
+            if (elAvg) elAvg.textContent = summary.avg_score !== undefined && summary.avg_score !== null && summary.avg_score > 0 ? `${summary.avg_score}%` : '--';
+
+            if (!tbody) return;
+
+            if (attempts.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--fx-text-muted);">
+                            <div style="font-size: 1.05rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 0.35rem;">No Completed Assessments Yet</div>
+                            <div style="font-size: 0.85rem;">Once you complete and submit an examination, your official evaluated scorecard, question breakdown, and forensic report will appear here automatically from Cloud DB.</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = attempts.map((att: any) => {
+                const isDisq = att.disqualified === true || att.status === 'invalidated';
+                const scoreText = isDisq ? '<span style="color: #ef4444; font-weight: 800;">0 (Annulled)</span>' : `<strong>${att.score}</strong> / ${att.max_possible}`;
+                const pctBadge = isDisq 
+                    ? '<span class="status-pill status-suspended" style="background: #fee2e2; color: #b91c1c;">0.0%</span>'
+                    : `<span class="status-pill" style="background: ${att.percentage >= 60 ? '#dcfce7; color: #15803d;' : '#fef3c7; color: #92400e;'} font-weight: 700;">${att.percentage}%</span>`;
+
+                const statusPill = isDisq
+                    ? '<span class="status-pill status-suspended" style="background: #fee2e2; color: #b91c1c; font-weight: 700;">Disqualified</span>'
+                    : '<span class="status-pill status-active" style="background: #ecfdf5; color: #047857; font-weight: 700;">Evaluated &bull; Cloud Verified</span>';
+
+                const timeStr = att.submitted_at_ist || '--';
+
+                return `
+                    <tr>
+                        <td style="font-family: var(--fx-font-mono); font-weight: 700; color: var(--brand-blue);">${escapeHtml(att.exam_code)}</td>
+                        <td>
+                            <strong>${escapeHtml(att.exam_title)}</strong>
+                            <div style="font-size: 0.72rem; color: var(--fx-text-muted); margin-top: 2px;">
+                                Ref: ${escapeHtml(att.submission_reference)} &bull; Duration: ${escapeHtml(att.time_taken_display)}
+                            </div>
+                        </td>
+                        <td>${scoreText}</td>
+                        <td>${pctBadge}</td>
+                        <td style="font-weight: 700;">${escapeHtml(att.accuracy_display || '--')}</td>
+                        <td style="font-size: 0.75rem; color: var(--fx-text-muted);">${escapeHtml(timeStr)}</td>
+                        <td>${statusPill}</td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <a href="${att.scorecard_url}" class="fx-btn-pill-coral" style="text-decoration: none; padding: 6px 12px; font-size: 0.75rem;">
+                                View Scorecard &rarr;
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #ef4444;">Failed to sync past records from Cloud DB.</td></tr>`;
+            }
+        }
+    } catch (e) {
+        console.error('Error fetching candidate exam history:', e);
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #ef4444;">Network error syncing Cloud DB records.</td></tr>`;
+        }
+    }
+}
+(window as any).loadCandidateExamHistory = loadCandidateExamHistory;
 
 // Admit Card Modal Wiring
 const btnViewAdmit = document.getElementById('btn-view-admit-card');
@@ -476,8 +774,10 @@ if (btnCloseAdmit && modalAdmit) {
 
 initTheme();
 updateGreeting();
+syncMasterClock();
 updateClock();
 setInterval(updateClock, 1000);
+setInterval(syncMasterClock, 15000);
 setInterval(updateGreeting, 60000);
 loadCandidateProfile();
 loadPortalData();

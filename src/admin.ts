@@ -181,14 +181,7 @@ function switchAdminTab(tabName: string): void {
 
     // Special tab triggers
     if (tabName === 'scorecards') {
-        const resultsSelect = document.getElementById('select-results-exam') as HTMLSelectElement;
-        if (resultsSelect && (!resultsSelect.value || resultsSelect.value === '')) {
-            const activeId = getActiveExamId();
-            if (activeId) {
-                resultsSelect.value = activeId;
-                resultsSelect.dispatchEvent(new Event('change'));
-            }
-        }
+        populateResultsExamSelect();
     } else if (tabName === 'candidates') {
         renderCandidateTable();
     } else if (tabName === 'exams') {
@@ -409,14 +402,40 @@ async function loadDashboardSummary(): Promise<void> {
             if (slotsSubhead) slotsSubhead.textContent = `Total ${totalCands.toLocaleString()} Enrolled`;
 
             const breakdown = summary.batch_breakdown || {};
-            const slotA = document.getElementById('slot-a-count');
-            if (slotA) slotA.textContent = `${breakdown.A || 0} Cand.`;
+            const slotsContainer = document.getElementById('dash-slots-row');
+            if (slotsContainer) {
+                const slotsDef = [
+                    { slot: 'A', name: 'Slot A', room: 'LAB-01' },
+                    { slot: 'B', name: 'Slot B', room: 'LAB-02' },
+                    { slot: 'C', name: 'Slot C', room: 'LAB-03' },
+                    { slot: 'D', name: 'Slot D', room: 'LAB-04' }
+                ];
+                slotsContainer.innerHTML = slotsDef.map(s => {
+                    const count = breakdown[s.slot] || 0;
+                    const isLive = summary.active_candidates > 0 && s.slot === 'A';
+                    const statusText = isLive ? `${s.room} • Active Live` : `${s.room} • Standby`;
+                    const statusColor = isLive ? 'color: #10b981; font-weight: 700;' : (count > 0 ? 'color: var(--fx-text-heading);' : 'color: #64748b;');
+                    return `
+                        <div class="fx-slot-item">
+                            <div class="fx-slot-header">
+                                <span>${s.name}</span>
+                                <span>🇮🇳</span>
+                            </div>
+                            <div class="fx-slot-val">${count} Cand.</div>
+                            <div class="fx-slot-status" style="${statusColor}">${statusText}</div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                const slotA = document.getElementById('slot-a-count');
+                if (slotA) slotA.textContent = `${breakdown.A || 0} Cand.`;
 
-            const slotB = document.getElementById('slot-b-count');
-            if (slotB) slotB.textContent = `${breakdown.B || 0} Cand.`;
+                const slotB = document.getElementById('slot-b-count');
+                if (slotB) slotB.textContent = `${breakdown.B || 0} Cand.`;
 
-            const slotC = document.getElementById('slot-c-count');
-            if (slotC) slotC.textContent = `${breakdown.C || 0} Cand.`;
+                const slotC = document.getElementById('slot-c-count');
+                if (slotC) slotC.textContent = `${breakdown.C || 0} Cand.`;
+            }
 
             // Sessions & Invigilation
             const activeSessions = document.getElementById('dash-active-sessions');
@@ -446,14 +465,36 @@ async function loadDashboardSummary(): Promise<void> {
             const lat = ((summary.db_latency_ms || 18) / 1000).toFixed(2);
             if (infraLoad) infraLoad.textContent = `${lat}s / 100% OK`;
 
+            const infraBar = document.getElementById('dash-infra-bar');
+            if (infraBar) infraBar.style.width = '100%';
+
             const terminalNode = document.getElementById('dash-card-terminal-node');
-            if (terminalNode) terminalNode.textContent = summary.active_exam_terminal_prefix || 'NODE C-049';
+            if (terminalNode) terminalNode.textContent = summary.active_exam_terminal_prefix || 'NODE-L4-C';
 
             const terminalVenue = document.getElementById('dash-card-terminal-venue');
-            if (terminalVenue) terminalVenue.textContent = `${summary.active_exam_venue || 'SIMATS ENGINEERING'} • ${summary.active_exam_room || 'LAB-04'}`;
+            if (terminalVenue) terminalVenue.textContent = `${summary.active_exam_venue || 'SIMATS ENGINEERING'} • ${summary.active_exam_room || 'LAB-01'}`;
+
+            const termStatus = document.getElementById('dash-card-terminal-status');
+            if (termStatus) termStatus.textContent = (adminSocket && adminSocket.readyState === WebSocket.OPEN) ? '• Online' : '• Standby';
+
+            const termIp = document.getElementById('dash-card-terminal-ip');
+            if (termIp) termIp.textContent = window.location.hostname || 'Cloud DB Live';
+
+            const termPort = document.getElementById('dash-card-terminal-port');
+            if (termPort) termPort.textContent = `Port ${window.location.port || (window.location.protocol === 'https:' ? '443' : '8000')}`;
 
             const adminBadge = document.getElementById('dash-admin-email-badge');
             if (adminBadge) adminBadge.textContent = localStorage.getItem('admin_email') || 'admin@sse.cbt.in';
+
+            const wsStatus = document.getElementById('dash-ws-status');
+            if (wsStatus) {
+                wsStatus.textContent = `WebSocket Live Stream: ${adminSocket && adminSocket.readyState === WebSocket.OPEN ? 'Connected' : 'Connecting...'}`;
+            }
+
+            const ntpDrift = document.getElementById('dash-ntp-drift');
+            if (ntpDrift) {
+                ntpDrift.textContent = `time.google.com: ${Math.abs(Math.round(ntpOffsetMs))}ms drift`;
+            }
 
             // Middle / legacy stat cards
             const statTotal = document.getElementById('stat-total-cands');
@@ -519,6 +560,10 @@ function updateMasterClockDisplay(): void {
     const badgeEl = document.getElementById('master-clock-badge');
     if (badgeEl) {
         badgeEl.textContent = ntpSynced ? 'time.google.com NTP Synced' : 'IST Server Clock Active';
+    }
+    const ntpDrift = document.getElementById('dash-ntp-drift');
+    if (ntpDrift) {
+        ntpDrift.textContent = `time.google.com: ${Math.abs(Math.round(ntpOffsetMs))}ms drift`;
     }
 }
 
@@ -1976,6 +2021,10 @@ function initAdminWebSocket(): void {
                 dotEl.style.backgroundColor = '#10b981';
                 dotEl.style.boxShadow = '0 0 8px #10b981';
             }
+            const dashWsStatus = document.getElementById('dash-ws-status');
+            if (dashWsStatus) dashWsStatus.textContent = 'WebSocket Live Stream: Connected';
+            const termStatus = document.getElementById('dash-card-terminal-status');
+            if (termStatus) termStatus.textContent = '• Online';
 
             if (adminPingTimer) clearInterval(adminPingTimer);
             adminPingTimer = setInterval(() => {
@@ -2194,6 +2243,10 @@ function initAdminWebSocket(): void {
 
         adminSocket.onclose = () => {
             if (adminPingTimer) clearInterval(adminPingTimer);
+            const dashWsStatus = document.getElementById('dash-ws-status');
+            if (dashWsStatus) dashWsStatus.textContent = 'WebSocket Live Stream: Reconnecting...';
+            const termStatus = document.getElementById('dash-card-terminal-status');
+            if (termStatus) termStatus.textContent = '• Standby';
             setTimeout(initAdminWebSocket, 3000);
         };
 
@@ -4472,7 +4525,7 @@ function populateResultsExamSelect(): void {
     if (!sel) return;
 
     const currentVal = sel.value;
-    sel.innerHTML = '<option value="">-- Select Examination --</option>';
+    sel.innerHTML = '<option value="all">-- All Examinations (Global Records) --</option>';
 
     for (const ex of cachedExams) {
         const opt = document.createElement('option');
@@ -4482,11 +4535,12 @@ function populateResultsExamSelect(): void {
         sel.appendChild(opt);
     }
 
-    if (currentVal && cachedExams.some(e => e.id === currentVal)) {
+    if (currentVal && (currentVal === 'all' || cachedExams.some(e => e.id === currentVal))) {
         sel.value = currentVal;
-    } else if (cachedExams.length > 0) {
-        sel.value = cachedExams[0].id;
-        loadExamResults(cachedExams[0].id, currentResultsViewMode);
+        loadExamResults(currentVal, currentResultsViewMode);
+    } else {
+        sel.value = 'all';
+        loadExamResults('all', currentResultsViewMode);
     }
 }
 
@@ -4521,11 +4575,21 @@ async function loadExamResults(examId: string, viewMode: 'normal' | 'advanced' =
             const rmbTotal = document.getElementById('rmb-total-m');
 
             const ex = cachedExams.find(e => e.id === examId);
-            if (rmbTitle) rmbTitle.textContent = ex ? `${ex.title}` : `Exam: ${examId}`;
-            if (rmbQ) rmbQ.textContent = `Questions: ${ms.total_questions ?? '--'}`;
-            if (rmbCorr) rmbCorr.textContent = `Per Question: +${ms.correct_marks ?? 4}`;
+            if (rmbTitle) {
+                if (examId === 'all') {
+                    rmbTitle.textContent = 'All Examinations (Global Records)';
+                } else {
+                    rmbTitle.textContent = ex ? `${ex.title}` : `Exam: ${examId}`;
+                }
+            }
+            if (rmbQ) rmbQ.textContent = examId === 'all' ? `Active Tests: ${cachedExams.length}` : `Questions: ${ms.total_questions ?? '--'}`;
+            if (rmbCorr) rmbCorr.textContent = examId === 'all' ? `Scheme: Multi-Exam` : `Per Question: +${ms.correct_marks ?? 4}`;
             if (rmbNeg) {
-                if (ms.negative_marking_enabled === false) {
+                if (examId === 'all') {
+                    rmbNeg.textContent = `Cloud DB: Live Sync`;
+                    rmbNeg.style.background = 'rgba(16, 185, 129, 0.12)';
+                    rmbNeg.style.color = '#047857';
+                } else if (ms.negative_marking_enabled === false) {
                     rmbNeg.textContent = `Penalty: DISABLED (0)`;
                     rmbNeg.style.background = 'rgba(100, 116, 139, 0.15)';
                     rmbNeg.style.color = '#475569';
@@ -4535,7 +4599,7 @@ async function loadExamResults(examId: string, viewMode: 'normal' | 'advanced' =
                     rmbNeg.style.color = '#dc2626';
                 }
             }
-            if (rmbTotal) rmbTotal.textContent = `Total Marks: ${ms.total_marks ?? '--'}`;
+            if (rmbTotal) rmbTotal.textContent = examId === 'all' ? `Total Records: ${currentResultsList.length}` : `Total Marks: ${ms.total_marks ?? '--'}`;
 
             // Update Analytics KPI Summary Cards
             const an = data.analytics || {};
@@ -4544,10 +4608,10 @@ async function loadExamResults(examId: string, viewMode: 'normal' | 'advanced' =
             const elAvg = document.getElementById('kpi-avg-score');
             const elPass = document.getElementById('kpi-pass-rate');
 
-            if (elTotalCands) elTotalCands.textContent = String(an.total_candidates_appeared || currentResultsList.length);
-            if (elHigh) elHigh.textContent = `${an.highest_score || 0} / ${ms.total_marks || 0}`;
+            if (elTotalCands) elTotalCands.textContent = String(an.total_candidates_appeared || an.total_appeared || currentResultsList.length);
+            if (elHigh) elHigh.textContent = examId === 'all' ? `${an.highest_score || 0} pts` : `${an.highest_score || 0} / ${ms.total_marks || 0}`;
             if (elAvg) elAvg.textContent = String(an.average_score || 0);
-            if (elPass) elPass.textContent = `${an.pass_rate || 0}%`;
+            if (elPass) elPass.textContent = `${an.pass_rate || an.pass_rate_pct || 0}%`;
 
             renderResultsTable();
         } else {
@@ -4649,9 +4713,10 @@ function renderResultsTable(): void {
             ? '<span style="color: #dc2626; font-weight: 800;">DISQ</span>'
             : (r.rank != null ? (typeof r.rank === 'number' ? (r.rank === 1 ? '🥇 Rank 1' : r.rank === 2 ? '🥈 Rank 2' : r.rank === 3 ? '🥉 Rank 3' : `#${r.rank}`) : `#${r.rank}`) : `#${idx + 1}`);
 
+        const rowMax = r.max_marks || maxScore;
         const scoreDisplay = isDisq
             ? '<span style="color: #dc2626; font-weight: 800;">0.0 (NULLIFIED)</span>'
-            : `<span style="font-weight: 800; color: #047857; font-size: 0.95rem;">${r.raw_score ?? 0}</span> <span style="font-size: 0.75rem; color: var(--text-muted);">/ ${maxScore}</span>`;
+            : `<span style="font-weight: 800; color: #047857; font-size: 0.95rem;">${r.raw_score ?? r.score ?? 0}</span> <span style="font-size: 0.75rem; color: var(--text-muted);">/ ${rowMax}</span>`;
 
         const pctDisplay = isDisq ? '0.0%' : (r.percentage != null ? `${r.percentage}%` : 'N/A');
         const accDisplay = isDisq ? '0.0%' : (r.accuracy != null ? `${r.accuracy}%` : 'N/A');
@@ -4665,6 +4730,8 @@ function renderResultsTable(): void {
                     : `<span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">COMPLETED</span>`));
 
         const remarksSnippet = r.remarks ? `<div style="font-size: 0.7rem; color: #4338ca; margin-top: 2px;">💬 ${escapeHtml(r.remarks)}</div>` : '';
+        const examBadge = r.exam_title ? `<div style="font-size: 0.72rem; color: #1e3a8a; font-weight: 700; margin-top: 2px;">📝 ${escapeHtml(r.exam_title)} ${r.exam_code ? `(${escapeHtml(r.exam_code)})` : ''}</div>` : '';
+        const rowEid = r.exam_id || currentResultsExamId;
 
         if (isAdv) {
             rowsHtml += `
@@ -4673,6 +4740,7 @@ function renderResultsTable(): void {
                 <td>
                   <div style="font-weight: 700; color: var(--text-heading);">${escapeHtml(r.candidate_name)}</div>
                   <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted);">${escapeHtml(r.registration_number)} &bull; ${escapeHtml(r.terminal_node || 'Term')}</div>
+                  ${examBadge}
                   ${remarksSnippet}
                 </td>
                 <td style="font-weight: 700; color: #047857;">+${r.correct_count ?? 0}</td>
@@ -4685,9 +4753,9 @@ function renderResultsTable(): void {
                 <td>${statusBadge}</td>
                 <td style="text-align: right;">
                   <div style="display: inline-flex; gap: 4px;">
-                    <button type="button" class="btn btn-outline btn-sm btn-inspect-dossier" data-cid="${r.candidate_id}" title="Inspect Itemized Dossier" style="padding: 3px 7px; font-size: 0.72rem;">🔍 Dossier</button>
-                    <button type="button" class="btn btn-outline btn-sm btn-edit-result" data-cid="${r.candidate_id}" title="Edit Remarks &amp; Override" style="padding: 3px 7px; font-size: 0.72rem;">✏️ Edit</button>
-                    <button type="button" class="btn btn-outline btn-sm btn-delete-result" data-cid="${r.candidate_id}" data-name="${escapeHtml(r.candidate_name)}" title="Invalidate / Purge Attempt" style="padding: 3px 7px; font-size: 0.72rem; color: #ef4444; border-color: #fca5a5;">🗑️ Invalidate</button>
+                    <button type="button" class="btn btn-outline btn-sm btn-inspect-dossier" data-cid="${r.candidate_id}" data-eid="${rowEid}" title="Inspect Itemized Dossier" style="padding: 3px 7px; font-size: 0.72rem;">🔍 Dossier</button>
+                    <button type="button" class="btn btn-outline btn-sm btn-edit-result" data-cid="${r.candidate_id}" data-eid="${rowEid}" title="Edit Remarks &amp; Override" style="padding: 3px 7px; font-size: 0.72rem;">✏️ Edit</button>
+                    <button type="button" class="btn btn-outline btn-sm btn-delete-result" data-cid="${r.candidate_id}" data-eid="${rowEid}" data-name="${escapeHtml(r.candidate_name)}" title="Invalidate / Purge Attempt" style="padding: 3px 7px; font-size: 0.72rem; color: #ef4444; border-color: #fca5a5;">🗑️ Invalidate</button>
                   </div>
                 </td>
               </tr>
@@ -4699,6 +4767,7 @@ function renderResultsTable(): void {
                 <td>
                   <div style="font-weight: 700; color: var(--text-heading);">${escapeHtml(r.candidate_name)}</div>
                   <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted);">${escapeHtml(r.registration_number)} &bull; ${escapeHtml(r.terminal_node || 'Term')}</div>
+                  ${examBadge}
                   ${remarksSnippet}
                 </td>
                 <td style="font-size: 0.78rem; color: var(--text-muted);">${escapeHtml(r.category || 'GEN')} &bull; ${escapeHtml(r.gender || 'M')}</td>
@@ -4708,9 +4777,9 @@ function renderResultsTable(): void {
                 <td>${statusBadge}</td>
                 <td style="text-align: right;">
                   <div style="display: inline-flex; gap: 4px;">
-                    <button type="button" class="btn btn-outline btn-sm btn-inspect-dossier" data-cid="${r.candidate_id}" title="Inspect Itemized Dossier" style="padding: 3px 7px; font-size: 0.72rem;">🔍 Dossier</button>
-                    <button type="button" class="btn btn-outline btn-sm btn-edit-result" data-cid="${r.candidate_id}" title="Edit Remarks &amp; Override" style="padding: 3px 7px; font-size: 0.72rem;">✏️ Edit</button>
-                    <button type="button" class="btn btn-outline btn-sm btn-delete-result" data-cid="${r.candidate_id}" data-name="${escapeHtml(r.candidate_name)}" title="Invalidate / Purge Attempt" style="padding: 3px 7px; font-size: 0.72rem; color: #ef4444; border-color: #fca5a5;">🗑️ Invalidate</button>
+                    <button type="button" class="btn btn-outline btn-sm btn-inspect-dossier" data-cid="${r.candidate_id}" data-eid="${rowEid}" title="Inspect Itemized Dossier" style="padding: 3px 7px; font-size: 0.72rem;">🔍 Dossier</button>
+                    <button type="button" class="btn btn-outline btn-sm btn-edit-result" data-cid="${r.candidate_id}" data-eid="${rowEid}" title="Edit Remarks &amp; Override" style="padding: 3px 7px; font-size: 0.72rem;">✏️ Edit</button>
+                    <button type="button" class="btn btn-outline btn-sm btn-delete-result" data-cid="${r.candidate_id}" data-eid="${rowEid}" data-name="${escapeHtml(r.candidate_name)}" title="Invalidate / Purge Attempt" style="padding: 3px 7px; font-size: 0.72rem; color: #ef4444; border-color: #fca5a5;">🗑️ Invalidate</button>
                   </div>
                 </td>
               </tr>
@@ -4724,8 +4793,9 @@ function renderResultsTable(): void {
     tbody.querySelectorAll('.btn-inspect-dossier').forEach(btn => {
         btn.addEventListener('click', () => {
             const cid = (btn as HTMLElement).dataset.cid;
-            if (cid && currentResultsExamId) {
-                openResultDossierModal(currentResultsExamId, cid);
+            const eid = (btn as HTMLElement).dataset.eid || currentResultsExamId;
+            if (cid && eid) {
+                openResultDossierModal(eid, cid);
             }
         });
     });
@@ -4733,10 +4803,11 @@ function renderResultsTable(): void {
     tbody.querySelectorAll('.btn-edit-result').forEach(btn => {
         btn.addEventListener('click', () => {
             const cid = (btn as HTMLElement).dataset.cid;
-            if (cid && currentResultsExamId) {
+            const eid = (btn as HTMLElement).dataset.eid || currentResultsExamId;
+            if (cid && eid) {
                 const candResult = currentResultsList.find(c => String(c.candidate_id) === String(cid));
                 if (candResult) {
-                    openEditResultModal(currentResultsExamId, candResult);
+                    openEditResultModal(eid, candResult);
                 }
             }
         });
@@ -4745,9 +4816,10 @@ function renderResultsTable(): void {
     tbody.querySelectorAll('.btn-delete-result').forEach(btn => {
         btn.addEventListener('click', () => {
             const cid = (btn as HTMLElement).dataset.cid;
+            const eid = (btn as HTMLElement).dataset.eid || currentResultsExamId;
             const name = (btn as HTMLElement).dataset.name || 'Candidate';
-            if (cid && currentResultsExamId) {
-                deleteCandidateResult(currentResultsExamId, cid, name);
+            if (cid && eid) {
+                deleteCandidateResult(eid, cid, name);
             }
         });
     });
@@ -4952,11 +5024,8 @@ function initResultsManagementListeners(): void {
     const btnRecalc = document.getElementById('btn-recalc-results-top');
     if (btnRecalc) {
         btnRecalc.addEventListener('click', () => {
-            if (currentResultsExamId) {
-                recalculateExamResults(currentResultsExamId);
-            } else {
-                showToast('Please select an exam first', true);
-            }
+            const targetExam = currentResultsExamId || 'all';
+            recalculateExamResults(targetExam);
         });
     }
 
@@ -4964,33 +5033,24 @@ function initResultsManagementListeners(): void {
     const btnCsv = document.getElementById('btn-export-results-csv-top');
     if (btnCsv) {
         btnCsv.addEventListener('click', () => {
-            if (currentResultsExamId) {
-                window.location.href = `/api/v1/exams/${encodeURIComponent(currentResultsExamId)}/results-export?format=csv`;
-            } else {
-                showToast('Please select an exam first', true);
-            }
+            const targetExam = currentResultsExamId || 'all';
+            window.location.href = `/api/v1/exams/${encodeURIComponent(targetExam)}/results-export?format=csv`;
         });
     }
 
     const btnXls = document.getElementById('btn-export-results-xls-top');
     if (btnXls) {
         btnXls.addEventListener('click', () => {
-            if (currentResultsExamId) {
-                window.location.href = `/api/v1/exams/${encodeURIComponent(currentResultsExamId)}/results-export?format=xlsx`;
-            } else {
-                showToast('Please select an exam first', true);
-            }
+            const targetExam = currentResultsExamId || 'all';
+            window.location.href = `/api/v1/exams/${encodeURIComponent(targetExam)}/results-export?format=xlsx`;
         });
     }
 
     const btnResp = document.getElementById('btn-export-results-resp-top');
     if (btnResp) {
         btnResp.addEventListener('click', () => {
-            if (currentResultsExamId) {
-                window.location.href = `/api/v1/exams/${encodeURIComponent(currentResultsExamId)}/export/responses`;
-            } else {
-                showToast('Please select an exam first', true);
-            }
+            const targetExam = currentResultsExamId || 'all';
+            window.location.href = `/api/v1/exams/${encodeURIComponent(targetExam)}/export/responses`;
         });
     }
 

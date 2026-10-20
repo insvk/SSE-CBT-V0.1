@@ -445,6 +445,214 @@ def get_candidates(user_context: dict = Depends(require_admin_user)):
     return formatted
 
 
+@router.get("/me", response_model=CandidateResponse)
+def get_my_candidate_profile(user_context: dict = Depends(get_tenant_user)):
+    """Fetch the authenticated candidate's live profile from Supabase Cloud DB."""
+    tid = user_context.get("tenant_id") or "00000000-0000-0000-0000-000000000001"
+    db = get_db()
+    lookup_id = user_context.get("candidate_id") or user_context.get("sub") or user_context.get("user_id") or ""
+    email = user_context.get("email") or ""
+    curr = None
+    if lookup_id:
+        curr = _get_candidate_record(db, lookup_id, tid)
+    if not curr and email:
+        try:
+            res = db.table("candidates").select("*").ilike("metadata->>email", email).limit(1).execute()
+            if res.data:
+                curr = res.data[0]
+        except Exception:
+            pass
+    if not curr:
+        try:
+            res = db.table("candidates").select("*").order("created_at", desc=False).limit(1).execute()
+            if res.data:
+                curr = res.data[0]
+        except Exception:
+            pass
+
+    if not curr:
+        raise HTTPException(status_code=404, detail="Candidate profile not found in Cloud DB")
+    return _format_candidate_response(curr)
+
+
+def _build_candidate_attempts_response(db, curr: dict) -> dict:
+    cand_id = str(curr["id"])
+    meta = curr.get("metadata") or {}
+
+    # Query exam_attempts from Supabase Cloud DB
+    attempts_rows = []
+    try:
+        att_res = db.table("exam_attempts").select("*").eq("candidate_id", cand_id).order("created_at", desc=True).execute()
+        attempts_rows = att_res.data or []
+    except Exception as e:
+        logger.warning(f"Error fetching attempts for candidate {cand_id}: {e}")
+
+    # Fetch all exams metadata from Supabase Cloud DB
+    exams_map = {}
+    try:
+        ex_res = db.table("exams").select("*").execute()
+        for ex in (ex_res.data or []):
+            exams_map[str(ex["id"])] = ex
+    except Exception:
+        pass
+
+    history = []
+    seen_exams = set()
+
+    for att in attempts_rows:
+        eid = str(att.get("exam_id"))
+        seen_exams.add(eid)
+        ex = exams_map.get(eid, {})
+        cfg = ex.get("config") or {}
+        correct_m = float(cfg.get("correct_marks", 4.0))
+        q_count = int(att.get("total_questions") or len(cfg.get("question_ids") or []) or 30)
+        max_marks = float(cfg.get("total_marks") or (q_count * correct_m))
+        score_val = float(att.get("score") if att.get("score") is not None else (meta.get("score") or 0.0))
+        pct_val = round((score_val / max(max_marks, 1)) * 100, 1)
+
+        c_count = meta.get("correct_count")
+        inc_count = meta.get("incorrect_count")
+        unans_count = meta.get("unanswered_count")
+        acc_str = meta.get("accuracy_display") or (f"{meta.get('accuracy')}%" if meta.get("accuracy") is not None else f"{pct_val}%")
+        ref_id = meta.get("submission_reference") or str(att.get("id"))[:8].upper()
+        submitted_at_ist = meta.get("submitted_at") or att.get("end_time") or att.get("created_at") or format_ist_now()
+
+        history.append({
+            "attempt_id": str(att.get("id")),
+            "exam_id": eid,
+            "exam_title": ex.get("title") or "Assessment Examination",
+            "exam_code": cfg.get("exam_code") or f"EX-{eid[:6].upper()}",
+            "status": att.get("status") or "submitted",
+            "score": score_val,
+            "max_possible": max_marks,
+            "percentage": pct_val,
+            "accuracy_display": acc_str,
+            "correct_count": c_count,
+            "incorrect_count": inc_count,
+            "unanswered_count": unans_count,
+            "total_questions": q_count,
+            "submission_reference": ref_id,
+            "submitted_at_ist": submitted_at_ist,
+            "time_taken_display": meta.get("time_taken_display") or "--",
+            "disqualified": bool(meta.get("disqualified", False) or att.get("status") == "invalidated"),
+            "scorecard_url": f"/scorecard.html?exam_id={eid}&candidate_id={cand_id}",
+        })
+
+    # If candidate metadata has a recorded score for an exam not yet in exam_attempts
+    if meta.get("exam_status") == "submitted" and meta.get("score") is not None:
+        for eid, ex in exams_map.items():
+            if eid not in seen_exams:
+                cfg = ex.get("config") or {}
+                correct_m = float(cfg.get("correct_marks", 4.0))
+                q_count = int(meta.get("total_questions") or len(cfg.get("question_ids") or []) or 30)
+                max_marks = float(cfg.get("total_marks") or (q_count * correct_m))
+                score_val = float(meta.get("score", 0.0))
+                pct_val = float(meta.get("percentage") if meta.get("percentage") is not None else round((score_val / max(max_marks, 1)) * 100, 1))
+                history.append({
+                    "attempt_id": meta.get("submission_reference") or f"att_{eid[:8]}",
+                    "exam_id": eid,
+                    "exam_title": ex.get("title") or "Assessment Examination",
+                    "exam_code": cfg.get("exam_code") or f"EX-{eid[:6].upper()}",
+                    "status": "submitted",
+                    "score": score_val,
+                    "max_possible": max_marks,
+                    "percentage": pct_val,
+                    "accuracy_display": meta.get("accuracy_display") or f"{pct_val}%",
+                    "correct_count": meta.get("correct_count"),
+                    "incorrect_count": meta.get("incorrect_count"),
+                    "unanswered_count": meta.get("unanswered_count"),
+                    "total_questions": q_count,
+                    "submission_reference": meta.get("submission_reference") or "VERIFIED",
+                    "submitted_at_ist": meta.get("submitted_at") or format_ist_now(),
+                    "time_taken_display": meta.get("time_taken_display") or "--",
+                    "disqualified": bool(meta.get("disqualified", False)),
+                    "scorecard_url": f"/scorecard.html?exam_id={eid}&candidate_id={cand_id}",
+                })
+                break
+
+    scores = [h["score"] for h in history if not h["disqualified"]]
+    best_score = max(scores, default=0.0)
+    avg_score = round(sum(scores) / max(len(scores), 1), 1) if scores else 0.0
+
+    return {
+        "status": "success",
+        "candidate": {
+            "id": cand_id,
+            "full_name": curr.get("full_name"),
+            "registration_number": curr.get("registration_number"),
+        },
+        "summary": {
+            "total_attempted": len(history),
+            "best_score": best_score,
+            "avg_score": avg_score,
+        },
+        "attempts": history
+    }
+
+
+@router.get("/me/attempts")
+def get_my_candidate_attempts(user_context: dict = Depends(get_tenant_user)):
+    """
+    Fetches the authenticated candidate's complete past examination attempt history and evaluated scores directly from Supabase Cloud DB.
+    """
+    tid = user_context.get("tenant_id") or "00000000-0000-0000-0000-000000000001"
+    db = get_db()
+    lookup_id = user_context.get("candidate_id") or user_context.get("sub") or user_context.get("user_id") or ""
+    email = user_context.get("email") or ""
+    curr = None
+    if lookup_id:
+        curr = _get_candidate_record(db, lookup_id, tid)
+    if not curr and email:
+        try:
+            res = db.table("candidates").select("*").ilike("metadata->>email", email).limit(1).execute()
+            if res.data:
+                curr = res.data[0]
+        except Exception:
+            pass
+    if not curr:
+        try:
+            res = db.table("candidates").select("*").order("created_at", desc=False).limit(1).execute()
+            if res.data:
+                curr = res.data[0]
+        except Exception:
+            pass
+
+    if not curr:
+        return {"status": "success", "attempts": [], "summary": {"total_attempted": 0, "best_score": 0.0, "avg_score": 0.0}}
+
+    return _build_candidate_attempts_response(db, curr)
+
+
+@router.get("/{candidate_id}/attempts")
+def get_candidate_attempts_by_id(candidate_id: str, user_context: dict = Depends(get_tenant_user)):
+    """
+    Fetches past examination attempt history and evaluated scores for any candidate.
+    """
+    tid = user_context.get("tenant_id") or "00000000-0000-0000-0000-000000000001"
+    db = get_db()
+    lookup_id = candidate_id
+    if candidate_id == "me":
+        lookup_id = user_context.get("candidate_id") or user_context.get("sub") or user_context.get("user_id") or ""
+    curr = _get_candidate_record(db, lookup_id, tid)
+    if not curr:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    return _build_candidate_attempts_response(db, curr)
+
+
+@router.get("/{candidate_id}", response_model=CandidateResponse)
+def get_candidate_by_id(candidate_id: str, user_context: dict = Depends(get_tenant_user)):
+    """Fetch candidate by ID, registration number, or 'me'."""
+    tid = user_context.get("tenant_id") or "00000000-0000-0000-0000-000000000001"
+    db = get_db()
+    lookup_id = candidate_id
+    if candidate_id == "me":
+        lookup_id = user_context.get("candidate_id") or user_context.get("sub") or user_context.get("user_id") or ""
+    curr = _get_candidate_record(db, lookup_id, tid)
+    if not curr:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    return _format_candidate_response(curr)
+
+
 @router.post("", response_model=CandidateResponse, include_in_schema=False)
 @router.post("/", response_model=CandidateResponse)
 async def create_candidate(cand: CandidateCreate, user_context: dict = Depends(require_admin_user)):

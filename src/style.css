@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
   /* Brand Palettes */
@@ -43,7 +43,7 @@
   --text-light: #94a3b8;
   --text-inverse: #ffffff;
 
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
   /* Elevation & Radii */
@@ -990,10 +990,11 @@ body {
 .modal-content {
   background: white;
   border-radius: var(--radius-lg);
-  padding: 2.25rem;
+  padding: 2rem;
   box-shadow: var(--shadow-lg);
-  width: 90%;
-  max-width: 520px;
+  width: min(94vw, 560px);
+  max-height: 90dvh;
+  overflow-y: auto;
   animation: modal-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1005,18 +1006,21 @@ body {
 /* Toast */
 #toast {
   visibility: hidden;
-  min-width: 300px;
+  min-width: 220px;
+  max-width: min(90vw, 380px);
+  width: fit-content;
   background-color: #0f172a;
   color: #fff;
   text-align: center;
   border-radius: var(--radius);
-  padding: 14px 24px;
+  padding: 12px 20px;
   position: fixed;
   z-index: 2000;
   left: 50%;
   bottom: 30px;
   transform: translateX(-50%);
   font-weight: 600;
+  font-size: 0.85rem;
   box-shadow: var(--shadow-lg);
 }
 #toast.show {
@@ -1414,43 +1418,47 @@ body {
   }
 
   .exam-header {
-    flex-direction: column;
-    align-items: stretch;
-    padding: var(--space-2) var(--space-3);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
     gap: 6px;
     min-height: auto;
     background: #ffffff;
     border-bottom: 1px solid var(--border-color);
   }
 
-  /* Row 1: Brand + Dynamic Workstation Node + Countdown Timer + Palette */
+  /* Row 1 Left: Brand */
   .exam-header-brand {
+    order: 1;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 6px;
   }
 
   .exam-title-text {
     font-size: 0.85rem;
     font-weight: 800;
-    max-width: 48vw;
+    max-width: 44vw;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  /* Telemetry row on mobile: Node Badge + Timer + Palette */
+  /* Row 1 Right: Node Badge + Timer + Palette Drawer Button */
   .exam-header-telemetry {
+    order: 2;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 6px;
-    flex-wrap: nowrap;
+    flex: 0 0 auto;
   }
 
-  /* Workstation Node Badge: PROMINENTLY VISIBLE ON MOBILE AT TOP */
+  /* Workstation Node Badge: ALWAYS PROMINENT ON MOBILE */
   .terminal-badge-chip {
     display: inline-flex !important;
     align-items: center;
@@ -1471,7 +1479,7 @@ body {
 
   /* Countdown Timer Badge */
   .countdown-widget {
-    padding: 2px 6px;
+    padding: 2px 4px;
   }
   .countdown-label {
     display: none;
@@ -1482,13 +1490,20 @@ body {
     padding: 3px 8px;
   }
 
-  /* Row 2: Secondary Quick Toolbar (Calculator, Rough Sheet, Font, Sync) */
+  .btn-palette-toggle-header {
+    display: inline-flex !important;
+    padding: 3px 8px;
+    font-size: 0.75rem;
+  }
+
+  /* Row 2: Secondary Quick Tools Strip (Calculator, Rough Sheet, Font, Paper, Inst, Exit) */
   .exam-header-tools {
+    order: 3;
     display: flex;
     align-items: center;
     gap: 6px;
     width: 100%;
-    max-width: 100%;
+    flex: 1 0 100%;
     overflow-x: auto;
     padding: 4px 0 2px 0;
     border-top: 1px solid #f1f5f9;
@@ -1504,7 +1519,7 @@ body {
     white-space: nowrap;
   }
 
-  /* Candidate Profile chip folds on small mobile to give Node room */
+  /* Candidate Profile chip & NTP clock folded on mobile to optimize space */
   .candidate-profile-chip {
     display: none;
   }
@@ -1588,7 +1603,7 @@ body {
 
   /* Touch-Friendly Option Cards */
   .option-card-row {
-    min-height: 52px;
+    min-height: 48px;
     padding: 0.75rem 0.85rem;
     margin-bottom: 8px;
     border-radius: 8px;
@@ -1618,9 +1633,10 @@ body {
 
   /* Compact Thumb-Accessible Touch Footer */
   .exam-footer {
+    display: flex;
     flex-direction: column;
-    padding: var(--space-2) var(--space-3);
-    padding-bottom: max(var(--space-2), env(safe-area-inset-bottom, 8px));
+    padding: 6px 10px;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 8px));
     gap: 6px;
     min-height: auto;
     background: #ffffff;
@@ -1642,10 +1658,12 @@ body {
   .footer-buttons-row-1 button {
     flex: 1;
     min-height: 44px;
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     font-weight: 700;
     padding: 0 4px;
     text-align: center;
+    border-radius: 6px;
+    touch-action: manipulation;
   }
 
   .footer-buttons-row-2 {
@@ -1658,6 +1676,8 @@ body {
     min-height: 44px;
     font-size: 0.82rem;
     font-weight: 700;
+    border-radius: 6px;
+    touch-action: manipulation;
   }
 
   .footer-right-group {
@@ -1673,6 +1693,7 @@ body {
     padding: 0 4px;
     text-align: center;
     border-radius: 6px;
+    touch-action: manipulation;
   }
   .footer-right-group #btn-submit-exam {
     flex: 1.25;
@@ -1683,12 +1704,19 @@ body {
   /* Floating Modals Centered on Mobile */
   .calc-window,
   .scratchpad-window {
-    width: min(94vw, 360px) !important;
+    width: min(94vw, 380px) !important;
     left: 50% !important;
     right: auto !important;
-    top: 8% !important;
+    top: 5% !important;
     transform: translateX(-50%) !important;
-    max-height: 84vh !important;
+    max-height: 90vh !important;
+  }
+
+  .modal-content {
+    padding: 1.25rem 1rem !important;
+    width: min(94vw, 560px) !important;
+    max-height: 90dvh !important;
+    overflow-y: auto !important;
   }
 
   /* Palette Grid Touch Size */
@@ -1706,12 +1734,12 @@ body {
 
 /* ------------------------------------------------------------
    3. SMALL MOBILE SCREENS (Max-Width: 479px)
-   (iPhone SE, older Galaxy A, compact Android phones)
+   (iPhone SE, Galaxy A, compact Android phones)
    ------------------------------------------------------------ */
 @media (max-width: 479px) {
   .exam-title-text {
-    font-size: 0.78rem;
-    max-width: 40vw;
+    font-size: 0.76rem;
+    max-width: 38vw;
   }
 
   .terminal-badge-chip {
@@ -1733,22 +1761,50 @@ body {
 
   .choose-question-grid {
     grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
   }
 
   .footer-buttons-row-1 button {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     padding: 0 2px;
   }
   .footer-buttons-row-2 .btn-nav-split {
     font-size: 0.76rem;
   }
   .footer-right-group button {
-    font-size: 0.72rem;
+    font-size: 0.74rem;
   }
 }
 
 /* ------------------------------------------------------------
-   4. MOBILE LANDSCAPE ORIENTATION (Max-Height: 500px)
+   4. ULTRA-COMPACT MOBILE SCREENS (Max-Width: 360px)
+   (Fold outer screens, tiny Androids)
+   ------------------------------------------------------------ */
+@media (max-width: 360px) {
+  .exam-title-text {
+    font-size: 0.7rem;
+    max-width: 32vw;
+  }
+  .choose-question-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+  .palette-number-btn,
+  .btn-palette-num {
+    min-height: 36px;
+    font-size: 0.8rem;
+  }
+  .footer-buttons-row-1 button,
+  .footer-buttons-row-2 .btn-nav-split,
+  .footer-right-group button {
+    font-size: 0.68rem;
+    padding: 0 2px;
+    min-height: 42px;
+  }
+}
+
+/* ------------------------------------------------------------
+   5. MOBILE LANDSCAPE ORIENTATION (Max-Height: 500px)
    ------------------------------------------------------------ */
 @media (max-height: 500px) and (orientation: landscape) {
   .exam-header {

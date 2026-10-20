@@ -448,7 +448,7 @@
       }
 
       /* Mobile & Cross-Platform Responsive Rules */
-      @media (max-width: 960px) {
+      @media (max-width: 1024px) {
         .split-layout {
           flex-direction: column;
           width: 100vw;
@@ -467,7 +467,7 @@
           flex-direction: column;
           justify-content: center;
           align-items: center;
-          padding: 2.25rem 1.5rem;
+          padding: 2.5rem 1.75rem;
           padding-top: max(2rem, env(safe-area-inset-top, 24px));
           padding-bottom: max(2rem, env(safe-area-inset-bottom, 24px));
           box-sizing: border-box;
@@ -479,10 +479,10 @@
           margin: auto;
         }
         .saveetha-brand-img {
-          max-width: 240px;
+          max-width: 250px;
         }
         .welcome-title {
-          font-size: 1.65rem;
+          font-size: 1.7rem;
           line-height: 1.25;
           margin-top: 0.75rem;
           margin-bottom: 0.25rem;
@@ -524,8 +524,9 @@
           justify-content: center;
         }
         .modal-card {
-          width: 94vw;
-          max-width: 440px;
+          width: min(94vw, 440px);
+          max-height: 90dvh;
+          overflow-y: auto;
           margin: 0 auto;
         }
       }
@@ -540,7 +541,7 @@
           max-width: 100%;
         }
         .saveetha-brand-img {
-          max-width: 210px;
+          max-width: min(220px, 75vw);
         }
         .welcome-title {
           font-size: 1.45rem;
@@ -561,6 +562,26 @@
         }
         .btn-google {
           margin-bottom: 1.25rem;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .left-pane {
+          padding: 1rem 0.75rem;
+        }
+        .welcome-title {
+          font-size: 1.3rem;
+        }
+        .options-row {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+        .saveetha-brand-img {
+          max-width: 180px;
+        }
+        .btn-login, .btn-google {
+          font-size: 0.85rem;
         }
       }
     </style>

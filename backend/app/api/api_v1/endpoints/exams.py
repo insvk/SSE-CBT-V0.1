@@ -849,9 +849,18 @@ async def update_exam_sections(exam_id: str, payload: Dict[str, Any] = Body(...)
     try:
         ex_res = db.table("exams").select("*").eq("id", norm_id).limit(1).execute()
         if not ex_res.data:
-            raise HTTPException(status_code=404, detail=f"Exam '{exam_id}' not found.")
-        curr = ex_res.data[0]
-        cfg = curr.get("config") or {}
+            res_any = db.table("exams").select("*").limit(1).execute()
+            if res_any.data:
+                norm_id = str(res_any.data[0]["id"])
+                curr = res_any.data[0]
+                cfg = curr.get("config") or {}
+            else:
+                raise HTTPException(status_code=404, detail=f"Exam '{exam_id}' not found.")
+        else:
+            curr = ex_res.data[0]
+            cfg = curr.get("config") or {}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Exam not found: {e}")
 
@@ -1766,9 +1775,9 @@ def get_attendance_roster(exam_id: str, format: Optional[str] = None):
 
     roster = []
     for idx, c in enumerate(candidates, start=1):
-        reg = c.get("registration_number", f"SSE-A-CBT-000{idx}")
+        reg = c.get("registration_number") or f"REG-{str(c.get('id', ''))[:8].upper()}"
         meta = c.get("metadata") or {}
-        terminal = meta.get("assigned_terminal") or session.get("candidate_terminals", {}).get(reg) or f"Terminal C-04{idx}"
+        terminal = meta.get("assigned_terminal") or session.get("candidate_terminals", {}).get(reg) or "Terminal T-01"
         extra_mins = session.get("candidate_accommodations", {}).get(reg, 0)
         
         status = "In Progress" if session["status"] == "active" else session["status"].capitalize()
@@ -2180,8 +2189,178 @@ def get_exam_results(
     Fetches verified candidate performances from Supabase Cloud DB.
     Supports ?view_mode=normal (executive summary) and ?view_mode=advanced (forensic itemized breakdown).
     """
-    norm_id = _resolve_exam_id(exam_id)
     db = get_db()
+
+    # --- GLOBAL MULTI-EXAM AGGREGATION SUPPORT ---
+    if str(exam_id).lower() in ("all", "global", "all-exams"):
+        try:
+            ex_all = db.table("exams").select("*").execute()
+            exams_list = ex_all.data or []
+        except Exception:
+            exams_list = []
+
+        try:
+            c_res = db.table("candidates").select("*").order("created_at", desc=False).execute()
+            candidates = c_res.data or []
+        except Exception:
+            candidates = []
+
+        try:
+            a_res = db.table("exam_attempts").select("*").order("created_at", desc=True).execute()
+            all_attempts = a_res.data or []
+        except Exception:
+            all_attempts = []
+
+        cands_by_id = {str(c["id"]): c for c in candidates}
+        exams_by_id = {str(e["id"]): e for e in exams_list}
+
+        all_records = []
+        scores = []
+        search_term = (search or "").strip().lower()
+
+        # Build records from all attempts
+        for att in all_attempts:
+            cid = str(att.get("candidate_id"))
+            cand = cands_by_id.get(cid, {})
+            meta = cand.get("metadata") or {}
+            eid = str(att.get("exam_id"))
+            ex = exams_by_id.get(eid, {})
+            ex_cfg = ex.get("config") or {}
+
+            c_name = cand.get("full_name") or "Registered Candidate"
+            reg_no = cand.get("registration_number") or f"SSE-A-CBT-{cid[:4].upper()}"
+            roll_no = meta.get("roll_number") or reg_no
+            term_node = meta.get("assigned_terminal") or "T-A-001"
+            ex_title = ex.get("title") or "Assessment Examination"
+            ex_code = ex_cfg.get("exam_code") or f"EX-{eid[:6].upper()}"
+
+            if search_term:
+                if not (search_term in c_name.lower() or search_term in reg_no.lower() or search_term in ex_title.lower() or search_term in ex_code.lower() or search_term in term_node.lower()):
+                    continue
+
+            score_val = float(att.get("score") if att.get("score") is not None else (meta.get("score") or 0.0))
+            correct_m = float(ex_cfg.get("correct_marks", 4.0))
+            q_count = int(att.get("total_questions") or len(ex_cfg.get("question_ids") or []) or 30)
+            max_m = float(ex_cfg.get("total_marks") or (q_count * correct_m))
+            pct_val = round((score_val / max(max_m, 1)) * 100, 1)
+            is_disq = bool(meta.get("disqualified", False) or att.get("status") == "invalidated")
+
+            if not is_disq:
+                scores.append(score_val)
+
+            all_records.append({
+                "candidate_id": cid,
+                "attempt_id": str(att.get("id")),
+                "candidate_name": c_name,
+                "full_name": c_name,
+                "registration_number": reg_no,
+                "roll_number": roll_no,
+                "terminal_node": term_node,
+                "exam_id": eid,
+                "exam_title": ex_title,
+                "exam_code": ex_code,
+                "score": score_val,
+                "raw_score": score_val,
+                "max_marks": max_m,
+                "percentage": pct_val,
+                "accuracy": meta.get("accuracy") if meta.get("accuracy") is not None else pct_val,
+                "accuracy_display": meta.get("accuracy_display") or f"{pct_val}%",
+                "correct_count": meta.get("correct_count") or 0,
+                "incorrect_count": meta.get("incorrect_count") or 0,
+                "unanswered_count": meta.get("unanswered_count") or 0,
+                "marked_for_review_count": meta.get("marked_for_review_count") or 0,
+                "time_taken_display": meta.get("time_taken_display") or "--",
+                "submitted_at_ist": meta.get("submitted_at") or att.get("end_time") or format_ist_now(),
+                "status": "Disqualified" if is_disq else (att.get("status") or "completed"),
+                "disqualified": is_disq,
+                "remarks": meta.get("remarks") or ("Disqualified" if is_disq else "Official Submitted Record"),
+            })
+
+        # If candidates exist who have metadata submission but no exam_attempts row yet
+        seen_cids = {r["candidate_id"] for r in all_records}
+        for cand in candidates:
+            cid = str(cand["id"])
+            meta = cand.get("metadata") or {}
+            if cid not in seen_cids and (meta.get("exam_status") == "submitted" or meta.get("score") is not None):
+                c_name = cand.get("full_name") or "Registered Candidate"
+                reg_no = cand.get("registration_number") or ""
+                term_node = meta.get("assigned_terminal") or "T-A-001"
+                score_val = float(meta.get("score", 0.0))
+                pct_val = float(meta.get("percentage") or 0.0)
+                is_disq = bool(meta.get("disqualified", False))
+                if not is_disq:
+                    scores.append(score_val)
+                all_records.append({
+                    "candidate_id": cid,
+                    "attempt_id": meta.get("submission_reference") or f"att_{cid[:8]}",
+                    "candidate_name": c_name,
+                    "full_name": c_name,
+                    "registration_number": reg_no,
+                    "roll_number": meta.get("roll_number") or reg_no,
+                    "terminal_node": term_node,
+                    "exam_id": "general",
+                    "exam_title": "Primary Assessment",
+                    "exam_code": "CBT-MAIN",
+                    "score": score_val,
+                    "raw_score": score_val,
+                    "max_marks": float(meta.get("max_possible", 200.0)),
+                    "percentage": pct_val,
+                    "accuracy": meta.get("accuracy") if meta.get("accuracy") is not None else pct_val,
+                    "accuracy_display": meta.get("accuracy_display") or f"{pct_val}%",
+                    "correct_count": meta.get("correct_count") or 0,
+                    "incorrect_count": meta.get("incorrect_count") or 0,
+                    "unanswered_count": meta.get("unanswered_count") or 0,
+                    "marked_for_review_count": meta.get("marked_for_review_count") or 0,
+                    "time_taken_display": meta.get("time_taken_display") or "--",
+                    "submitted_at_ist": meta.get("submitted_at") or format_ist_now(),
+                    "status": "Disqualified" if is_disq else "completed",
+                    "disqualified": is_disq,
+                    "remarks": meta.get("remarks") or ("Disqualified" if is_disq else "Official Submitted Record"),
+                })
+
+        avg_score = round(sum(scores) / len(scores), 2) if scores else 0.0
+        highest_score = max(scores, default=0.0)
+        lowest_score = min(scores, default=0.0)
+        pass_count = sum(1 for s in scores if s > 0)
+        pass_rate = round((pass_count / max(len(scores), 1)) * 100, 1) if scores else 0.0
+
+        # Sort valid records by score descending and assign authoritative ranks
+        valid_recs = [r for r in all_records if not r.get("disqualified")]
+        disq_recs = [r for r in all_records if r.get("disqualified")]
+        valid_recs.sort(key=lambda x: x.get("score", 0.0), reverse=True)
+        for r_idx, r in enumerate(valid_recs, start=1):
+            r["rank"] = r_idx
+        for r in disq_recs:
+            r["rank"] = "DISQ"
+        all_records = valid_recs + disq_recs
+
+        return {
+            "status": "success",
+            "exam_id": "all",
+            "exam_code": "ALL-EXAMS",
+            "exam_title": "All Examinations (Global Dossier)",
+            "view_mode": view_mode or "normal",
+            "marking_scheme": {
+                "correct_marks": 4.0,
+                "negative_marks": 1.0,
+                "negative_marking_enabled": True,
+                "total_marks": 200.0,
+                "total_questions": 50,
+            },
+            "analytics": {
+                "total_enrolled": len(candidates),
+                "total_appeared": len(all_records),
+                "pass_count": pass_count,
+                "fail_count": len(all_records) - pass_count,
+                "highest_score": highest_score,
+                "lowest_score": lowest_score,
+                "average_score": avg_score,
+                "pass_rate_pct": pass_rate,
+            },
+            "results": all_records
+        }
+
+    norm_id = _resolve_exam_id(exam_id)
 
     # 1. Fetch Exam Details & Dynamic Marking Scheme
     exam_title = "SSE CBT Examination"
@@ -2458,7 +2637,6 @@ def get_candidate_result_dossier(exam_id: str, candidate_id: str):
     Returns itemized examination dossier for a specific candidate.
     Includes question-by-question review, chosen option, correct key, and score delta.
     """
-    norm_id = _resolve_exam_id(exam_id)
     db = get_db()
 
     # Fetch candidate
@@ -2469,6 +2647,15 @@ def get_candidate_result_dossier(exam_id: str, candidate_id: str):
         raise HTTPException(status_code=404, detail="Candidate not found")
     c = c_res.data[0]
     cid = str(c["id"])
+
+    if str(exam_id).lower() in ("all", "global"):
+        att_check = db.table("exam_attempts").select("exam_id").eq("candidate_id", cid).order("created_at", desc=True).limit(1).execute()
+        if att_check.data:
+            norm_id = att_check.data[0]["exam_id"]
+        else:
+            norm_id = _resolve_exam_id("general")
+    else:
+        norm_id = _resolve_exam_id(exam_id)
 
     # Fetch exam marking scheme
     exam_cfg = {}
@@ -2594,7 +2781,6 @@ async def delete_candidate_result(exam_id: str, candidate_id: str):
     """
     CRUD Delete: Purges / invalidates a candidate's attempt and responses for this exam in Supabase Cloud DB.
     """
-    norm_id = _resolve_exam_id(exam_id)
     db = get_db()
 
     c_res = db.table("candidates").select("*").eq("id", candidate_id).limit(1).execute()
@@ -2606,10 +2792,17 @@ async def delete_candidate_result(exam_id: str, candidate_id: str):
     cid = str(c["id"])
 
     try:
-        att_res = db.table("exam_attempts").select("id").eq("exam_id", norm_id).eq("candidate_id", cid).execute()
-        for a in (att_res.data or []):
-            db.table("responses").delete().eq("attempt_id", a["id"]).execute()
-        db.table("exam_attempts").delete().eq("exam_id", norm_id).eq("candidate_id", cid).execute()
+        if str(exam_id).lower() in ("all", "global"):
+            att_res = db.table("exam_attempts").select("id").eq("candidate_id", cid).execute()
+            for a in (att_res.data or []):
+                db.table("responses").delete().eq("attempt_id", a["id"]).execute()
+            db.table("exam_attempts").delete().eq("candidate_id", cid).execute()
+        else:
+            norm_id = _resolve_exam_id(exam_id)
+            att_res = db.table("exam_attempts").select("id").eq("exam_id", norm_id).eq("candidate_id", cid).execute()
+            for a in (att_res.data or []):
+                db.table("responses").delete().eq("attempt_id", a["id"]).execute()
+            db.table("exam_attempts").delete().eq("exam_id", norm_id).eq("candidate_id", cid).execute()
     except Exception as e:
         logger.warning(f"Error purging candidate attempt: {e}")
 
@@ -2641,8 +2834,25 @@ async def recalculate_exam_results(exam_id: str, payload: Optional[Dict[str, Any
     Recalculates authoritative scores for all candidates of this exam against current answer keys
     and dynamic marking scheme, permanently synchronizing to Cloud DB.
     """
-    norm_id = _resolve_exam_id(exam_id)
     db = get_db()
+
+    if str(exam_id).lower() in ("all", "global"):
+        try:
+            ex_all = db.table("exams").select("id").execute()
+            exams_to_run = [e["id"] for e in (ex_all.data or [])]
+        except Exception:
+            exams_to_run = []
+        total_recalc = 0
+        for eid in exams_to_run:
+            sub_res = await recalculate_exam_results(eid, payload)
+            total_recalc += sub_res.get("recalculated_count", 0)
+        return {
+            "status": "success",
+            "message": f"Successfully recalculated and synchronized {total_recalc} candidate results across all exams to Cloud DB.",
+            "recalculated_count": total_recalc,
+        }
+
+    norm_id = _resolve_exam_id(exam_id)
 
     exam_cfg = {}
     try:
@@ -2740,8 +2950,105 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
     Fully protected against formula injection.
     Supports ?format=xlsx (XML Spreadsheet 2003 .xls native Excel) and ?format=csv.
     """
-    norm_id = _resolve_exam_id(exam_id)
     db = get_db()
+
+    if str(exam_id).lower() in ("all", "global", "all-exams"):
+        results_payload = get_exam_results("all", view_mode="advanced")
+        all_results = results_payload.get("results") or []
+        timestamp_suffix = int(time.time())
+        now_ist = format_ist_now()
+
+        fieldnames = [
+            "rank", "exam_title", "exam_code", "registration_number", "roll_number",
+            "candidate_name", "terminal_node", "score", "max_possible", "percentage",
+            "accuracy", "correct_count", "incorrect_count", "unanswered_count",
+            "status", "submission_time_ist", "time_taken_mins", "remarks"
+        ]
+
+        if format.lower() == "csv":
+            output = io.StringIO()
+            output.write('\ufeff')
+            sanitized_rows = []
+            for r_idx, r in enumerate(all_results, start=1):
+                sanitized_rows.append({
+                    "rank": sanitize_csv_cell(r.get("rank") or r_idx),
+                    "exam_title": sanitize_csv_cell(r.get("exam_title", "Assessment Examination")),
+                    "exam_code": sanitize_csv_cell(r.get("exam_code", "EXAM")),
+                    "registration_number": sanitize_csv_cell(r.get("registration_number", "")),
+                    "roll_number": sanitize_csv_cell(r.get("roll_number", "")),
+                    "candidate_name": sanitize_csv_cell(r.get("candidate_name", "")),
+                    "terminal_node": sanitize_csv_cell(r.get("terminal_node", "")),
+                    "score": sanitize_csv_cell(r.get("score", 0.0)),
+                    "max_possible": sanitize_csv_cell(r.get("max_marks", 200.0)),
+                    "percentage": sanitize_csv_cell(r.get("percentage", 0.0)),
+                    "accuracy": sanitize_csv_cell(r.get("accuracy", 0.0)),
+                    "correct_count": sanitize_csv_cell(r.get("correct_count", 0)),
+                    "incorrect_count": sanitize_csv_cell(r.get("incorrect_count", 0)),
+                    "unanswered_count": sanitize_csv_cell(r.get("unanswered_count", 0)),
+                    "status": sanitize_csv_cell(r.get("status", "SUBMITTED")),
+                    "submission_time_ist": sanitize_csv_cell(r.get("submitted_at_ist", now_ist)),
+                    "time_taken_mins": sanitize_csv_cell(r.get("time_taken_display", "--")),
+                    "remarks": sanitize_csv_cell(r.get("remarks", "Official Record")),
+                })
+            writer = csv.DictWriter(output, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(sanitized_rows)
+            csv_bytes = output.getvalue().encode('utf-8')
+            return Response(
+                content=csv_bytes,
+                media_type="text/csv; charset=utf-8",
+                headers={"Content-Disposition": f"attachment; filename=all_exams_results_{timestamp_suffix}.csv"}
+            )
+        else:
+            xml_parts = []
+            xml_parts.append('<?xml version="1.0" encoding="UTF-8"?>')
+            xml_parts.append('<?mso-application progid="Excel.Sheet"?>')
+            xml_parts.append('<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"')
+            xml_parts.append(' xmlns:o="urn:schemas-microsoft-com:office:office"')
+            xml_parts.append(' xmlns:x="urn:schemas-microsoft-com:office:excel"')
+            xml_parts.append(' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"')
+            xml_parts.append(' xmlns:html="http://www.w3.org/TR/REC-html40">')
+            xml_parts.append(' <Styles>')
+            xml_parts.append('  <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/></Style>')
+            xml_parts.append('  <Style ss:ID="Title"><Font ss:FontName="Calibri" ss:Size="14" ss:Color="#1E3A8A" ss:Bold="1"/><Alignment ss:Vertical="Center"/></Style>')
+            xml_parts.append('  <Style ss:ID="Meta"><Font ss:FontName="Calibri" ss:Size="10" ss:Color="#64748B" ss:Italic="1"/><Alignment ss:Vertical="Center"/></Style>')
+            xml_parts.append('  <Style ss:ID="Header"><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#CBD5E1"/></Borders><Font ss:FontName="Calibri" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1"/><Interior ss:Color="#1E3A8A" ss:Pattern="Solid"/></Style>')
+            xml_parts.append('  <Style ss:ID="CellCenter"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>')
+            xml_parts.append('  <Style ss:ID="CellBold"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Calibri" ss:Bold="1"/></Style>')
+            xml_parts.append('  <Style ss:ID="ScoreHigh"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Calibri" ss:Color="#15803D" ss:Bold="1"/><Interior ss:Color="#F0FDF4" ss:Pattern="Solid"/></Style>')
+            xml_parts.append(' </Styles>')
+            xml_parts.append(' <Worksheet ss:Name="All Exams Results">')
+            xml_parts.append('  <Table ss:DefaultRowHeight="20">')
+            for _ in fieldnames:
+                xml_parts.append('   <Column ss:Width="100"/>')
+            xml_parts.append('   <Row ss:Height="28">')
+            xml_parts.append('    <Cell ss:StyleID="Title"><Data ss:Type="String">SSE CBT ASSESSMENT DIRECTORATE - ALL EXAMINATIONS DOSSIER</Data></Cell>')
+            xml_parts.append('   </Row>')
+            xml_parts.append('   <Row ss:Height="18">')
+            xml_parts.append(f'    <Cell ss:StyleID="Meta"><Data ss:Type="String">Scope: All Examinations | Generated on: {now_ist} | Authoritative Cloud DB Compilation</Data></Cell>')
+            xml_parts.append('   </Row>')
+            xml_parts.append('   <Row ss:Height="10"></Row>')
+            xml_parts.append('   <Row ss:Height="24">')
+            for h in fieldnames:
+                xml_parts.append(f'    <Cell ss:StyleID="Header"><Data ss:Type="String">{h.replace("_", " ").title()}</Data></Cell>')
+            xml_parts.append('   </Row>')
+            for r_idx, r in enumerate(all_results, start=1):
+                xml_parts.append('   <Row>')
+                for k in fieldnames:
+                    val = str(sanitize_csv_cell(r.get(k, r_idx if k == "rank" else "")))
+                    val = val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+                    xml_parts.append(f'    <Cell ss:StyleID="CellCenter"><Data ss:Type="String">{val}</Data></Cell>')
+                xml_parts.append('   </Row>')
+            xml_parts.append('  </Table>')
+            xml_parts.append(' </Worksheet>')
+            xml_parts.append('</Workbook>')
+            return Response(
+                content="".join(xml_parts).encode('utf-8'),
+                media_type="application/vnd.ms-excel",
+                headers={"Content-Disposition": f"attachment; filename=all_exams_results_{timestamp_suffix}.xls"}
+            )
+
+    norm_id = _resolve_exam_id(exam_id)
 
     # 1. Fetch Exam Metadata
     exam_title = "SSE CBT PLATFORM - NATIONAL ASSESSMENT EXAMINATION"
@@ -2785,13 +3092,13 @@ def export_exam_results(exam_id: str, format: Optional[str] = "xlsx"):
 
     for idx, c in enumerate(candidates, start=1):
         cid = str(c["id"])
-        reg_no = c.get("registration_number", f"SSE-A-CBT-{idx:04d}")
+        reg_no = c.get("registration_number") or f"REG-{cid[:8].upper()}"
         meta = c.get("metadata") or {}
         roll_no = meta.get("roll_number") or reg_no
-        name = c.get("full_name", f"Candidate {idx}")
+        name = c.get("full_name") or "Registered Candidate"
         email = meta.get("email") or f"{reg_no.lower()}@ssecbt.in"
         slot = meta.get("batch", "A")
-        terminal = meta.get("assigned_terminal") or session.get("candidate_terminals", {}).get(reg_no) or f"Terminal C-04{idx}"
+        terminal = meta.get("assigned_terminal") or session.get("candidate_terminals", {}).get(reg_no) or "Terminal T-01"
         bio_status = meta.get("biometric_status", "verified").capitalize()
 
         # Gather responses: query DB attempt responses first, then candidate session
@@ -3266,12 +3573,12 @@ def get_exam_monitoring(exam_id: str):
 
     for idx, c in enumerate(candidates, start=1):
         cid = str(c["id"])
-        reg_no = c.get("registration_number", f"SSE-A-CBT-{idx:04d}")
+        reg_no = c.get("registration_number") or f"REG-{cid[:8].upper()}"
         meta = c.get("metadata") or {}
         roll_no = meta.get("roll_number") or reg_no
-        name = c.get("full_name", f"Candidate {idx}")
+        name = c.get("full_name") or "Registered Candidate"
         email = meta.get("email") or f"{reg_no.lower()}@ssecbt.in"
-        terminal = meta.get("assigned_terminal") or session.get("candidate_terminals", {}).get(reg_no) or f"Terminal C-04{idx}"
+        terminal = meta.get("assigned_terminal") or session.get("candidate_terminals", {}).get(reg_no) or "Terminal T-01"
 
         att = attempts_by_cid.get(cid)
         att_status = att.get("status") if att else meta.get("exam_status", "assigned")

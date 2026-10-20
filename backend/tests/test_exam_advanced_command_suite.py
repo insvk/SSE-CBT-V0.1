@@ -33,7 +33,7 @@ def get_admin_headers() -> dict:
     }
 
 ADMIN_HEADERS = get_admin_headers()
-EXAM_ID = "00000000-0000-0000-0000-000000000101"
+EXAM_ID = "00000000-0000-0000-0000-000000000002"
 
 
 def test_exam_phase_lifecycle():

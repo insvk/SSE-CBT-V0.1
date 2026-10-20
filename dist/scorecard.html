@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"
     rel="stylesheet">
   
   <script>
@@ -32,9 +32,9 @@
       }
     }
   </script>
-  <script type="module" crossorigin src="/assets/scorecard-1911cc0f.js"></script>
+  <script type="module" crossorigin src="/assets/scorecard-32c7d822.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
-  <link rel="stylesheet" href="/assets/finexy-theme-f3294019.css">
+  <link rel="stylesheet" href="/assets/finexy-theme-63a3d038.css">
 </head>
 
 <body>
@@ -177,7 +177,7 @@
         </div>
 
         <!-- Candidate Profile Grid -->
-        <div style="position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--fx-border);">
+        <div class="sc-candidate-grid">
           <div>
             <div style="margin-bottom: 12px;">
               <div style="font-size: 0.72rem; font-weight: 700; color: var(--fx-text-muted); text-transform: uppercase;">Candidate's Name</div>
@@ -253,35 +253,35 @@
         <!-- Performance Summary Metrics Grid -->
         <div id="sc-metrics-grid-container" style="margin-bottom: 24px;">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
-            <div style="background: var(--fx-canvas); border: 1px solid var(--fx-border); border-radius: 14px; padding: 12px; text-align: center;">
+            <div class="fx-stat-card-micro">
               <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--fx-text-muted);">Total Questions</div>
               <div style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading); margin-top: 4px;" id="sc-stat-total">--</div>
             </div>
-            <div style="background: var(--fx-canvas); border: 1px solid var(--fx-border); border-radius: 14px; padding: 12px; text-align: center;">
+            <div class="fx-stat-card-micro">
               <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--fx-text-muted);">Attempted</div>
               <div style="font-size: 1.25rem; font-weight: 800; color: #0284c7; margin-top: 4px;" id="sc-stat-attempted">--</div>
             </div>
-            <div style="background: var(--fx-canvas); border: 1px solid var(--fx-border); border-radius: 14px; padding: 12px; text-align: center;">
+            <div class="fx-stat-card-micro">
               <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #10b981;">Correct</div>
               <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin-top: 4px;" id="sc-stat-correct">--</div>
             </div>
-            <div style="background: var(--fx-canvas); border: 1px solid var(--fx-border); border-radius: 14px; padding: 12px; text-align: center;">
+            <div class="fx-stat-card-micro">
               <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #ef4444;">Incorrect</div>
               <div style="font-size: 1.25rem; font-weight: 800; color: #ef4444; margin-top: 4px;" id="sc-stat-incorrect">--</div>
             </div>
-            <div style="background: var(--fx-canvas); border: 1px solid var(--fx-border); border-radius: 14px; padding: 12px; text-align: center;">
+            <div class="fx-stat-card-micro">
               <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--fx-text-muted);">Unanswered</div>
               <div style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-muted); margin-top: 4px;" id="sc-stat-unanswered">--</div>
             </div>
-            <div style="background: var(--fx-canvas); border: 1px solid var(--fx-border); border-radius: 14px; padding: 12px; text-align: center;">
+            <div class="fx-stat-card-micro">
               <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #f59e0b;">Flagged Review</div>
               <div style="font-size: 1.25rem; font-weight: 800; color: #f59e0b; margin-top: 4px;" id="sc-stat-review">--</div>
             </div>
-            <div style="background: var(--fx-canvas); border: 1px solid var(--fx-border); border-radius: 14px; padding: 12px; text-align: center;">
+            <div class="fx-stat-card-micro">
               <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #10b981;">Marks Awarded</div>
               <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin-top: 4px;" id="sc-stat-positive">--</div>
             </div>
-            <div style="background: var(--fx-canvas); border: 1px solid var(--fx-border); border-radius: 14px; padding: 12px; text-align: center;">
+            <div class="fx-stat-card-micro">
               <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #ef4444;">Penalty Deducted</div>
               <div style="font-size: 1.25rem; font-weight: 800; color: #ef4444; margin-top: 4px;" id="sc-stat-penalty">--</div>
             </div>

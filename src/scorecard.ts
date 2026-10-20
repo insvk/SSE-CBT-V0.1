@@ -268,7 +268,7 @@ function renderScorecardData(data: any, fallbackName: string, fallbackReg: strin
 
             const aggSign = aggScore > 0 ? '+' : '';
             rowsHtml += `
-                <tr style="background: #f8fafc; font-weight: 800; border-top: 2px solid var(--border-color, #e2e8f0);">
+                <tr style="background: var(--fx-border-subtle); font-weight: 800; border-top: 2px solid var(--border-color);">
                     <td style="color: #1e3a8a;">TOTAL AGGREGATE</td>
                     <td>${aggTot}</td>
                     <td style="color: #0284c7;">${aggAtt}</td>
@@ -283,7 +283,7 @@ function renderScorecardData(data: any, fallbackName: string, fallbackReg: strin
             scTableBody.innerHTML = rowsHtml;
         } else {
             scTableBody.innerHTML = `
-                <tr style="background: #f8fafc; font-weight: 800;">
+                <tr style="background: var(--fx-border-subtle); font-weight: 800;">
                     <td style="color: #1e3a8a;">Comprehensive Assessment Paper</td>
                     <td>${totCount}</td>
                     <td style="color: #0284c7;">${attCount}</td>
@@ -364,9 +364,25 @@ async function loadAuthoritativeScore(): Promise<void> {
     const scRef = document.getElementById('sc-ref');
     const scTableBody = document.getElementById('sc-table-body');
 
-    const candidateName = localStorage.getItem('candidate_name') || 'Registered Candidate';
-    const regNo = localStorage.getItem('reg_no') || new URLSearchParams(window.location.search).get('reg_no') || '';
-    const candId = localStorage.getItem('candidate_id') || new URLSearchParams(window.location.search).get('candidate_id') || '';
+    let candidateName = localStorage.getItem('candidate_name') || 'Registered Candidate';
+    let regNo = new URLSearchParams(window.location.search).get('reg_no') || localStorage.getItem('reg_no') || '';
+    let candId = new URLSearchParams(window.location.search).get('candidate_id') || localStorage.getItem('candidate_id') || '';
+
+    // Authoritative candidate profile from Cloud DB
+    try {
+        const meRes = await fetch('/api/v1/auth/me', { headers: getHeaders() });
+        if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData.full_name) candidateName = meData.full_name;
+            if (!regNo && (meData.registration_number || meData.roll_number)) {
+                regNo = meData.registration_number || meData.roll_number;
+            }
+            if (!candId && meData.candidate_id) {
+                candId = meData.candidate_id;
+            }
+        }
+    } catch (_) {}
+
     const urlExamId = new URLSearchParams(window.location.search).get('exam_id');
     let examId = urlExamId || localStorage.getItem('active_exam_id') || '';
     if (!examId) {

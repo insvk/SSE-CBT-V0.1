@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="/src/finexy-theme.css">
   <script>
@@ -181,9 +181,9 @@
             </svg>
           </div>
           <div>
-            <div class="fx-brand-title">SSE CBT</div>
+            <div class="fx-brand-title">SSE CBT PLATFORM</div>
           </div>
-          <span class="fx-brand-badge">Command</span>
+          <span class="fx-brand-badge">COE ADMIN</span>
         </a>
 
         <!-- Center: Floating Segmented Pill Tabs Navigation (Exact Replica of Reference) -->
@@ -273,7 +273,8 @@
             <div class="fx-big-number" id="dash-total-candidates-hero">0 Candidates</div>
             <div class="fx-trend-tag">
               <span id="dash-cand-trend-badge">↑ 100%</span>
-              <span style="color: var(--fx-text-muted); font-weight: 500;" id="dash-cand-trend-sub">synchronized with Supabase Cloud DB</span>
+              <span style="color: var(--fx-text-muted); font-weight: 500;" id="dash-cand-trend-sub">synchronized with
+                Supabase Cloud DB</span>
             </div>
 
             <!-- Two Pill Action Buttons matching screenshot Transfer & Request -->
@@ -300,7 +301,7 @@
               <span>Shift Allocations</span>
               <span id="dash-slots-subhead">Total 0 Enrolled</span>
             </div>
-            <div class="fx-slots-row">
+            <div class="fx-slots-row" id="dash-slots-row">
               <div class="fx-slot-item">
                 <div class="fx-slot-header">
                   <span>Slot A</span>
@@ -438,7 +439,8 @@
             <div class="fx-progress-container">
               <div class="fx-progress-meta">
                 <span>Infrastructure &amp; Supabase DB Load</span>
-                <span style="font-family: var(--fx-font-mono); color: var(--fx-coral);" id="dash-infra-load">0.02s / 100% OK</span>
+                <span style="font-family: var(--fx-font-mono); color: var(--fx-coral);" id="dash-infra-load">0.02s /
+                  100% OK</span>
               </div>
               <div class="fx-progress-track">
                 <div class="fx-progress-fill" id="dash-infra-bar" style="width: 100%;"></div>
@@ -466,7 +468,8 @@
               <div class="fx-card-badge-dark">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span class="fx-badge-chip-tag" id="dash-card-terminal-node">NODE L4</span>
-                  <span style="font-size: 0.7rem; font-weight: 700; color: #10b981;" id="dash-card-terminal-status">• Online</span>
+                  <span style="font-size: 0.7rem; font-weight: 700; color: #10b981;" id="dash-card-terminal-status">•
+                    Online</span>
                 </div>
                 <div style="margin: 10px 0;">
                   <div style="font-size: 0.7rem; color: #94a3b8;">Terminal Allocation</div>
@@ -486,9 +489,11 @@
                 </div>
                 <div style="margin: 10px 0;">
                   <div style="font-size: 0.7rem; color: rgba(255,255,255,0.85);">Directorate Session</div>
-                  <div class="fx-badge-num" id="dash-admin-email-badge" style="font-size: 0.78rem;">admin@sse.cbt.in</div>
+                  <div class="fx-badge-num" id="dash-admin-email-badge" style="font-size: 0.78rem;">admin@sse.cbt.in
+                  </div>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: rgba(255,255,255,0.9);">
+                <div
+                  style="display: flex; justify-content: space-between; font-size: 0.72rem; color: rgba(255,255,255,0.9);">
                   <span id="dash-admin-mode-text">AUTHORITATIVE</span>
                   <span>SSE CBT 2026</span>
                 </div>
@@ -570,34 +575,49 @@
         </div>
       </section>
 
-            <!-- ================= SECTION 2: EXAM OPERATIONS & SCHEDULING ================= -->
+      <!-- ================= SECTION 2: EXAM OPERATIONS & SCHEDULING ================= -->
       <section class="fx-section-view" id="view-exams">
         <div class="fx-card" style="margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
             <div>
-              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Test Lifecycle &amp; Exam Scheduling</h2>
-              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Deploy examinations, configure AI proctoring, manage custom section tabs, and set duration.</p>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Test Lifecycle &amp; Exam
+                Scheduling</h2>
+              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Deploy examinations,
+                configure AI proctoring, manage custom section tabs, and set duration.</p>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <button type="button" class="fx-btn-pill-light" id="btn-refresh-exams">↻ Refresh</button>
               <button type="button" class="fx-btn-pill-light" id="btn-share-cand-reg">🔗 Registration Link</button>
-              <button type="button" class="fx-btn-pill-coral" id="btn-open-create-exam">+ Deploy New Test to Cloud DB</button>
+              <button type="button" class="fx-btn-pill-coral" id="btn-open-create-exam">+ Deploy New Test to Cloud
+                DB</button>
             </div>
           </div>
 
           <!-- EXAM METRIC COUNTERS -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px;">
-            <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 16px; padding: 14px 18px;">
-              <div style="font-size: 0.72rem; font-weight: 700; color: #047857; text-transform: uppercase;">Active Tests (Live Now)</div>
-              <div style="font-size: 1.5rem; font-weight: 800; color: var(--fx-text-heading); margin-top: 4px;" id="stat-active-exams-count">0</div>
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px;">
+            <div
+              style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 16px; padding: 14px 18px;">
+              <div style="font-size: 0.72rem; font-weight: 700; color: #047857; text-transform: uppercase;">Active Tests
+                (Live Now)</div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--fx-text-heading); margin-top: 4px;"
+                id="stat-active-exams-count">0</div>
             </div>
-            <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 16px; padding: 14px 18px;">
-              <div style="font-size: 0.72rem; font-weight: 700; color: var(--fx-coral); text-transform: uppercase;">Scheduled (Upcoming)</div>
-              <div style="font-size: 1.5rem; font-weight: 800; color: var(--fx-text-heading); margin-top: 4px;" id="stat-scheduled-exams-count">0</div>
+            <div
+              style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 16px; padding: 14px 18px;">
+              <div style="font-size: 0.72rem; font-weight: 700; color: var(--fx-coral); text-transform: uppercase;">
+                Scheduled (Upcoming)</div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--fx-text-heading); margin-top: 4px;"
+                id="stat-scheduled-exams-count">0</div>
             </div>
-            <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 16px; padding: 14px 18px;">
-              <div style="font-size: 0.72rem; font-weight: 700; color: var(--fx-text-muted); text-transform: uppercase;">Concluded Tests</div>
-              <div style="font-size: 1.5rem; font-weight: 800; color: var(--fx-text-heading); margin-top: 4px;" id="stat-concluded-exams-count">0</div>
+            <div
+              style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 16px; padding: 14px 18px;">
+              <div
+                style="font-size: 0.72rem; font-weight: 700; color: var(--fx-text-muted); text-transform: uppercase;">
+                Concluded Tests</div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--fx-text-heading); margin-top: 4px;"
+                id="stat-concluded-exams-count">0</div>
             </div>
           </div>
 
@@ -646,7 +666,7 @@
         </div>
       </section>
 
-<!-- ================= SECTION 3: CANDIDATES MANAGEMENT SUITE ================= -->
+      <!-- ================= SECTION 3: CANDIDATES MANAGEMENT SUITE ================= -->
       <section class="fx-section-view" id="view-candidates">
         <div class="fx-card">
           <div
@@ -713,7 +733,7 @@
           </div>
 
           <div
-            style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px; text-align: center;">
+            style="background: var(--fx-border-subtle); border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px; text-align: center;">
             <div style="font-size: 1.1rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 6px;">
               Authoritative Assessment Item Bank
             </div>
@@ -797,35 +817,124 @@
       <!-- ================= SECTION 6: SCORECARDS & RESULTS ================= -->
       <section class="fx-section-view" id="view-scorecards">
         <div class="fx-card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+          <!-- Header & Controls -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 14px;">
             <div>
-              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading);">Examination Results
-                Dossier &amp; Audited Scorecards</h2>
-              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">Inspect official calculated
-                scores, download candidate dossiers, override remarks, and sign credentials.</p>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading); margin: 0;">Examination Results Dossier &amp; Audited Records</h2>
+                <span class="fx-brand-badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; font-size: 0.72rem;">Cloud DB Synced</span>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 4px;">Inspect official calculated scores, search all candidate records, download dossiers, override remarks, and review integrity credentials.</p>
             </div>
-            <a href="/scorecard.html" class="fx-btn-pill-coral" style="text-decoration: none;">
-              Open Official Scorecard View &rarr;
-            </a>
+            
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <!-- Target Exam Selector -->
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <label for="results-exam-select" style="font-size: 0.75rem; font-weight: 700; color: var(--fx-text-muted);">EXAM:</label>
+                <select id="results-exam-select" class="fx-select" style="padding: 7px 12px; border-radius: 9999px; font-size: 0.82rem; font-weight: 700; border: 1px solid var(--fx-border); background: var(--fx-card); color: var(--fx-text-heading); cursor: pointer;">
+                  <option value="all">-- All Examinations (Global Records) --</option>
+                </select>
+              </div>
+
+              <!-- View Mode Toggle -->
+              <div style="display: flex; background: var(--fx-border-subtle); padding: 3px; border-radius: 9999px; border: 1px solid var(--fx-border);">
+                <button type="button" id="btn-results-mode-normal" class="btn btn-sm" style="background: var(--brand-blue); color: white; border-radius: 9999px; padding: 4px 12px; font-size: 0.75rem; font-weight: 700; border: none; cursor: pointer;">Summary</button>
+                <button type="button" id="btn-results-mode-advanced" class="btn btn-sm" style="background: transparent; color: var(--fx-text-muted); border-radius: 9999px; padding: 4px 12px; font-size: 0.75rem; font-weight: 700; border: none; cursor: pointer;">Forensic Dossier</button>
+              </div>
+
+              <!-- Recalculate & Export Actions -->
+              <button type="button" id="btn-recalc-results-top" class="fx-btn-pill-light" style="padding: 6px 12px; font-size: 0.75rem;" title="Recalculate scoring across all responses">
+                🔄 Recalculate
+              </button>
+              <button type="button" id="btn-export-results-csv-top" class="fx-btn-pill-light" style="padding: 6px 12px; font-size: 0.75rem;" title="Export results to CSV">
+                📥 Export CSV
+              </button>
+              <a href="/scorecard.html" class="fx-btn-pill-coral" style="text-decoration: none; padding: 6px 14px; font-size: 0.75rem;">
+                Open Scorecard &rarr;
+              </a>
+            </div>
           </div>
 
+          <!-- KPI Summary Cards Row -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 18px;">
+            <div class="fx-mini-stat-card">
+              <span class="fx-card-label">Candidates Evaluated</span>
+              <div class="fx-duo-val" id="kpi-total-cands">0</div>
+              <div class="fx-trend-sub" style="color: #64748b;">Cloud DB records</div>
+            </div>
+            <div class="fx-mini-stat-card">
+              <span class="fx-card-label">Highest Score</span>
+              <div class="fx-duo-val" id="kpi-highest-score" style="color: #047857;">0 / 0</div>
+              <div class="fx-trend-sub" style="color: #10b981;">Top candidate performance</div>
+            </div>
+            <div class="fx-mini-stat-card">
+              <span class="fx-card-label">Average Score</span>
+              <div class="fx-duo-val" id="kpi-avg-score">0.0</div>
+              <div class="fx-trend-sub" style="color: #6366f1;">Cohort Mean</div>
+            </div>
+            <div class="fx-mini-stat-card">
+              <span class="fx-card-label">Qualifying Pass Rate</span>
+              <div class="fx-duo-val" id="kpi-pass-rate" style="color: #047857;">0.0%</div>
+              <div class="fx-trend-sub" style="color: #10b981;">Standard benchmark</div>
+            </div>
+          </div>
+
+          <!-- Dynamic Marking Scheme Banner -->
+          <div id="results-marking-banner" style="background: var(--fx-border-subtle); border: 1px solid var(--fx-border); border-radius: 12px; padding: 10px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 0.78rem;">
+            <div style="font-weight: 700; color: var(--fx-text-heading); display: flex; align-items: center; gap: 8px;">
+              <span>📋</span>
+              <span id="rmb-exam-title">Exam: All Examinations</span>
+            </div>
+            <div style="display: flex; gap: 14px; align-items: center; font-weight: 600;">
+              <span id="rmb-q-count" style="color: var(--fx-text-muted);">Questions: --</span>
+              <span id="rmb-correct-m" style="color: #047857; background: rgba(16, 185, 129, 0.1); padding: 2px 8px; border-radius: 4px;">Per Question: +4</span>
+              <span id="rmb-neg-m" style="color: #dc2626; background: rgba(239, 68, 68, 0.1); padding: 2px 8px; border-radius: 4px;">Penalty: -1</span>
+              <span id="rmb-total-m" style="color: var(--brand-blue); font-weight: 800;">Total Marks: --</span>
+            </div>
+          </div>
+
+          <!-- Table Filter & Search Controls -->
+          <div class="fx-table-toolbar" style="margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+              <div class="fx-pill-search" style="max-width: 320px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="results-search-input" placeholder="Search candidate, reg no, terminal..." />
+              </div>
+
+              <select id="results-status-filter" class="fx-select" style="padding: 6px 12px; border-radius: 9999px; font-size: 0.78rem; font-weight: 600; border: 1px solid var(--fx-border); background: var(--fx-card); color: var(--fx-text-heading); cursor: pointer;">
+                <option value="ALL">All Statuses</option>
+                <option value="SUBMITTED">Completed / Submitted</option>
+                <option value="DISQUALIFIED">Disqualified</option>
+                <option value="RESET">Reset</option>
+              </select>
+
+              <span id="results-count-ticker" style="font-size: 0.75rem; color: var(--fx-text-muted); font-weight: 600;">
+                Showing 0 candidate records
+              </span>
+            </div>
+          </div>
+
+          <!-- Table Container -->
           <div style="overflow-x: auto;">
             <table class="fx-table">
-              <thead>
+              <thead id="results-table-head">
                 <tr>
-                  <th>Candidate Name</th>
-                  <th>Registration No</th>
-                  <th>Exam Title</th>
-                  <th>Score / Max</th>
+                  <th style="width: 50px;">Rank</th>
+                  <th>Candidate Identification</th>
+                  <th>Category &amp; Gender</th>
+                  <th style="font-weight: 800; color: #1e3a8a;">Raw Score / Max</th>
                   <th>Percentage</th>
                   <th>Accuracy</th>
                   <th>Status</th>
-                  <th style="text-align: right;">Action</th>
+                  <th style="text-align: right; min-width: 140px;">CRUD Actions</th>
                 </tr>
               </thead>
               <tbody id="results-table-body">
                 <tr>
-                  <td colspan="8" style="text-align: center; padding: 2rem; color: var(--fx-text-muted);">
+                  <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--fx-text-muted);">
                     Loading official submitted exam results from Cloud DB...
                   </td>
                 </tr>
@@ -851,7 +960,8 @@
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
-            <div style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px;">
+            <div
+              style="background: var(--fx-border-subtle); border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px;">
               <h3 style="font-size: 1rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 6px;">Admit
                 Card Badge Template</h3>
               <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 14px;">Hall ticket layout, venue
@@ -859,7 +969,8 @@
               <button type="button" class="fx-btn-pill-dark"
                 onclick="document.getElementById('btn-open-settings-modal').click();">Configure Admit Card</button>
             </div>
-            <div style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px;">
+            <div
+              style="background: var(--fx-border-subtle); border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px;">
               <h3 style="font-size: 1rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 6px;">Audited
                 Scorecard Certificate</h3>
               <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 14px;">Scorecard sections,
@@ -867,7 +978,8 @@
               <button type="button" class="fx-btn-pill-dark"
                 onclick="document.getElementById('btn-open-settings-modal').click();">Configure Scorecard</button>
             </div>
-            <div style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px;">
+            <div
+              style="background: var(--fx-border-subtle); border: 1px solid var(--fx-border); border-radius: 16px; padding: 20px;">
               <h3 style="font-size: 1rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 6px;">Atomic
                 Master Clock</h3>
               <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 14px;">Synchronized with Google
@@ -988,7 +1100,7 @@
     </div>
   </div>
 
-    <!-- 3. CREATE / EDIT EXAM MODAL -->
+  <!-- 3. CREATE / EDIT EXAM MODAL -->
   <div class="modal-backdrop" id="modal-exam-create"
     style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
     <div
@@ -999,7 +1111,8 @@
           <h2
             style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 8px;">
             <span>Create &amp; Schedule CBT Test</span>
-            <span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">CLOUD DB</span>
+            <span class="badge-pill"
+              style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">CLOUD DB</span>
           </h2>
           <p style="font-size: 0.78rem; color: var(--fx-text-muted); margin-top: 2px;">
             Authoritative Supabase Cloud DB &bull; Live IST Time-Gated Window &bull; Realtime Question Bank Linkage
@@ -1016,81 +1129,110 @@
         <!-- BASIC EXAM DETAILS -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
           <div style="grid-column: 1 / -1;">
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Exam / Test Title *</label>
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Exam
+              / Test Title *</label>
             <input type="text" class="fx-pill-search" id="exam-title-input" required
               placeholder="e.g. UNIVERSITY END SEMESTER EXAMINATION 2026"
               style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
           </div>
 
           <div>
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Exam Code / Paper ID *</label>
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Exam
+              Code / Paper ID *</label>
             <input type="text" class="fx-pill-search" id="exam-code-input" required placeholder="e.g. CS-801-CBT"
               style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
           </div>
 
           <div>
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Duration (Minutes) *</label>
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Duration
+              (Minutes) *</label>
             <input type="number" class="fx-pill-search" id="exam-duration-input" value="180" min="5" max="360" required
               style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
           </div>
 
           <div>
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Scheduled Start Time (IST) *</label>
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Scheduled
+              Start Time (IST) *</label>
             <input type="datetime-local" class="fx-pill-search" id="exam-start-time-input" required
               style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
-            <span style="font-size: 0.68rem; color: var(--fx-text-muted); margin-top: 2px; display: block;">Exam unlocks automatically at this moment</span>
+            <span style="font-size: 0.68rem; color: var(--fx-text-muted); margin-top: 2px; display: block;">Exam unlocks
+              automatically at this moment</span>
           </div>
 
           <div>
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Scheduled End Time (IST) *</label>
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Scheduled
+              End Time (IST) *</label>
             <input type="datetime-local" class="fx-pill-search" id="exam-end-time-input" required
               style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
-            <span style="font-size: 0.68rem; color: var(--fx-text-muted); margin-top: 2px; display: block;">Console locks and auto-submits after this</span>
+            <span style="font-size: 0.68rem; color: var(--fx-text-muted); margin-top: 2px; display: block;">Console
+              locks and auto-submits after this</span>
           </div>
 
           <div>
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Marks for Correct Answer (+M) *</label>
-            <input type="number" step="0.5" class="fx-pill-search" id="exam-correct-marks-input" value="4" min="0.5" max="50" required
-              style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
-            <span style="font-size: 0.68rem; color: var(--fx-text-muted); margin-top: 2px; display: block;">Points awarded per correct response</span>
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Marks
+              for Correct Answer (+M) *</label>
+            <input type="number" step="0.5" class="fx-pill-search" id="exam-correct-marks-input" value="4" min="0.5"
+              max="50" required style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            <span style="font-size: 0.68rem; color: var(--fx-text-muted); margin-top: 2px; display: block;">Points
+              awarded per correct response</span>
           </div>
 
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 0;">Negative Marking *</label>
-              <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700;">
-                <input type="checkbox" id="exam-negative-marking-toggle" checked style="width: 16px; height: 16px; accent-color: #ef4444; cursor: pointer;" />
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); margin-bottom: 0;">Negative
+                Marking *</label>
+              <label
+                style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700;">
+                <input type="checkbox" id="exam-negative-marking-toggle" checked
+                  style="width: 16px; height: 16px; accent-color: #ef4444; cursor: pointer;" />
                 <span id="exam-neg-toggle-label" style="color: #ef4444; font-weight: 800;">PENALTY ON</span>
               </label>
             </div>
-            <input type="number" step="0.25" class="fx-pill-search" id="exam-negative-marks-input" value="1" min="0" max="20"
-              style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
-            <span id="exam-neg-hint" style="font-size: 0.68rem; color: var(--fx-text-muted); margin-top: 2px; display: block;">Penalty deducted per incorrect answer</span>
+            <input type="number" step="0.25" class="fx-pill-search" id="exam-negative-marks-input" value="1" min="0"
+              max="20" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+            <span id="exam-neg-hint"
+              style="font-size: 0.68rem; color: var(--fx-text-muted); margin-top: 2px; display: block;">Penalty deducted
+              per incorrect answer</span>
           </div>
 
           <!-- DYNAMIC LIVE MARKING ENGINE CALCULATOR BADGE -->
-          <div style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 12px; padding: 12px 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+          <div
+            style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 12px; padding: 12px 16px;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
               <div>
-                <div style="font-size: 0.82rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 6px;">
+                <div
+                  style="font-size: 0.82rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 6px;">
                   <span>⚡ Authoritative Dynamic Marking Engine</span>
-                  <span class="badge-pill" style="background: #10b981; color: white; font-weight: 800; font-size: 0.7rem;">AUTO-CALCULATED</span>
+                  <span class="badge-pill"
+                    style="background: #10b981; color: white; font-weight: 800; font-size: 0.7rem;">AUTO-CALCULATED</span>
                 </div>
                 <div style="font-size: 0.72rem; color: var(--fx-text-muted); margin-top: 2px;">
                   Total Marks = (Selected Questions) &times; (Marks per Question)
                 </div>
               </div>
               <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
-                <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 700;">
+                <div
+                  style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 700;">
                   Questions: <span id="calc-live-q-count" style="color: var(--fx-coral); font-size: 0.88rem;">0</span>
                 </div>
-                <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 700;">
+                <div
+                  style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 700;">
                   Per Question: <span id="calc-live-per-q" style="color: #047857; font-size: 0.88rem;">+4</span>
                 </div>
-                <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 700;">
+                <div
+                  style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 700;">
                   Penalty: <span id="calc-live-neg-m" style="color: #dc2626; font-size: 0.88rem;">-1</span>
                 </div>
-                <div style="background: #1e3a8a; color: white; border-radius: 6px; padding: 0.35rem 0.85rem; font-size: 0.82rem; font-weight: 800;">
+                <div
+                  style="background: #1e3a8a; color: white; border-radius: 6px; padding: 0.35rem 0.85rem; font-size: 0.82rem; font-weight: 800;">
                   Total: <span id="calc-live-total-marks" style="font-size: 1.05rem;">0</span>
                 </div>
               </div>
@@ -1099,62 +1241,78 @@
         </div>
 
         <!-- VENUE, CENTER CODE, ROOM NO & TERMINAL ALLOCATION SETTINGS -->
-        <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 14px; padding: 14px; margin-bottom: 14px;">
-          <div style="font-size: 0.85rem; font-weight: 800; color: var(--fx-text-heading); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+        <div
+          style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 14px; padding: 14px; margin-bottom: 14px;">
+          <div
+            style="font-size: 0.85rem; font-weight: 800; color: var(--fx-text-heading); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
             <span>🏢 Examination Centre &amp; Lab Infrastructure Configuration</span>
-            <span class="badge-pill" style="background: rgba(14, 165, 233, 0.15); color: #0284c7; font-weight: 800; font-size: 0.7rem;">VENUE CONTROLLER</span>
+            <span class="badge-pill"
+              style="background: rgba(14, 165, 233, 0.15); color: #0284c7; font-weight: 800; font-size: 0.7rem;">VENUE
+              CONTROLLER</span>
           </div>
           <div style="font-size: 0.72rem; color: var(--fx-text-muted); margin-bottom: 10px;">
-            Physical test venue, room number, shift/slot batch, and terminal node prefix assigned to candidate workstations.
+            Physical test venue, room number, shift/slot batch, and terminal node prefix assigned to candidate
+            workstations.
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div style="grid-column: 1 / -1;">
-              <label style="font-size: 0.75rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 3px;">Exam Centre / Venue Name</label>
+              <label
+                style="font-size: 0.75rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 3px;">Exam
+                Centre / Venue Name</label>
               <input type="text" class="fx-pill-search" id="exam-venue-input"
                 placeholder="e.g. University Examination Complex" value="Saveetha Engineering College, Chennai - 602105"
                 style="width: 100%; border-radius: 8px; padding: 6px 10px;" />
             </div>
             <div>
-              <label style="font-size: 0.75rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 3px;">Centre Code</label>
-              <input type="text" class="fx-pill-search" id="exam-center-code-input"
-                placeholder="e.g. TN-CHE-001" value="TN-CHE-001"
+              <label
+                style="font-size: 0.75rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 3px;">Centre
+                Code</label>
+              <input type="text" class="fx-pill-search" id="exam-center-code-input" placeholder="e.g. TN-CHE-001"
+                value="TN-CHE-001" style="width: 100%; border-radius: 8px; padding: 6px 10px;" />
+            </div>
+            <div>
+              <label
+                style="font-size: 0.75rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 3px;">Exam
+                Room / Lab Hall</label>
+              <input type="text" class="fx-pill-search" id="exam-room-input" placeholder="e.g. Lab 4" value="Lab 4"
                 style="width: 100%; border-radius: 8px; padding: 6px 10px;" />
             </div>
             <div>
-              <label style="font-size: 0.75rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 3px;">Exam Room / Lab Hall</label>
-              <input type="text" class="fx-pill-search" id="exam-room-input"
-                placeholder="e.g. Lab 4" value="Lab 4"
-                style="width: 100%; border-radius: 8px; padding: 6px 10px;" />
+              <label
+                style="font-size: 0.75rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 3px;">Terminal
+                Node Prefix</label>
+              <input type="text" class="fx-pill-search" id="exam-terminal-prefix-input" placeholder="e.g. NODE-L4-C"
+                value="NODE-L4-C" style="width: 100%; border-radius: 8px; padding: 6px 10px;" />
             </div>
             <div>
-              <label style="font-size: 0.75rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 3px;">Terminal Node Prefix</label>
-              <input type="text" class="fx-pill-search" id="exam-terminal-prefix-input"
-                placeholder="e.g. NODE-L4-C" value="NODE-L4-C"
-                style="width: 100%; border-radius: 8px; padding: 6px 10px;" />
-            </div>
-            <div>
-              <label style="font-size: 0.75rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 3px;">Shift / Slot Batch</label>
-              <input type="text" class="fx-pill-search" id="exam-slot-input"
-                placeholder="e.g. Shift 1" value="Shift 1"
+              <label
+                style="font-size: 0.75rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 3px;">Shift
+                / Slot Batch</label>
+              <input type="text" class="fx-pill-search" id="exam-slot-input" placeholder="e.g. Shift 1" value="Shift 1"
                 style="width: 100%; border-radius: 8px; padding: 6px 10px;" />
             </div>
           </div>
         </div>
 
         <!-- 1. AI PROCTORING & WEBCAM PERMISSIONS CONTROLLER -->
-        <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 14px; padding: 14px; margin-bottom: 14px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div
+          style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 14px; padding: 14px; margin-bottom: 14px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
             <div>
-              <div style="font-size: 0.85rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 8px;">
+              <div
+                style="font-size: 0.85rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 8px;">
                 <span>AI Proctoring Camera &amp; Live Facial Telemetry</span>
                 <span class="badge-pill" id="badge-modal-ai-camera"
-                  style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800; font-size: 0.72rem;">ACTIVE (ON)</span>
+                  style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800; font-size: 0.72rem;">ACTIVE
+                  (ON)</span>
               </div>
               <div style="font-size: 0.72rem; color: var(--fx-text-muted); margin-top: 2px;">
                 When enabled, candidate terminals stream real-time webcam video with AI face gaze tracking.
               </div>
             </div>
-            <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.825rem; font-weight: 700; user-select: none;">
+            <label
+              style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.825rem; font-weight: 700; user-select: none;">
               <input type="checkbox" id="exam-ai-camera-toggle" checked
                 style="width: 18px; height: 18px; accent-color: #059669; cursor: pointer;" />
               <span id="exam-ai-camera-toggle-label" style="color: #047857;">AI Camera ON</span>
@@ -1163,12 +1321,16 @@
         </div>
 
         <!-- 2. DYNAMIC EXAMINATION SECTIONS & HEADERS BUILDER -->
-        <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 14px; padding: 14px; margin-bottom: 14px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div
+          style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 14px; padding: 14px; margin-bottom: 14px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
             <div>
-              <div style="font-size: 0.85rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 6px;">
+              <div
+                style="font-size: 0.85rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 6px;">
                 <span>Examination Sections &amp; Subject Headers</span>
-                <span class="badge-pill" style="background: rgba(30, 58, 138, 0.1); color: #1e3a8a; font-weight: 800; font-size: 0.72rem;"
+                <span class="badge-pill"
+                  style="background: rgba(30, 58, 138, 0.1); color: #1e3a8a; font-weight: 800; font-size: 0.72rem;"
                   id="sec-builder-count">4 Sections</span>
               </div>
               <div style="font-size: 0.72rem; color: var(--fx-text-muted);">
@@ -1188,12 +1350,17 @@
         </div>
 
         <!-- QUESTION BANK SELECTOR & IMPORTER SECTION -->
-        <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 14px; padding: 14px; margin-bottom: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div
+          style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 14px; padding: 14px; margin-bottom: 16px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
             <div>
-              <div style="font-size: 0.85rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 6px;">
+              <div
+                style="font-size: 0.85rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 6px;">
                 <span>Import Questions from Question Bank</span>
-                <span class="badge-pill" style="background: rgba(99, 102, 241, 0.12); color: #4f46e5; font-weight: 800; font-size: 0.72rem;">Cloud DB</span>
+                <span class="badge-pill"
+                  style="background: rgba(99, 102, 241, 0.12); color: #4f46e5; font-weight: 800; font-size: 0.72rem;">Cloud
+                  DB</span>
               </div>
               <div style="font-size: 0.72rem; color: var(--fx-text-muted);">
                 Select questions from Cloud DB to include in this test.
@@ -1201,7 +1368,8 @@
             </div>
 
             <!-- LIVE QUESTION SELECTION TICKER -->
-            <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 6px; padding: 0.3rem 0.75rem; font-size: 0.75rem; font-weight: 700; color: #047857;">
+            <div
+              style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 6px; padding: 0.3rem 0.75rem; font-size: 0.75rem; font-weight: 700; color: #047857;">
               <span id="qb-selected-count">0</span> / <span id="qb-total-count">0</span> Selected &bull; Max Score:
               <span id="qb-max-score">0</span>
             </div>
@@ -1209,27 +1377,32 @@
 
           <!-- QUICK SELECTION BUTTONS -->
           <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap;">
-            <button type="button" class="fx-btn-pill-light" id="btn-qb-auto-pick" style="padding: 4px 12px; font-size: 0.75rem;">
+            <button type="button" class="fx-btn-pill-light" id="btn-qb-auto-pick"
+              style="padding: 4px 12px; font-size: 0.75rem;">
               ⚡ Auto-Pick Balanced (10 Phys + 10 Chem + 10 Math)
             </button>
-            <button type="button" class="fx-btn-pill-light" id="btn-qb-select-all" style="padding: 4px 12px; font-size: 0.75rem;">
+            <button type="button" class="fx-btn-pill-light" id="btn-qb-select-all"
+              style="padding: 4px 12px; font-size: 0.75rem;">
               Select All Available
             </button>
-            <button type="button" class="fx-btn-pill-light" id="btn-qb-clear-all" style="padding: 4px 12px; font-size: 0.75rem; color: #ef4444;">
+            <button type="button" class="fx-btn-pill-light" id="btn-qb-clear-all"
+              style="padding: 4px 12px; font-size: 0.75rem; color: #ef4444;">
               Clear All
             </button>
           </div>
 
           <!-- FILTER CONTROLS FOR QUESTION BANK -->
           <div style="display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 0.5rem; margin-bottom: 0.75rem;">
-            <select class="fx-pill-filter-btn" id="qb-filter-subject" style="padding: 6px 10px; font-size: 0.75rem; border-radius: 8px;">
+            <select class="fx-pill-filter-btn" id="qb-filter-subject"
+              style="padding: 6px 10px; font-size: 0.75rem; border-radius: 8px;">
               <option value="ALL">All Subjects</option>
               <option value="Physics">Physics</option>
               <option value="Chemistry">Chemistry</option>
               <option value="Mathematics">Mathematics</option>
             </select>
 
-            <select class="fx-pill-filter-btn" id="qb-filter-difficulty" style="padding: 6px 10px; font-size: 0.75rem; border-radius: 8px;">
+            <select class="fx-pill-filter-btn" id="qb-filter-difficulty"
+              style="padding: 6px 10px; font-size: 0.75rem; border-radius: 8px;">
               <option value="ALL">All Difficulties</option>
               <option value="Easy">Easy</option>
               <option value="Medium">Medium</option>
@@ -1263,33 +1436,43 @@
   <!-- EXAM LEADERBOARD & PERFORMANCE SUMMARY MODAL -->
   <div class="modal-backdrop" id="modal-exam-summary"
     style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 800px; width: 95%; max-height: 85vh; overflow-y: auto; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--fx-border);">
+    <div
+      style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 800px; width: 95%; max-height: 85vh; overflow-y: auto; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
+      <div
+        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--fx-border);">
         <div>
-          <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 8px;">
+          <h2
+            style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 8px;">
             <span>Exam Results &amp; Performance Digest</span>
-            <span class="badge-pill" style="background: #10b981; color: white; font-size: 0.7rem; font-weight: 800;">CLOUD DB</span>
+            <span class="badge-pill"
+              style="background: #10b981; color: white; font-size: 0.7rem; font-weight: 800;">CLOUD DB</span>
           </h2>
           <div style="font-size: 0.8rem; font-weight: 700; color: #1e3a8a;" id="sum-exam-title">--</div>
         </div>
-        <button type="button" class="fx-tool-btn" onclick="document.getElementById('modal-exam-summary').style.display='none'">✕</button>
+        <button type="button" class="fx-tool-btn"
+          onclick="document.getElementById('modal-exam-summary').style.display='none'">✕</button>
       </div>
 
       <!-- SUMMARY STATS GRID -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; text-align: center; margin-bottom: 1.25rem;">
-        <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 12px; padding: 0.75rem;">
+      <div
+        style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; text-align: center; margin-bottom: 1.25rem;">
+        <div
+          style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 12px; padding: 0.75rem;">
           <div style="font-size: 0.7rem; color: var(--fx-text-muted); font-weight: 700;">TOTAL APPEARED</div>
           <div style="font-size: 1.4rem; font-weight: 900; color: var(--fx-text-heading);" id="sum-total-cands">0</div>
         </div>
-        <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 12px; padding: 0.75rem;">
+        <div
+          style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 12px; padding: 0.75rem;">
           <div style="font-size: 0.7rem; color: #15803d; font-weight: 700;">HIGHEST SCORE</div>
           <div style="font-size: 1.4rem; font-weight: 900; color: #15803d;" id="sum-highest-score">--</div>
         </div>
-        <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 12px; padding: 0.75rem;">
+        <div
+          style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 12px; padding: 0.75rem;">
           <div style="font-size: 0.7rem; color: #1e3a8a; font-weight: 700;">AVERAGE SCORE</div>
           <div style="font-size: 1.4rem; font-weight: 900; color: #1e3a8a;" id="sum-avg-score">--</div>
         </div>
-        <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 12px; padding: 0.75rem;">
+        <div
+          style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 12px; padding: 0.75rem;">
           <div style="font-size: 0.7rem; color: #d97706; font-weight: 700;">PASS PERCENTAGE</div>
           <div style="font-size: 1.4rem; font-weight: 900; color: #d97706;" id="sum-pass-rate">--</div>
         </div>
@@ -1300,7 +1483,8 @@
         <div style="font-size: 0.825rem; font-weight: 800; color: var(--fx-text-heading); margin-bottom: 0.5rem;">
           Top Ranking Candidate Performers:
         </div>
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--fx-border); border-radius: 12px;">
+        <div
+          style="overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--fx-border); border-radius: 12px;">
           <table class="fx-table">
             <thead>
               <tr>
@@ -1324,7 +1508,8 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="fx-btn-pill-coral" onclick="document.getElementById('modal-exam-summary').style.display='none'">Done</button>
+        <button type="button" class="fx-btn-pill-coral"
+          onclick="document.getElementById('modal-exam-summary').style.display='none'">Done</button>
       </div>
     </div>
   </div>
@@ -1332,33 +1517,45 @@
   <!-- SHARE CANDIDATE REGISTRATION LINK MODAL -->
   <div class="modal-backdrop" id="modal-share-reg-link"
     style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 620px; width: 95%; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--fx-border);">
+    <div
+      style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 620px; width: 95%; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
+      <div
+        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--fx-border);">
         <div>
-          <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 8px;">
+          <h2
+            style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading); display: flex; align-items: center; gap: 8px;">
             <span>Candidate Self-Registration Portal</span>
-            <span class="badge-pill" style="background: #10b981; color: white; font-weight: 800; font-size: 0.72rem;">PUBLIC LINK</span>
+            <span class="badge-pill"
+              style="background: #10b981; color: white; font-weight: 800; font-size: 0.72rem;">PUBLIC LINK</span>
           </h2>
           <p style="font-size: 0.78rem; color: var(--fx-text-muted); margin-top: 2px;">
             Share this link with candidates for self-enrollment and instant examination access.
           </p>
         </div>
-        <button type="button" class="fx-tool-btn" onclick="document.getElementById('modal-share-reg-link').style.display='none'">✕</button>
+        <button type="button" class="fx-tool-btn"
+          onclick="document.getElementById('modal-share-reg-link').style.display='none'">✕</button>
       </div>
 
-      <div style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+      <div
+        style="background: var(--fx-card); border: 1px solid var(--fx-border); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
         <div style="margin-bottom: 10px;">
-          <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Pre-select Target Exam (Optional):</label>
-          <select class="fx-pill-filter-btn" id="share-reg-exam-select" style="width: 100%; padding: 8px 12px; border-radius: 8px;">
+          <label
+            style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Pre-select
+            Target Exam (Optional):</label>
+          <select class="fx-pill-filter-btn" id="share-reg-exam-select"
+            style="width: 100%; padding: 8px 12px; border-radius: 8px;">
             <option value="">-- General Registration (All Exams Accessible) --</option>
           </select>
         </div>
 
-        <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Candidate Self-Registration URL:</label>
+        <label
+          style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Candidate
+          Self-Registration URL:</label>
         <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
           <input type="text" class="fx-pill-search" id="share-reg-url-input" readonly
             style="font-family: var(--fx-font-mono); font-size: 0.8rem; background: var(--fx-card); flex: 1; padding: 8px 12px; border-radius: 8px;" />
-          <button type="button" class="fx-btn-pill-coral" id="btn-copy-reg-url" style="white-space: nowrap; padding: 8px 16px;">
+          <button type="button" class="fx-btn-pill-coral" id="btn-copy-reg-url"
+            style="white-space: nowrap; padding: 8px 16px;">
             Copy Link
           </button>
         </div>
@@ -1366,7 +1563,9 @@
 
       <!-- QUICK SHARING MESSAGE TEMPLATE -->
       <div style="margin-bottom: 14px;">
-        <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Pre-formatted Invite Message:</label>
+        <label
+          style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Pre-formatted
+          Invite Message:</label>
         <textarea class="fx-pill-search" id="share-reg-msg-preview" rows="4" readonly
           style="font-size: 0.75rem; font-family: var(--fx-font-mono); width: 100%; border-radius: 10px; padding: 8px 12px;"></textarea>
         <button type="button" class="fx-btn-pill-light" id="btn-copy-invite-msg"
@@ -1376,8 +1575,10 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="fx-btn-pill-light" onclick="document.getElementById('modal-share-reg-link').style.display='none'">Done</button>
-        <a href="/register.html" target="_blank" class="fx-btn-pill-coral" id="btn-open-reg-preview" style="text-decoration: none;">
+        <button type="button" class="fx-btn-pill-light"
+          onclick="document.getElementById('modal-share-reg-link').style.display='none'">Done</button>
+        <a href="/register.html" target="_blank" class="fx-btn-pill-coral" id="btn-open-reg-preview"
+          style="text-decoration: none;">
           Open Portal &rarr;
         </a>
       </div>
@@ -1391,8 +1592,10 @@
       style="background: var(--fx-card); border-radius: 24px; padding: 24px; max-width: 780px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: var(--fx-shadow-hover); border: 1px solid var(--fx-border);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <div>
-          <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading);">Directorate Document &amp; Center Settings</h3>
-          <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-top: 2px;">Configure dynamic hall tickets, official scorecards, and testing venue authorities stored in Cloud DB.</p>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--fx-text-heading);">Directorate Document &amp;
+            Center Settings</h3>
+          <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-top: 2px;">Configure dynamic hall tickets,
+            official scorecards, and testing venue authorities stored in Cloud DB.</p>
         </div>
         <button type="button" class="fx-tool-btn" id="btn-close-settings"
           onclick="document.getElementById('modal-document-settings').style.display='none'">✕</button>
@@ -1409,41 +1612,49 @@
         <div id="tab-pane-admit" class="settings-tab-pane">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Institution / Testing Agency Name</label>
-              <input type="text" id="setting-admit-inst-name" class="fx-pill-search"
-                value="SSE CBT PLATFORM"
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Institution
+                / Testing Agency Name</label>
+              <input type="text" id="setting-admit-inst-name" class="fx-pill-search" value="SSE CBT PLATFORM"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Examination Title</label>
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Examination
+                Title</label>
               <input type="text" id="setting-admit-exam-title" class="fx-pill-search"
-                value="MCQ ASSESSMENT [ SSE CBT 2026 ]"
-                style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
+                value="MCQ ASSESSMENT [ SSE CBT 2026 ]" style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Header Subtitle / Tagline</label>
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Header
+                Subtitle / Tagline</label>
               <input type="text" id="setting-admit-subtitle" class="fx-pill-search"
                 value="PROVISIONAL ADMIT CARD / HALL TICKET • COMPUTER BASED TEST (CBT)"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Security Watermark Text</label>
-              <input type="text" id="setting-admit-watermark" class="fx-pill-search"
-                value="CONFIDENTIAL"
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Security
+                Watermark Text</label>
+              <input type="text" id="setting-admit-watermark" class="fx-pill-search" value="CONFIDENTIAL"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
           </div>
           <div style="margin-bottom: 14px;">
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Candidate Instructions &amp; Rules</label>
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Candidate
+              Instructions &amp; Rules</label>
             <textarea id="setting-admit-instructions" class="fx-pill-search" rows="3"
               style="width: 100%; border-radius: 10px; padding: 8px 12px;">1. Government photo ID card mandatory for physical entrance.
 2. Electronic devices, smartwatches, and calculators strictly prohibited.
 3. Continuous webcam biometric tracking and screen proctoring active.
 4. Candidates must report at the allocated test center prior to gate closure.</textarea>
           </div>
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 12px; padding: 12px;">
+          <div
+            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: var(--fx-border-subtle); border: 1px solid var(--fx-border); border-radius: 12px; padding: 12px;">
             <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
               <input type="checkbox" id="setting-admit-show-photo" checked /> Show Biometric Photo
             </label>
@@ -1469,13 +1680,16 @@
         <div id="tab-pane-scorecard" class="settings-tab-pane" style="display: none;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Institution / Testing Agency Name</label>
-              <input type="text" id="setting-sc-inst-name" class="fx-pill-search"
-                value="SSE CBT PLATFORM"
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Institution
+                / Testing Agency Name</label>
+              <input type="text" id="setting-sc-inst-name" class="fx-pill-search" value="SSE CBT PLATFORM"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Official Certificate Title</label>
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Official
+                Certificate Title</label>
               <input type="text" id="setting-sc-doc-title" class="fx-pill-search"
                 value="MCQ ASSESSMENT [ SSE CBT 2026 ] : Official Score Card"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
@@ -1483,25 +1697,31 @@
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Subhead / Status Verification Text</label>
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Subhead
+                / Status Verification Text</label>
               <input type="text" id="setting-sc-subhead-status" class="fx-pill-search"
                 value="Status: Authenticated &amp; Cloud Verified"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Security Watermark Text</label>
-              <input type="text" id="setting-sc-watermark" class="fx-pill-search"
-                value="CONFIDENTIAL"
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Security
+                Watermark Text</label>
+              <input type="text" id="setting-sc-watermark" class="fx-pill-search" value="CONFIDENTIAL"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
           </div>
           <div style="margin-bottom: 14px;">
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Scorecard Legal Footer Disclaimer</label>
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Scorecard
+              Legal Footer Disclaimer</label>
             <input type="text" id="setting-sc-footer-disclaimer" class="fx-pill-search"
               value="This is an official computer-generated score document verified against Supabase Cloud DB. No signature required."
               style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
           </div>
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 12px; padding: 12px;">
+          <div
+            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: var(--fx-border-subtle); border: 1px solid var(--fx-border); border-radius: 12px; padding: 12px;">
             <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
               <input type="checkbox" id="setting-sc-show-banner" checked /> Show Overall Banner
             </label>
@@ -1527,34 +1747,46 @@
         <div id="tab-pane-authority" class="settings-tab-pane" style="display: none;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate Official Name</label>
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate
+                Official Name</label>
               <input type="text" id="setting-controller-name" class="fx-pill-search" value="ADMIN@SSE.IN"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate Designation</label>
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Directorate
+                Designation</label>
               <input type="text" id="setting-controller-desig" class="fx-pill-search" value="Examination Directorate"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
           </div>
           <div style="margin-bottom: 12px;">
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Venue Name &amp; Full Address</label>
+            <label
+              style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Venue
+              Name &amp; Full Address</label>
             <textarea id="setting-venue-name" class="fx-pill-search" rows="2"
               style="width: 100%; border-radius: 10px; padding: 8px 12px;">SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105</textarea>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Center Code</label>
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Center
+                Code</label>
               <input type="text" id="setting-center-code" class="fx-pill-search" value="SSEC-TN-042"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Default Lab Room</label>
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Default
+                Lab Room</label>
               <input type="text" id="setting-lab-room" class="fx-pill-search" value="LAB-01 (Block-A)"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
             <div>
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Terminal Prefix</label>
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--fx-text-heading); display: block; margin-bottom: 4px;">Terminal
+                Prefix</label>
               <input type="text" id="setting-terminal-prefix" class="fx-pill-search" value="T-A-"
                 style="width: 100%; border-radius: 10px; padding: 8px 12px;" />
             </div>
@@ -1580,7 +1812,8 @@
         class="no-print">
         <strong style="font-size: 0.95rem;">Official CBT Examination Admit Card (Hall Ticket)</strong>
         <div style="display: flex; gap: 0.5rem;">
-          <button type="button" class="fx-btn-pill-coral" id="btn-print-admit" style="padding: 6px 16px; font-size: 0.8rem;">
+          <button type="button" class="fx-btn-pill-coral" id="btn-print-admit"
+            style="padding: 6px 16px; font-size: 0.8rem;">
             Print Admit Card
           </button>
           <button type="button" class="fx-btn-pill-light" style="padding: 6px 16px; font-size: 0.8rem;"
@@ -1591,7 +1824,9 @@
       </div>
 
       <div class="admit-card-box" id="admit-card-printable-area" style="padding: 1.5rem; position: relative;">
-        <div class="admit-watermark" id="admit-watermark" style="position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 4rem; font-weight: 900; color: rgba(15, 23, 42, 0.04); pointer-events: none; z-index: 0; text-transform: uppercase;">CONFIDENTIAL</div>
+        <div class="admit-watermark" id="admit-watermark"
+          style="position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 4rem; font-weight: 900; color: rgba(15, 23, 42, 0.04); pointer-events: none; z-index: 0; text-transform: uppercase;">
+          CONFIDENTIAL</div>
 
         <!-- Header -->
         <div
@@ -1617,7 +1852,9 @@
               id="admit-number">AC-2026-A-0001</div>
           </div>
           <div style="text-align: right;">
-            <div class="admit-barcode" id="admit-barcode" style="font-family: monospace; font-size: 1.1rem; letter-spacing: 2px; font-weight: 700;">SSEC*2026*CBT</div>
+            <div class="admit-barcode" id="admit-barcode"
+              style="font-family: monospace; font-size: 1.1rem; letter-spacing: 2px; font-weight: 700;">SSEC*2026*CBT
+            </div>
             <div style="font-size: 0.68rem; color: #64748b; margin-top: 2px;">SECURE 2D SCANNER DATA</div>
           </div>
         </div>
@@ -1637,8 +1874,8 @@
             </div>
             <div>
               <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">ROLL NUMBER</div>
-              <div style="font-size: 0.9rem; font-weight: 800; font-family: monospace; color: #2563eb;"
-                id="admit-roll">--</div>
+              <div style="font-size: 0.9rem; font-weight: 800; font-family: monospace; color: #2563eb;" id="admit-roll">
+                --</div>
             </div>
             <div>
               <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">REGISTRATION NUMBER</div>
@@ -1662,10 +1899,11 @@
         </div>
 
         <!-- Schedule & Venue Details -->
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 1rem; position: relative; z-index: 1;">
+        <div
+          style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 1rem; position: relative; z-index: 1;">
           <table id="admit-slots-table"
             style="width: 100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #cbd5e1;">
-            <tr style="background: #f8fafc;">
+            <tr style="background: var(--fx-border-subtle);">
               <th
                 style="padding: 6px 10px; border: 1px solid #cbd5e1; text-align: left; font-size: 0.72rem; color: #475569;">
                 EXAMINATION SLOT</th>
@@ -1680,18 +1918,22 @@
                 EXAM TIMINGS</th>
             </tr>
             <tr>
-              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 800; color: #2563eb;" id="admit-slot">
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 800; color: #2563eb;"
+                id="admit-slot">
                 Subject Slot A</td>
-              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;" id="admit-reporting">08:30 AM IST</td>
-              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #dc2626;" id="admit-gate-close">09:15 AM IST</td>
-              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;" id="admit-exam-timings">09:30 AM - 12:30 PM IST</td>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;" id="admit-reporting">08:30 AM
+                IST</td>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #dc2626;"
+                id="admit-gate-close">09:15 AM IST</td>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 700;" id="admit-exam-timings">09:30
+                AM - 12:30 PM IST</td>
             </tr>
           </table>
         </div>
 
         <!-- Venue & Terminal -->
         <div id="admit-venue-block"
-          style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.8rem; position: relative; z-index: 1;">
+          style="background: var(--fx-border-subtle); border: 1px solid var(--fx-border); padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.8rem; position: relative; z-index: 1;">
           <div style="font-weight: 800; color: #0f172a; margin-bottom: 2px;">
             TEST VENUE: <span id="admit-venue-name">SSE Digital Assessment Hub, Campus Block-A, Chennai - 602105</span>
           </div>
@@ -1709,10 +1951,11 @@
           <div style="font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
             <span>RULES &amp; INSTRUCTIONS FOR CANDIDATES</span>
           </div>
-          <div id="admit-instructions-content" style="white-space: pre-line;">1. Government photo ID card mandatory for physical entrance.
-2. Electronic devices, smartwatches, and calculators strictly prohibited.
-3. Continuous webcam biometric tracking and screen proctoring active.
-4. Candidates must report at the allocated test center prior to gate closure.</div>
+          <div id="admit-instructions-content" style="white-space: pre-line;">1. Government photo ID card mandatory for
+            physical entrance.
+            2. Electronic devices, smartwatches, and calculators strictly prohibited.
+            3. Continuous webcam biometric tracking and screen proctoring active.
+            4. Candidates must report at the allocated test center prior to gate closure.</div>
         </div>
 
         <!-- Official Signatures -->
@@ -1720,14 +1963,18 @@
           style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #cbd5e1; position: relative; z-index: 1;">
           <div style="text-align: center;">
             <div style="width: 140px; height: 35px; border-bottom: 1px solid #64748b;"></div>
-            <div style="font-size: 0.72rem; color: #475569; font-weight: 600; margin-top: 4px;">Candidate's Signature</div>
+            <div style="font-size: 0.72rem; color: #475569; font-weight: 600; margin-top: 4px;">Candidate's Signature
+            </div>
             <div style="font-size: 0.65rem; color: #94a3b8;">(To be signed in presence of Invigilator)</div>
           </div>
           <div style="text-align: center;">
-            <div style="font-family: 'Brush Script MT', cursive, sans-serif; font-size: 1.25rem; color: #1e3a8a; font-weight: 700;" id="admit-controller-name">
+            <div
+              style="font-family: 'Brush Script MT', cursive, sans-serif; font-size: 1.25rem; color: #1e3a8a; font-weight: 700;"
+              id="admit-controller-name">
               ADMIN@SSE.IN</div>
             <div
-              style="font-size: 0.72rem; color: #0f172a; font-weight: 800; border-top: 1px solid #64748b; padding-top: 4px;" id="admit-controller-desig">
+              style="font-size: 0.72rem; color: #0f172a; font-weight: 800; border-top: 1px solid #64748b; padding-top: 4px;"
+              id="admit-controller-desig">
               Examination Directorate</div>
             <div style="font-size: 0.65rem; color: #475569;" id="admit-controller-inst">SSE CBT PLATFORM</div>
           </div>
@@ -1808,7 +2055,7 @@
         <input type="hidden" id="edit-result-cand-id" />
         <input type="hidden" id="edit-result-exam-id" />
         <div
-          style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+          style="background: var(--fx-border-subtle); border: 1px solid var(--fx-border); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
           <div style="font-size: 0.72rem; color: var(--fx-text-muted);">Candidate:</div>
           <div id="edit-result-cand-name" style="font-weight: 800; font-size: 0.95rem; color: var(--fx-text-heading);">
             --</div>
@@ -1878,7 +2125,7 @@
       <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-bottom: 14px;">Candidate attempt will be
         immediately terminated, scores nullified, and terminal locked.</p>
       <input type="hidden" id="debar-cand-id" />
-      <div style="background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 12px;">
+      <div style="background: var(--fx-border-subtle); padding: 10px; border-radius: 10px; margin-bottom: 12px;">
         <div id="debar-cand-name" style="font-weight: 700; color: var(--fx-text-heading);">--</div>
         <div id="debar-cand-reg"
           style="font-size: 0.78rem; font-family: var(--fx-font-mono); color: var(--fx-text-muted);">--</div>

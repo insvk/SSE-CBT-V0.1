@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"
     rel="stylesheet">
   
   <script>
@@ -19,9 +19,9 @@
       }
     })();
   </script>
-  <script type="module" crossorigin src="/assets/candidate_dashboard-365153df.js"></script>
+  <script type="module" crossorigin src="/assets/candidate_dashboard-089d67fd.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
-  <link rel="stylesheet" href="/assets/finexy-theme-f3294019.css">
+  <link rel="stylesheet" href="/assets/finexy-theme-63a3d038.css">
 </head>
 
 <body>
@@ -84,14 +84,11 @@
           </svg>
         </button>
 
-        <!-- 4. Scorecard (File Text) -->
-        <button type="button" class="fx-dock-item" data-tab="scorecard" title="Verified Scorecard" onclick="window.location.href='/scorecard.html'">
+        <!-- 4. Past Exam History & Attempted Tests -->
+        <button type="button" class="fx-dock-item" data-tab="history" title="Past Exam History &amp; Attempted Tests" onclick="switchCandTab('history')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
         </button>
 
@@ -149,7 +146,7 @@
           <button type="button" class="fx-pill active" data-tab="overview" onclick="switchCandTab('overview')">Overview</button>
           <button type="button" class="fx-pill" data-tab="exams" onclick="switchCandTab('exams')">My Examinations</button>
           <button type="button" class="fx-pill" data-tab="admit" id="btn-view-admit-card">Admit Card</button>
-          <button type="button" class="fx-pill" data-tab="scorecard" onclick="window.location.href='/scorecard.html'">Verified Scorecard</button>
+          <button type="button" class="fx-pill" data-tab="history" onclick="switchCandTab('history')">Past Exam History &amp; Scores</button>
           <button type="button" class="fx-pill" data-tab="guidelines" onclick="window.location.href='/instructions.html'">Guidelines</button>
         </div>
 
@@ -246,9 +243,9 @@
             <!-- Shift Batches Sub-row -->
             <div class="fx-slots-subhead">
               <span>Candidate Reporting Slot</span>
-              <span>Authoritative Schedule</span>
+              <span id="cand-slots-subhead">Authoritative Schedule</span>
             </div>
-            <div class="fx-slots-row">
+            <div class="fx-slots-row" id="cand-slots-row">
               <div class="fx-slot-item">
                 <div class="fx-slot-header">
                   <span>Slot A</span>
@@ -315,9 +312,9 @@
                   <span class="fx-card-label">Biometric Verification</span>
                   <span style="font-size: 0.9rem;">🔒</span>
                 </div>
-                <div class="fx-duo-val">Verified</div>
+                <div class="fx-duo-val" id="cand-stat-biometric-val">Verified</div>
                 <div class="fx-trend-sub" style="color: #10b981;">
-                  <span>Active Session</span>
+                  <span id="cand-stat-biometric-sub">Active Session</span>
                 </div>
               </div>
 
@@ -327,9 +324,9 @@
                   <span class="fx-card-label">Time Precision</span>
                   <span style="font-size: 0.9rem;">⏱️</span>
                 </div>
-                <div class="fx-duo-val">0ms drift</div>
+                <div class="fx-duo-val" id="cand-stat-clock-drift">0ms drift</div>
                 <div class="fx-trend-sub" style="color: #10b981;">
-                  <span>Google NTP IST</span>
+                  <span id="cand-stat-clock-sub">Google NTP IST</span>
                 </div>
               </div>
             </div>
@@ -340,7 +337,7 @@
             <div class="fx-card-title-row">
               <div>
                 <div class="fx-card-label" style="font-weight: 700; color: var(--fx-text-heading); font-size: 1.05rem;">Section Distribution</div>
-                <div style="font-size: 0.75rem; color: var(--fx-text-muted); margin-top: 2px;">Subject-wise test questions breakdown</div>
+                <div style="font-size: 0.75rem; color: var(--fx-text-muted); margin-top: 2px;" id="cand-sections-subtitle">Subject-wise test questions breakdown</div>
               </div>
               <div style="display: flex; gap: 8px; font-size: 0.72rem; font-weight: 600;">
                 <span style="color: var(--fx-coral);">&#9632; Core</span>
@@ -349,7 +346,7 @@
             </div>
 
             <!-- Striped Bars Graphic matching the reference chart -->
-            <div class="fx-bars-container">
+            <div class="fx-bars-container" id="cand-section-bars-container">
               <div class="fx-bar-col">
                 <div class="fx-bar-composite" style="height: 100%;">
                   <div class="fx-bar-top" style="height: 40%;"></div>
@@ -419,11 +416,11 @@
                 </div>
                 <div style="margin: 10px 0;">
                   <div style="font-size: 0.7rem; color: #94a3b8;">Center Allocation</div>
-                  <div class="fx-badge-num">SSE DIGITAL HUB • CHENNAI</div>
+                  <div class="fx-badge-num" id="cand-center-badge">SSE DIGITAL HUB • CHENNAI</div>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #94a3b8;">
-                  <span>Shift: Slot A</span>
-                  <span>Room: LAB-01</span>
+                  <span id="cand-shift-badge">Shift: Slot A</span>
+                  <span id="cand-room-badge">Room: LAB-01</span>
                 </div>
               </div>
 
@@ -435,10 +432,10 @@
                 </div>
                 <div style="margin: 10px 0;">
                   <div style="font-size: 0.7rem; color: rgba(255,255,255,0.85);">Candidate Status</div>
-                  <div class="fx-badge-num" style="font-size: 0.78rem;">OFFICIALLY SEATED</div>
+                  <div class="fx-badge-num" id="cand-status-badge" style="font-size: 0.78rem;">OFFICIALLY SEATED</div>
                 </div>
                 <div style="font-size: 0.72rem; color: rgba(255,255,255,0.9);">
-                  <span>SSE CBT 2026</span>
+                  <span id="cand-exam-badge">SSE CBT 2026</span>
                 </div>
               </div>
             </div>
@@ -496,13 +493,86 @@
               <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 2px;">All active and concluded tests linked to your candidate registration.</p>
             </div>
           </div>
-          <div style="background: #f8fafc; border: 1px solid var(--fx-border); border-radius: 16px; padding: 24px; text-align: center;">
+          <div style="background: var(--fx-border-subtle); border: 1px solid var(--fx-border); border-radius: 16px; padding: 24px; text-align: center;">
             <p style="font-size: 0.9rem; color: var(--fx-text-muted); margin-bottom: 16px;">
               Ready to write your examination? Please review instructions before proceeding.
             </p>
             <a href="/instructions.html" class="fx-btn-pill-coral" style="display: inline-flex; text-decoration: none;">
               Proceed to Instructions &rarr;
             </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SECTION 3: PAST EXAM HISTORY & ATTEMPTED TESTS TAB ================= -->
+      <section class="fx-section-view" id="view-history">
+        <div class="fx-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--fx-text-heading); margin: 0;">Past Exam History &amp; Attempted Tests</h2>
+                <span class="fx-brand-badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; font-size: 0.72rem;">Cloud DB Synced</span>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--fx-text-muted); margin-top: 4px;">Authoritative log of all your submitted examinations, scores, accuracy metrics, and official audited scorecards retrieved directly from Supabase Cloud DB.</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="fx-btn-pill-light" id="btn-refresh-history" onclick="loadCandidateExamHistory()" title="Refresh records from Supabase Cloud DB">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 4v6h-6"></path>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                <span>Sync Cloud DB</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Summary Metrics Bar -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 22px;">
+            <div class="fx-mini-stat-card">
+              <span class="fx-card-label">Total Tests Attempted</span>
+              <div class="fx-duo-val" id="hist-total-attempts">0 Tests</div>
+              <div class="fx-trend-sub" style="color: #64748b;">Authoritative records</div>
+            </div>
+            <div class="fx-mini-stat-card">
+              <span class="fx-card-label">Highest Score Achieved</span>
+              <div class="fx-duo-val" id="hist-best-score" style="color: #047857;">--</div>
+              <div class="fx-trend-sub" style="color: #10b981;">Best evaluated mark</div>
+            </div>
+            <div class="fx-mini-stat-card">
+              <span class="fx-card-label">Average Performance</span>
+              <div class="fx-duo-val" id="hist-avg-score">--</div>
+              <div class="fx-trend-sub" style="color: #6366f1;">Mean score percentage</div>
+            </div>
+            <div class="fx-mini-stat-card">
+              <span class="fx-card-label">Integrity Status</span>
+              <div class="fx-duo-val" style="font-size: 1.1rem; color: #10b981;">Verified</div>
+              <div class="fx-trend-sub" style="color: #10b981;">Zero Malpractice Flag</div>
+            </div>
+          </div>
+
+          <!-- Past Exam Attempts Table -->
+          <div class="fx-table-wrap">
+            <table class="fx-table">
+              <thead>
+                <tr>
+                  <th>Test Code</th>
+                  <th>Examination Assessment</th>
+                  <th>Score / Max</th>
+                  <th>Percentage</th>
+                  <th>Accuracy</th>
+                  <th>Submission (IST)</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="cand-history-table-body">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--fx-text-muted);">
+                    Loading authoritative past attempt history from Cloud DB...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>

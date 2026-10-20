@@ -1036,11 +1036,38 @@ function openQuestionPaper(): void {
 }
 
 // User Profile Initializer
-function initProfile(): void {
-    const name = localStorage.getItem('candidate_name') || 'Candidate';
-    const reg = localStorage.getItem('reg_no') || '';
+async function initProfile(): Promise<void> {
+    let name = localStorage.getItem('candidate_name') || 'Candidate';
+    let reg = localStorage.getItem('reg_no') || '';
     if (ui.candDisplayName) ui.candDisplayName.textContent = name;
     if (ui.candDisplayReg) ui.candDisplayReg.textContent = reg;
+
+    try {
+        const res = await fetch('/api/v1/auth/me', { headers: getAuthHeaders() });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.full_name) {
+                name = data.full_name;
+                localStorage.setItem('candidate_name', name);
+                if (ui.candDisplayName) ui.candDisplayName.textContent = name;
+            }
+            if (data.registration_number || data.roll_number) {
+                reg = data.registration_number || data.roll_number;
+                localStorage.setItem('reg_no', reg);
+                if (ui.candDisplayReg) ui.candDisplayReg.textContent = reg;
+            }
+            if (data.candidate_id) {
+                localStorage.setItem('candidate_id', data.candidate_id);
+            }
+            if (data.assigned_terminal) {
+                const termDisplayId = document.getElementById('term-display-id');
+                if (termDisplayId) termDisplayId.textContent = data.assigned_terminal;
+            }
+            if (data.disqualified) {
+                triggerTerminalForceLock("Candidate account is disqualified in Cloud DB.");
+            }
+        }
+    } catch (_) {}
 }
 
 // Bind Global Listeners
