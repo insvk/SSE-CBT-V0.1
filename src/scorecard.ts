@@ -84,7 +84,7 @@ function renderScorecardData(data: any, fallbackName: string, fallbackReg: strin
     if (scName) scName.textContent = candName;
     if (scReg) scReg.textContent = candReg;
     if (scCategory) scCategory.textContent = data.category || 'General';
-    if (scGender) scGender.textContent = data.gender || 'Male';
+    if (scGender) scGender.textContent = data.gender || 'Not Specified';
     if (scAppNo) {
         if (data.application_number) {
             scAppNo.textContent = data.application_number;

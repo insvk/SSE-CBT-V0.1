@@ -351,7 +351,8 @@ function renderDynamicOverviewBars(subjectBreakdown?: Record<string, number>): v
     const breakdown = subjectBreakdown || {};
     let entries = Object.entries(breakdown);
     if (entries.length === 0) {
-        entries = [['MATH-1', 0], ['MATH-2', 0], ['PHYS', 0], ['CHEM', 0], ['BIO', 0]];
+        container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; font-size: 0.78rem; color: var(--text-muted); text-align: center; padding: 1rem;">No question bank items recorded</div>';
+        return;
     }
 
     const counts = entries.map(([_, count]) => count);
@@ -458,7 +459,7 @@ async function loadDashboardSummary(): Promise<void> {
 
             const questionsSub = document.getElementById('dash-questions-sub');
             const numSubjects = Object.keys(summary.subject_breakdown || {}).length;
-            if (questionsSub) questionsSub.textContent = `↑ ${numSubjects > 0 ? numSubjects : 3} Sections`;
+            if (questionsSub) questionsSub.textContent = `↑ ${numSubjects} Sections`;
 
             // Telemetry & Infrastructure Load
             const infraLoad = document.getElementById('dash-infra-load');
@@ -469,10 +470,16 @@ async function loadDashboardSummary(): Promise<void> {
             if (infraBar) infraBar.style.width = '100%';
 
             const terminalNode = document.getElementById('dash-card-terminal-node');
-            if (terminalNode) terminalNode.textContent = summary.active_exam_terminal_prefix || 'NODE-L4-C';
+            if (terminalNode) terminalNode.textContent = summary.active_exam_terminal_prefix || 'NODE --';
 
             const terminalVenue = document.getElementById('dash-card-terminal-venue');
-            if (terminalVenue) terminalVenue.textContent = `${summary.active_exam_venue || 'SIMATS ENGINEERING'} • ${summary.active_exam_room || 'LAB-01'}`;
+            if (terminalVenue) {
+                if (summary.active_exam_venue && summary.active_exam_venue !== "Awaiting Exam Configuration") {
+                    terminalVenue.textContent = `${summary.active_exam_venue} • ${summary.active_exam_room || 'LAB-01'}`;
+                } else {
+                    terminalVenue.textContent = summary.active_exam_venue || 'Awaiting Center Setup';
+                }
+            }
 
             const termStatus = document.getElementById('dash-card-terminal-status');
             if (termStatus) termStatus.textContent = (adminSocket && adminSocket.readyState === WebSocket.OPEN) ? '• Online' : '• Standby';
@@ -1630,10 +1637,9 @@ function renderProctorTerminals(): void {
     if (countEl) countEl.textContent = `${cachedCandidates.length} Active Terminals Online`;
     grid.innerHTML = '';
 
-    cachedCandidates.forEach((c: any, idx: number) => {
-        const fallbackTerm = `Terminal C-04${idx + 1}`;
-        const regNo = c.registration_number || `SSE-${c.batch || 'A'}-CBT-000${idx + 1}`;
-        const terminalId = candidateAssignedTerminals[regNo] || c.metadata?.assigned_terminal || fallbackTerm;
+    cachedCandidates.forEach((c: any) => {
+        const regNo = c.registration_number || c.roll_number || 'Unassigned';
+        const terminalId = candidateAssignedTerminals[regNo] || c.metadata?.assigned_terminal || c.assigned_terminal || 'Unassigned';
         const violations = terminalViolations[regNo] || 0;
         const isPaused = candidatePausedStates[regNo] || false;
         const isLocked = candidateLockedStates[regNo] || false;
@@ -1793,7 +1799,10 @@ if (formExtendCandidateTime) {
         inputReg.value = regNo;
         labelName.textContent = name;
         labelTerm.textContent = `Current Active Node: ${currentTerm}`;
-        if (targetInput) targetInput.value = 'Terminal C-049';
+        if (targetInput) {
+            targetInput.value = '';
+            targetInput.placeholder = 'e.g. Node-T-02';
+        }
         modal.style.display = 'flex';
     }
 };

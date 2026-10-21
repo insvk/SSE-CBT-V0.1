@@ -17,8 +17,8 @@ interface ExamQuestion {
 // Authoritative Questions loaded directly from Supabase Cloud DB (Zero hardcoded mock questions)
 let allQuestions: ExamQuestion[] = [];
 let currentQuestionIndex = 0;
-let activeSection = "MATH-1";
-let configuredSections: string[] = ["MATH-1", "MATH-2", "PHYSICS", "CHEMISTRY"];
+let activeSection = "";
+let configuredSections: string[] = [];
 let isAiCameraEnabled = false;
 let activeCameraMediaStream: MediaStream | null = null;
 
@@ -913,7 +913,7 @@ function openGodEditModal(): void {
     ui.editQOptC.value = q.options[2] || "";
     ui.editQOptD.value = q.options[3] || "";
     ui.editQAns.value = q.correct_answer || "A";
-    ui.editQSec.value = q.section || "PHYSICS - SEC-I";
+    ui.editQSec.value = q.section || q.subject || "General";
 
     ui.modalEditQ.style.display = 'flex';
 }
@@ -970,10 +970,16 @@ function renderDynamicSectionPills(sections?: Array<{ name: string; enabled: boo
         if (enabledSections.length > 0) {
             configuredSections = enabledSections;
         }
+    } else if (configuredSections.length === 0 && allQuestions && allQuestions.length > 0) {
+        configuredSections = Array.from(new Set(allQuestions.map(q => q.section || q.subject || "General"))).filter(Boolean);
+    }
+
+    if (configuredSections.length === 0) {
+        return;
     }
 
     if (!configuredSections.includes(activeSection)) {
-        activeSection = configuredSections[0] || 'MATH-1';
+        activeSection = configuredSections[0] || '';
     }
 
     const container = document.getElementById('section-pills-container');
@@ -1007,7 +1013,7 @@ function renderDynamicSectionPills(sections?: Array<{ name: string; enabled: boo
     updateSectionMeta();
 }
 
-renderDynamicSectionPills();
+// renderDynamicSectionPills rendered on exam question fetch
 
 // Question Paper Modal Generator
 function openQuestionPaper(): void {
@@ -1332,10 +1338,8 @@ async function fetchRemoteQuestions(): Promise<void> {
 
                 // Section Headers sync
                 const secs = exInfo.sections || exInfo.config?.sections;
-                if (secs && Array.isArray(secs)) {
+                if (secs && Array.isArray(secs) && secs.length > 0) {
                     renderDynamicSectionPills(secs);
-                } else {
-                    renderDynamicSectionPills(['MATH-1', 'MATH-2', 'PHYSICS', 'CHEMISTRY']);
                 }
             }
         } catch (_) {}
@@ -1378,6 +1382,11 @@ async function fetchRemoteQuestions(): Promise<void> {
                 allQuestions = data;
                 responses = new Array(allQuestions.length).fill(null);
                 questionState = new Array(allQuestions.length).fill(0);
+
+                if (configuredSections.length === 0) {
+                    const discoveredSecs = Array.from(new Set(allQuestions.map(q => q.section || q.subject || "General"))).filter(Boolean);
+                    renderDynamicSectionPills(discoveredSecs.length > 0 ? discoveredSecs : ["General"]);
+                }
 
                 renderPalette();
                 loadQuestion(0);

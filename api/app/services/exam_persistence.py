@@ -120,11 +120,10 @@ def ensure_candidate_exists(
                 "batch": "A",
                 "status": "active",
                 "exam_status": "in_progress",
-                "password": "password123",
-                "assigned_terminal": "Terminal C-049",
+                "assigned_terminal": "Unassigned",
                 "roll_number": reg,
-                "biometric_status": "verified",
-                "biometric_score": 98.6,
+                "biometric_status": "pending",
+                "biometric_score": None,
             }
         }).execute()
         return cand_uuid

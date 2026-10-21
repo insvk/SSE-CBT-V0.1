@@ -252,12 +252,13 @@ function renderDynamicSectionBars(sections: any[]): void {
     const container = document.getElementById('cand-section-bars-container');
     if (!container) return;
 
-    let secList = ['MATH-1', 'MATH-2', 'PHYSICS', 'CHEMISTRY'];
+    let secList: string[] = [];
     if (Array.isArray(sections) && sections.length > 0) {
         secList = sections.map(s => typeof s === 'string' ? s : (s.name || '')).filter(Boolean);
     }
     if (secList.length === 0) {
-        secList = ['CORE-1', 'CORE-2', 'ASSESSMENT'];
+        container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; font-size: 0.8rem; color: var(--fx-text-muted);">No sections configured for this exam</div>';
+        return;
     }
 
     const heights = [
@@ -360,25 +361,25 @@ async function loadCandidateProfile(): Promise<void> {
             const bioVal = document.getElementById('cand-stat-biometric-val');
             const bioSub = document.getElementById('cand-stat-biometric-sub');
             if (bioVal) {
-                bioVal.textContent = data.biometric_score ? `Verified ${data.biometric_score}%` : 'Verified';
+                bioVal.textContent = data.biometric_score ? `Verified ${data.biometric_score}%` : (data.biometric_status === 'verified' ? 'Verified' : 'Pending');
             }
             if (bioSub) {
-                bioSub.textContent = data.disqualified ? 'Invalidated' : 'Active Session';
-                bioSub.style.color = data.disqualified ? '#ef4444' : '#10b981';
+                bioSub.textContent = data.disqualified ? 'Invalidated' : (data.biometric_status === 'verified' ? 'Active Session' : 'Verification Required');
+                bioSub.style.color = data.disqualified ? '#ef4444' : (data.biometric_status === 'verified' ? '#10b981' : '#f59e0b');
             }
 
             // Digital Hall Ticket Badges
             const termBadge = document.getElementById('cand-terminal-badge');
-            if (termBadge) termBadge.textContent = data.assigned_terminal || 'T-A-0001';
+            if (termBadge) termBadge.textContent = data.assigned_terminal || 'Unassigned';
 
             const centerBadge = document.getElementById('cand-center-badge');
-            if (centerBadge) centerBadge.textContent = (data.test_center_name || 'SSE DIGITAL ASSESSMENT HUB • CHENNAI').toUpperCase();
+            if (centerBadge) centerBadge.textContent = (data.test_center_name || 'Awaiting Allocation').toUpperCase();
 
             const shiftBadge = document.getElementById('cand-shift-badge');
             if (shiftBadge) shiftBadge.textContent = `Shift: Slot ${data.batch || 'A'}`;
 
             const roomBadge = document.getElementById('cand-room-badge');
-            if (roomBadge) roomBadge.textContent = `Room: ${data.room_number || 'LAB-01'}`;
+            if (roomBadge) roomBadge.textContent = `Room: ${data.room_number || 'Unassigned'}`;
 
             const statusBadge = document.getElementById('cand-status-badge');
             if (statusBadge) {

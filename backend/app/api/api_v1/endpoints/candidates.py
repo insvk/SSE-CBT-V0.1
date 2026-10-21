@@ -115,9 +115,9 @@ def _format_candidate_response(row: dict) -> CandidateResponse:
     # Safely extract biometric score
     raw_bio = metadata.get("biometric_score")
     try:
-        bio_score = float(raw_bio) if raw_bio is not None else 98.4
+        bio_score = float(raw_bio) if raw_bio is not None else None
     except (ValueError, TypeError):
-        bio_score = 98.4
+        bio_score = None
 
     # Robust candidate name fallback
     cand_name = row.get("full_name") or row.get("name") or metadata.get("full_name") or metadata.get("name") or "Candidate"
@@ -144,11 +144,11 @@ def _format_candidate_response(row: dict) -> CandidateResponse:
         roll_number=roll_no,
         status=metadata.get("status", "active"),
         batch=batch,
-        email=metadata.get("email") or (f"{reg_no.lower()}@ssecbt.in" if reg_no else "candidate@ssecbt.in"),
-        password=metadata.get("password") or "12345678",
+        email=metadata.get("email") or "",
+        password=metadata.get("password") or "",
         tenant_id=str(row.get("tenant_id", "")),
         category=metadata.get("category", "General"),
-        gender=metadata.get("gender", "Male"),
+        gender=metadata.get("gender", "Not Specified"),
         is_pwd=bool(metadata.get("is_pwd", False)),
         has_scribe=bool(metadata.get("has_scribe", False)),
         disability_type=metadata.get("disability_type"),
@@ -158,11 +158,11 @@ def _format_candidate_response(row: dict) -> CandidateResponse:
         test_center_code=metadata.get("test_center_code"),
         room_number=metadata.get("room_number") or metadata.get("lab_number"),
         device_details=metadata.get("device_details"),
-        biometric_status=metadata.get("biometric_status", "verified"),
+        biometric_status=metadata.get("biometric_status", "pending"),
         biometric_score=bio_score,
         exam_status=metadata.get("exam_status", "assigned"),
         debar_reason=metadata.get("debar_reason"),
-        ip_address=metadata.get("ip_address", "10.0.4.12"),
+        ip_address=metadata.get("ip_address"),
         reporting_time_ist=metadata.get("reporting_time_ist") or slot_info["reporting"],
         slot_timing_ist=slot_info["timing"],
         created_at_ist=created_at_ist,
@@ -273,9 +273,9 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
         # Real exams metadata
         active_exams_count = 0
         active_exam_duration = 180
-        active_exam_venue = "SIMATS ENGINEERING • LAB-01"
-        active_exam_terminal_prefix = "NODE-L4-C"
-        active_exam_room = "LAB-01"
+        active_exam_venue = "Awaiting Exam Configuration"
+        active_exam_terminal_prefix = "T-"
+        active_exam_room = "Awaiting Room Assignment"
         active_exam_title = "None"
         try:
             ex_res = db.table("exams").select("*").execute()
@@ -287,16 +287,17 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
                 active_exam_title = primary.get("title") or "Active Assessment"
                 active_exam_duration = int(primary.get("duration_minutes") or 180)
                 cfg = primary.get("config") or {}
-                active_exam_venue = cfg.get("test_venue_name") or "SIMATS ENGINEERING"
+                active_exam_venue = cfg.get("test_venue_name") or primary.get("venue") or "SIMATS ENGINEERING"
                 active_exam_terminal_prefix = cfg.get("terminal_prefix") or "NODE-L4-C"
-                active_exam_room = cfg.get("default_lab_room") or "LAB-01"
+                active_exam_room = cfg.get("default_lab_room") or cfg.get("room") or "LAB-01"
             elif all_exams:
                 primary = all_exams[0]
+                active_exam_title = primary.get("title") or "Assessment"
                 active_exam_duration = int(primary.get("duration_minutes") or 180)
                 cfg = primary.get("config") or {}
-                active_exam_venue = cfg.get("test_venue_name") or "SIMATS ENGINEERING"
+                active_exam_venue = cfg.get("test_venue_name") or primary.get("venue") or "SIMATS ENGINEERING"
                 active_exam_terminal_prefix = cfg.get("terminal_prefix") or "NODE-L4-C"
-                active_exam_room = cfg.get("default_lab_room") or "LAB-01"
+                active_exam_room = cfg.get("default_lab_room") or cfg.get("room") or "LAB-01"
         except Exception as ex_err:
             logger.warning("Error fetching exams for dashboard summary: %s", ex_err)
 
@@ -373,10 +374,10 @@ def get_dashboard_summary(user_context: dict = Depends(require_admin_user)):
             "total_questions": 0,
             "subject_breakdown": {},
             "active_exams_count": 0,
-            "active_exam_duration": 180,
-            "active_exam_venue": "SIMATS ENGINEERING • LAB-01",
-            "active_exam_terminal_prefix": "NODE-L4-C",
-            "active_exam_room": "LAB-01",
+            "active_exam_duration": 0,
+            "active_exam_venue": "Awaiting Exam Configuration",
+            "active_exam_terminal_prefix": "T-",
+            "active_exam_room": "Awaiting Room Assignment",
             "active_exam_title": "None",
             "total_attempts": 0,
             "completed_attempts": 0,
@@ -687,15 +688,15 @@ async def create_candidate(cand: CandidateCreate, user_context: dict = Depends(r
             "has_scribe": bool(cand.has_scribe),
             "disability_type": cand.disability_type,
             "compensatory_minutes": int(cand.compensatory_minutes or (60 if cand.is_pwd else 0)),
-            "assigned_terminal": cand.assigned_terminal or f"T-{slot}-{reg_number[-4:]}",
-            "test_center_name": cand.test_center_name or "SSE Digital Assessment Hub, Chennai",
-            "test_center_code": cand.test_center_code or "SSEC-TN-042",
-            "room_number": cand.room_number or "LAB-01",
+            "assigned_terminal": cand.assigned_terminal or "Unassigned",
+            "test_center_name": cand.test_center_name or "",
+            "test_center_code": cand.test_center_code or "",
+            "room_number": cand.room_number or "",
             "device_details": cand.device_details,
             "reporting_time_ist": slot_info["reporting"],
             "slot_timing_ist": slot_info["timing"],
-            "biometric_status": "verified",
-            "biometric_score": 98.4,
+            "biometric_status": "pending",
+            "biometric_score": None,
             "exam_status": "assigned",
             "registered_at_ist": format_ist_now(),
         },
@@ -1202,17 +1203,17 @@ async def bulk_import_candidates(
                 "password": hashed_pwd,
                 "email": cand_email,
                 "roll_number": reg_number,
-                "assigned_terminal": terminal_node,
+                "assigned_terminal": terminal_node or "Unassigned",
                 "compensatory_minutes": 60 if is_pwd else 0,
                 "reporting_time_ist": slot_info["reporting"],
                 "slot_timing_ist": slot_info["timing"],
-                "biometric_status": "verified",
-                "biometric_score": 98.4,
+                "biometric_status": "pending",
+                "biometric_score": None,
                 "exam_status": "assigned",
                 "registered_at_ist": format_ist_now(),
-                "test_center_name": "SSE Digital Assessment Hub, Chennai",
-                "test_center_code": "SSEC-TN-042",
-                "room_number": "LAB-01",
+                "test_center_name": "",
+                "test_center_code": "",
+                "room_number": "",
             },
         }
         imported_candidates.append(item)

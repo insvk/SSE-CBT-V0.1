@@ -477,14 +477,14 @@ async def create_account(
                 "has_scribe": bool(req.has_scribe),
                 "disability_type": req.disability_type or "",
                 "compensatory_minutes": int(req.compensatory_minutes or (60 if req.is_pwd else 0)),
-                "test_center_name": req.test_center_name or "SSE Digital Assessment Hub, Chennai",
-                "test_center_code": "SSEC-TN-042",
-                "room_number": req.room_number or "LAB-01",
-                "assigned_terminal": assigned_terminal,
+                "test_center_name": req.test_center_name or "",
+                "test_center_code": "",
+                "room_number": req.room_number or "",
+                "assigned_terminal": assigned_terminal or "Unassigned",
                 "slot_timing_ist": f"Subject Paper Slot {slot}",
                 "reporting_time_ist": f"Subject Slot {slot}",
-                "biometric_status": "verified",
-                "biometric_score": 98.4,
+                "biometric_status": "pending",
+                "biometric_score": None,
                 "exam_status": "assigned",
                 "registered_at_ist": format_ist_now(),
             }
@@ -609,8 +609,8 @@ def get_current_user_profile(current_user: dict = Depends(get_current_user)):
         "status": "active",
         "exam_status": "assigned",
         "disqualified": False,
-        "biometric_status": "verified",
-        "biometric_score": 98.4,
+        "biometric_status": "pending",
+        "biometric_score": None,
     }
 
     try:
@@ -667,8 +667,8 @@ def get_current_user_profile(current_user: dict = Depends(get_current_user)):
             profile["status"] = meta.get("status", "active")
             profile["exam_status"] = meta.get("exam_status", "assigned")
             profile["disqualified"] = bool(meta.get("disqualified", False) or meta.get("exam_status") == "invalidated")
-            profile["biometric_status"] = meta.get("biometric_status", "verified")
-            profile["biometric_score"] = float(meta.get("biometric_score", 98.4))
+            profile["biometric_status"] = meta.get("biometric_status", "pending")
+            profile["biometric_score"] = float(meta["biometric_score"]) if meta.get("biometric_score") is not None else None
             profile["slot_timing_ist"] = meta.get("slot_timing_ist")
             profile["reporting_time_ist"] = meta.get("reporting_time_ist")
             profile["email"] = meta.get("email") or email or profile["email"]
@@ -787,8 +787,8 @@ async def register_candidate(req: CandidateSelfRegisterRequest):
         "reporting_time_ist": f"Subject Slot {slot}",
         "registered_at_ist": now_ist,
         "exam_status": "assigned",
-        "biometric_status": "verified",
-        "biometric_score": 98.4,
+        "biometric_status": "pending",
+        "biometric_score": None,
         "target_exam_id": req.exam_id,
         "target_exam_title": exam_title,
     }

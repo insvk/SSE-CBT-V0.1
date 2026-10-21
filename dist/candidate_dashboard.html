@@ -19,7 +19,7 @@
       }
     })();
   </script>
-  <script type="module" crossorigin src="/assets/candidate_dashboard-d5c81502.js"></script>
+  <script type="module" crossorigin src="/assets/candidate_dashboard-70df773d.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
   <link rel="stylesheet" href="/assets/finexy-theme-0be3deec.css">
 </head>
@@ -286,7 +286,7 @@
                     </svg>
                   </div>
                 </div>
-                <div class="fx-duo-val" id="cand-stat-status">1 Test Enrolled</div>
+                <div class="fx-duo-val" id="cand-stat-status">0 Tests Enrolled</div>
                 <div class="fx-trend-sub" style="color: rgba(255,255,255,0.9);">
                   <span>&bull; Ready to write</span>
                 </div>
@@ -345,36 +345,8 @@
               </div>
             </div>
 
-            <!-- Striped Bars Graphic matching the reference chart -->
+            <!-- Striped Bars Graphic rendered dynamically from live database -->
             <div class="fx-bars-container" id="cand-section-bars-container">
-              <div class="fx-bar-col">
-                <div class="fx-bar-composite" style="height: 100%;">
-                  <div class="fx-bar-top" style="height: 40%;"></div>
-                  <div class="fx-bar-bottom" style="height: 50%;"></div>
-                </div>
-                <span class="fx-bar-label">MATH</span>
-              </div>
-              <div class="fx-bar-col">
-                <div class="fx-bar-composite" style="height: 100%;">
-                  <div class="fx-bar-top" style="height: 50%;"></div>
-                  <div class="fx-bar-bottom" style="height: 40%;"></div>
-                </div>
-                <span class="fx-bar-label">PHYS</span>
-              </div>
-              <div class="fx-bar-col">
-                <div class="fx-bar-composite" style="height: 100%;">
-                  <div class="fx-bar-top" style="height: 35%;"></div>
-                  <div class="fx-bar-bottom" style="height: 55%;"></div>
-                </div>
-                <span class="fx-bar-label">CHEM</span>
-              </div>
-              <div class="fx-bar-col">
-                <div class="fx-bar-composite" style="height: 100%;">
-                  <div class="fx-bar-top" style="height: 45%;"></div>
-                  <div class="fx-bar-bottom" style="height: 45%;"></div>
-                </div>
-                <span class="fx-bar-label">ENG</span>
-              </div>
             </div>
           </div>
         </div>
@@ -411,16 +383,16 @@
               <!-- Card 1: Matte Dark Card -->
               <div class="fx-card-badge-dark">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span class="fx-badge-chip-tag" id="cand-terminal-badge">T-A-0004</span>
+                  <span class="fx-badge-chip-tag" id="cand-terminal-badge">Unassigned</span>
                   <span style="font-size: 0.7rem; font-weight: 700; color: #10b981;">• Verified</span>
                 </div>
                 <div style="margin: 10px 0;">
                   <div style="font-size: 0.7rem; color: #94a3b8;">Center Allocation</div>
-                  <div class="fx-badge-num" id="cand-center-badge">SSE DIGITAL HUB • CHENNAI</div>
+                  <div class="fx-badge-num" id="cand-center-badge">Awaiting Allocation</div>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #94a3b8;">
                   <span id="cand-shift-badge">Shift: Slot A</span>
-                  <span id="cand-room-badge">Room: LAB-01</span>
+                  <span id="cand-room-badge">Room: Unassigned</span>
                 </div>
               </div>
 
@@ -432,10 +404,10 @@
                 </div>
                 <div style="margin: 10px 0;">
                   <div style="font-size: 0.7rem; color: rgba(255,255,255,0.85);">Candidate Status</div>
-                  <div class="fx-badge-num" id="cand-status-badge" style="font-size: 0.78rem;">OFFICIALLY SEATED</div>
+                  <div class="fx-badge-num" id="cand-status-badge" style="font-size: 0.78rem;">ASSIGNED</div>
                 </div>
                 <div style="font-size: 0.72rem; color: rgba(255,255,255,0.9);">
-                  <span id="cand-exam-badge">SSE CBT 2026</span>
+                  <span id="cand-exam-badge">Assessment</span>
                 </div>
               </div>
             </div>

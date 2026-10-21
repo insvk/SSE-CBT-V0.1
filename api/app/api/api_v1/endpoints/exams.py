@@ -1876,7 +1876,7 @@ def _get_authoritative_exam_questions(db, exam_id: str) -> Dict[str, Dict[str, A
         logger.warning(f"Error querying question_bank: {e}")
 
 
-    # Enabled sections
+    # Enabled sections from exam configuration
     enabled_sections = []
     raw_sections = cfg.get("sections") if isinstance(cfg, dict) else []
     if raw_sections and isinstance(raw_sections, list):
@@ -1885,8 +1885,16 @@ def _get_authoritative_exam_questions(db, exam_id: str) -> Dict[str, Dict[str, A
                 enabled_sections.append(str(s["name"]).strip())
             elif isinstance(s, str) and s.strip():
                 enabled_sections.append(s.strip())
+
+    # If no custom sections were configured by the admin, discover them dynamically from questions
     if not enabled_sections:
-        enabled_sections = ["MATH-1", "MATH-2", "PHYSICS", "CHEMISTRY"]
+        discovered = []
+        for r in rows:
+            c = r.get("content") or {}
+            sec_cand = (c.get("section") if isinstance(c, dict) else r.get("section")) or r.get("subject")
+            if sec_cand and str(sec_cand).strip() not in discovered:
+                discovered.append(str(sec_cand).strip())
+        enabled_sections = discovered if discovered else ["General"]
 
     math_counter = 0
     questions_map = {}
@@ -1905,7 +1913,9 @@ def _get_authoritative_exam_questions(db, exam_id: str) -> Dict[str, Dict[str, A
         subj = r.get("subject", "General") or "General"
 
         if not sec or sec not in enabled_sections:
-            if subj in ("Maths", "Mathematics"):
+            if subj in enabled_sections:
+                sec = subj
+            elif "math" in subj.lower():
                 has_m1 = "MATH-1" in enabled_sections
                 has_m2 = "MATH-2" in enabled_sections
                 if has_m1 and has_m2:
@@ -1918,14 +1928,9 @@ def _get_authoritative_exam_questions(db, exam_id: str) -> Dict[str, Dict[str, A
                 else:
                     found_m = next((s for s in enabled_sections if "math" in s.lower()), None)
                     sec = found_m or enabled_sections[0]
-            elif subj == "Physics":
-                found_p = next((s for s in enabled_sections if "phys" in s.lower()), None)
-                sec = found_p or enabled_sections[0]
-            elif subj == "Chemistry":
-                found_c = next((s for s in enabled_sections if "chem" in s.lower()), None)
-                sec = found_c or enabled_sections[0]
             else:
-                sec = enabled_sections[0]
+                found_match = next((s for s in enabled_sections if s.lower() == subj.lower() or s.lower() in subj.lower() or subj.lower() in s.lower()), None)
+                sec = found_match or enabled_sections[0]
 
         opts = r.get("options") or (content.get("options") if isinstance(content, dict) else []) or []
         ans = r.get("correct_answer") or (content.get("correct_answer") if isinstance(content, dict) else None) or "A"
@@ -2417,14 +2422,14 @@ def get_exam_results(
 
     for idx, c in enumerate(candidates, start=1):
         cid = str(c["id"])
-        reg = c.get("registration_number", f"SSE-A-CBT-{idx:04d}")
         meta = c.get("metadata") or {}
-        name = c.get("full_name", "Registered Candidate")
+        reg = c.get("registration_number") or meta.get("roll_number") or c.get("roll_number") or f"REG-{cid[:8].upper()}"
+        name = c.get("full_name") or meta.get("full_name") or "Registered Candidate"
         email = c.get("email") or meta.get("email") or ""
         category = c.get("category") or meta.get("category") or "General"
         gender = c.get("gender") or meta.get("gender") or "Male"
         roll = meta.get("roll_number") or reg
-        terminal = meta.get("assigned_terminal") or f"T-A-{idx:03d}"
+        terminal = meta.get("assigned_terminal") or "Unassigned"
         att = attempts_by_cid.get(cid)
         att_status = att.get("status") if att else None
 
@@ -2531,7 +2536,7 @@ def get_exam_results(
                 cand_s = session.get("candidate_responses", {}).get(cid) or session.get("candidate_responses", {}).get(reg)
                 if cand_s:
                     resp_list = list(cand_s.values()) if isinstance(cand_s, dict) else cand_s
-                elif session.get("reg_no") == reg or session.get("candidate_id") == cid or (not session.get("reg_no") and idx == 1):
+                elif session.get("reg_no") == reg or session.get("candidate_id") == cid:
                     resp_list = active_responses
 
             cand_res = ScoringEngine.calculate_score(

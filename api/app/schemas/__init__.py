@@ -58,11 +58,11 @@ class CandidateResponse(BaseModel):
     test_center_code: Optional[str] = None
     room_number: Optional[str] = None
     device_details: Optional[Dict[str, Any]] = None
-    biometric_status: Optional[str] = "verified"
-    biometric_score: Optional[float] = 98.4
+    biometric_status: Optional[str] = "pending"
+    biometric_score: Optional[float] = None
     exam_status: Optional[str] = "assigned"
     debar_reason: Optional[str] = None
-    ip_address: Optional[str] = "10.0.4.12"
+    ip_address: Optional[str] = None
     reporting_time_ist: Optional[str] = None
     slot_timing_ist: Optional[str] = None
     created_at_ist: Optional[str] = None
