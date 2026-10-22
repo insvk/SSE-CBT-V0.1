@@ -62,13 +62,24 @@ def resolve_question_uuid(db, q_id: str, tenant_id: str = "00000000-0000-0000-00
     except Exception:
         target_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(q_id)))
 
-    # Check if this exact UUID exists in question_bank
+    # Check if this exact UUID exists in question_bank; if not, ensure row exists to satisfy FK constraint
     try:
         chk = db.table("question_bank").select("id").eq("id", target_uuid).limit(1).execute()
         if chk.data:
             return target_uuid
-    except Exception:
-        pass
+        db.table("question_bank").upsert({
+            "id": target_uuid,
+            "tenant_id": tenant_id,
+            "type": "mcq_single",
+            "content": {"statement": f"Question {q_id}"},
+            "options": ["A", "B", "C", "D"],
+            "correct_answer": "A",
+            "difficulty": "Medium",
+            "subject": "General",
+            "status": "approved",
+        }).execute()
+    except Exception as e:
+        logger.warning(f"Error checking/ensuring question {target_uuid} exists in question_bank: {e}")
 
     return target_uuid
 
@@ -355,6 +366,7 @@ def mark_attempt_submitted_cloud_db(
                 "submission_reference": scoring_result.get("reference", ""),
                 "submitted_at": now_iso,
                 "percentile": None,
+                "scoring_details": scoring_result,
             })
         db.table("candidates").update({"metadata": meta}).eq("id", cand_uuid).execute()
     except Exception as e:

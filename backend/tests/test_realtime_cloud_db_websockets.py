@@ -226,34 +226,33 @@ def test_question_adjudication_and_bonus():
     )
     assert login_res.status_code == 200
     token = login_res.json()["access_token"]
+    headers = {"x-tenant-id": "00000000-0000-0000-0000-000000000001", "Authorization": f"Bearer {token}"}
 
-    # 2. Get or create question dynamically from Cloud DB
-    q_res = client.get(
+    # 2. Always create a dedicated question to test adjudication in isolation
+    new_q = client.post(
         "/api/v1/questions/",
-        headers={"x-tenant-id": "00000000-0000-0000-0000-000000000001", "Authorization": f"Bearer {token}"}
+        json={
+            "statement": "Temporary test question for adjudication test",
+            "opt_a": "Opt A", "opt_b": "Opt B", "opt_c": "Opt C", "opt_d": "Opt D",
+            "correct_answer": "A", "subject": "Physics", "marks": 4.0
+        },
+        headers=headers,
     )
-    if q_res.status_code == 200 and len(q_res.json()) > 0:
-        target_qid = q_res.json()[0]["id"]
-    else:
-        new_q = client.post(
-            "/api/v1/questions/",
-            json={
-                "statement": "Test question for adjudication",
-                "opt_a": "Opt A", "opt_b": "Opt B", "opt_c": "Opt C", "opt_d": "Opt D",
-                "correct_answer": "A", "subject": "Physics", "marks": 4.0
-            },
-            headers={"x-tenant-id": "00000000-0000-0000-0000-000000000001", "Authorization": f"Bearer {token}"}
-        )
-        target_qid = new_q.json()["id"]
+    assert new_q.status_code in [200, 201]
+    target_qid = new_q.json()["id"]
 
-    res = client.post(
-        f"/api/v1/questions/{target_qid}/adjudicate",
-        json={"action": "drop_bonus", "reason": "Ambiguous option wording"},
-        headers={"x-tenant-id": "00000000-0000-0000-0000-000000000001", "Authorization": f"Bearer {token}"}
-    )
-    assert res.status_code == 200
-    d = res.json()
-    assert d["status"] == "success"
-    assert d["action"] == "drop_bonus"
-    assert d["correct_answer"] == "BONUS"
+    try:
+        res = client.post(
+            f"/api/v1/questions/{target_qid}/adjudicate",
+            json={"action": "drop_bonus", "reason": "Ambiguous option wording"},
+            headers=headers,
+        )
+        assert res.status_code == 200
+        d = res.json()
+        assert d["status"] == "success"
+        assert d["action"] == "drop_bonus"
+        assert d["correct_answer"] == "BONUS"
+    finally:
+        client.delete(f"/api/v1/questions/{target_qid}", headers=headers)
+
 

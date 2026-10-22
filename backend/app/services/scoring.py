@@ -11,6 +11,7 @@ Guarantees:
 """
 from typing import Dict, Any, List, Optional, Union
 import logging
+import re
 
 logger = logging.getLogger("cbt.scoring")
 
@@ -18,17 +19,131 @@ logger = logging.getLogger("cbt.scoring")
 class ScoringEngine:
     @staticmethod
     def normalize_answer(ans: Any) -> Optional[str]:
-        """Normalizes candidate answer (e.g., int 0 -> 'A', 'a' -> 'A', '0' -> 'A')."""
+        """
+        Normalizes candidate answer or correct answer key to standard uppercase representation.
+        Handles:
+        - None / Empty / Null strings -> None
+        - int 0..5 -> 'A'..'F'
+        - str '0'..'5' -> 'A'..'F'
+        - str 'Option A', 'Opt A', 'Option 1' -> 'A', 'B'
+        - str 'A. ...', 'A) ...' -> 'A'
+        - Single letter 'A'..'F' -> 'A'..'F'
+        - Fallback: clean stripped uppercase string
+        """
         if ans is None:
             return None
         if isinstance(ans, int):
             index_map = {0: "A", 1: "B", 2: "C", 3: "D", 4: "E", 5: "F"}
             return index_map.get(ans, str(ans))
-        if isinstance(ans, str):
-            s = ans.strip().upper()
-            index_digit_map = {"0": "A", "1": "B", "2": "C", "3": "D"}
-            return index_digit_map.get(s, s)
-        return str(ans).strip().upper()
+
+        s = str(ans).strip()
+        if not s or s.lower() in ("null", "none", "undefined", "unanswered"):
+            return None
+
+        # Check for pure digit index like "0", "1", "2", "3"
+        if s.isdigit() and int(s) in range(6):
+            index_map = {0: "A", 1: "B", 2: "C", 3: "D", 4: "E", 5: "F"}
+            return index_map.get(int(s), s.upper())
+
+        # Check for patterns like "Option A", "Opt A", "Option 0"
+        m = re.match(r"^(?:OPTION|OPT|OPT_)\s*([A-F0-9])\b", s, re.IGNORECASE)
+        if m:
+            val = m.group(1).upper()
+            if val.isdigit() and int(val) in range(6):
+                index_map = {0: "A", 1: "B", 2: "C", 3: "D", 4: "E", 5: "F"}
+                return index_map.get(int(val), val)
+            return val
+
+        # Check for patterns like "A. ...", "A) ...", "A: ..."
+        m2 = re.match(r"^([A-F])[\.\)\:\-\s]", s, re.IGNORECASE)
+        if m2:
+            return m2.group(1).upper()
+
+        return s.upper()
+
+    @classmethod
+    def check_answer_correct(
+        cls,
+        cand_raw: Any,
+        correct_raw: Any,
+        options: List[Any],
+        q_type: str = "mcq_single",
+        tolerance: float = 0.01,
+    ) -> bool:
+        """
+        Authoritatively evaluates whether candidate response matches the question key.
+        Guarantees accurate matching between:
+        - Letter vs Letter ('A' vs 'A')
+        - Index vs Letter (0 vs 'A')
+        - Selected option text vs correct answer text ('Coulomb' vs 'Coulomb')
+        - Candidate option index vs correct answer text
+        - Numerical values within tolerance
+        """
+        if cand_raw is None or correct_raw is None:
+            return False
+
+        if q_type == "numerical":
+            try:
+                c_val = float(cand_raw)
+                k_val = float(correct_raw)
+                return abs(c_val - k_val) <= tolerance
+            except (ValueError, TypeError):
+                return False
+
+        # MCQ evaluation
+        cand_norm = cls.normalize_answer(cand_raw)
+        correct_norm = cls.normalize_answer(correct_raw)
+
+        # 1. Direct normalized equality (e.g. 'A' == 'A' or 'B' == 'B')
+        if cand_norm is not None and correct_norm is not None and cand_norm == correct_norm:
+            return True
+
+        # 2. Options list matching
+        if options and isinstance(options, list):
+            # Extract candidate chosen index
+            cand_idx: Optional[int] = None
+            if isinstance(cand_raw, int) and 0 <= cand_raw < len(options):
+                cand_idx = cand_raw
+            elif isinstance(cand_raw, str) and cand_raw.strip().isdigit() and 0 <= int(cand_raw.strip()) < len(options):
+                cand_idx = int(cand_raw.strip())
+            elif cand_norm and len(cand_norm) == 1 and cand_norm in "ABCDEF":
+                idx = ord(cand_norm) - ord("A")
+                if 0 <= idx < len(options):
+                    cand_idx = idx
+
+            # Extract correct key index
+            correct_idx: Optional[int] = None
+            if isinstance(correct_raw, int) and 0 <= correct_raw < len(options):
+                correct_idx = correct_raw
+            elif isinstance(correct_raw, str) and correct_raw.strip().isdigit() and 0 <= int(correct_raw.strip()) < len(options):
+                correct_idx = int(correct_raw.strip())
+            elif correct_norm and len(correct_norm) == 1 and correct_norm in "ABCDEF":
+                idx = ord(correct_norm) - ord("A")
+                if 0 <= idx < len(options):
+                    correct_idx = idx
+
+            # Both resolved to indices
+            if cand_idx is not None and correct_idx is not None:
+                if cand_idx == correct_idx:
+                    return True
+
+            # Candidate index option text matches correct_raw
+            if cand_idx is not None and 0 <= cand_idx < len(options):
+                opt_str = str(options[cand_idx]).strip().lower()
+                if opt_str == str(correct_raw).strip().lower():
+                    return True
+
+            # Candidate text matches option text at correct_idx
+            if correct_idx is not None and 0 <= correct_idx < len(options):
+                opt_str = str(options[correct_idx]).strip().lower()
+                if str(cand_raw).strip().lower() == opt_str:
+                    return True
+
+        # 3. Direct normalized string equality as fallback
+        if str(cand_raw).strip().lower() == str(correct_raw).strip().lower():
+            return True
+
+        return False
 
     @classmethod
     def calculate_score(
@@ -146,7 +261,11 @@ class ScoringEngine:
             ) if resp else False
 
             # Check if answered
-            is_answered = cand_raw is not None and str(cand_raw).strip() != "" and str(cand_raw).strip().lower() != "null"
+            is_answered = (
+                cand_raw is not None
+                and str(cand_raw).strip() != ""
+                and str(cand_raw).strip().lower() not in ("null", "none", "undefined", "unanswered")
+            )
 
             if is_marked_for_review:
                 marked_for_review_count += 1
@@ -181,7 +300,7 @@ class ScoringEngine:
                     "max_marks": q_correct_marks,
                     "negative_marks": 0.0,
                     "candidate_answer": cand_raw,
-                    "candidate_answer_display": str(cand_raw) if is_answered else "Not Attempted",
+                    "candidate_answer_display": cls._format_answer_display(cand_raw, options) if is_answered else "Not Attempted",
                     "correct_answer": "BONUS",
                     "correct_answer_display": "Official Bonus / Dropped Question",
                     "is_marked_for_review": is_marked_for_review,
@@ -216,37 +335,13 @@ class ScoringEngine:
             subject_scores[subject]["attempted"] += 1
 
             # Evaluate response correctness
-            is_correct = False
-            if q_type == "numerical":
-                try:
-                    c_val = float(cand_raw)
-                    k_val = float(correct_raw)
-                    is_correct = abs(c_val - k_val) <= tolerance
-                except (ValueError, TypeError):
-                    is_correct = False
-            else:
-                # MCQ Single
-                cand_norm = cls.normalize_answer(cand_raw)
-                correct_norm = cls.normalize_answer(correct_raw)
-                is_correct = (cand_norm == correct_norm) and (cand_norm is not None)
-
-                # Match against option text or index if options list is present
-                if not is_correct and options and isinstance(options, list):
-                    try:
-                        cand_idx = int(cand_raw)
-                        if 0 <= cand_idx < len(options):
-                            opt_text = str(options[cand_idx]).strip().lower()
-                            if opt_text == str(correct_raw).strip().lower():
-                                is_correct = True
-                    except (ValueError, TypeError):
-                        pass
-
-                    if not is_correct and isinstance(cand_raw, str):
-                        for opt_idx, opt_text in enumerate(options):
-                            if str(opt_text).strip().lower() == cand_raw.strip().lower():
-                                if cls.normalize_answer(opt_idx) == correct_norm:
-                                    is_correct = True
-                                break
+            is_correct = cls.check_answer_correct(
+                cand_raw=cand_raw,
+                correct_raw=correct_raw,
+                options=options,
+                q_type=q_type,
+                tolerance=tolerance,
+            )
 
             cand_display = cls._format_answer_display(cand_raw, options)
             correct_display = cls._format_answer_display(correct_raw, options)
@@ -354,7 +449,11 @@ class ScoringEngine:
     @classmethod
     def _format_answer_display(cls, ans: Any, options: List[Any]) -> str:
         """Formats answer value nicely with option text if available."""
-        if ans is None or str(ans).strip() == "":
+        if (
+            ans is None
+            or str(ans).strip() == ""
+            or str(ans).strip().lower() in ("null", "none", "undefined", "unanswered")
+        ):
             return "Unanswered"
         norm = cls.normalize_answer(ans)
         if norm and len(norm) == 1 and norm in "ABCDEF":
@@ -363,4 +462,8 @@ class ScoringEngine:
                 opt_txt = str(options[idx]).strip()
                 return f"Option {norm}: {opt_txt}"
             return f"Option {norm}"
+        if isinstance(ans, int) and options and 0 <= ans < len(options):
+            letter = chr(ord("A") + ans)
+            return f"Option {letter}: {str(options[ans]).strip()}"
         return str(ans)
+

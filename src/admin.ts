@@ -3998,7 +3998,7 @@ async function openExamSummaryModal(examId: string): Promise<void> {
                     const scoreDisplay = isDisq
                         ? '<span style="color: #dc2626; font-weight: 800;">0.0 (NULLIFIED)</span>'
                         : `<span style="font-weight: 800; color: #047857;">${c.raw_score} / ${data.max_possible_score}</span>`;
-                    const accDisplay = isDisq ? '0%' : `${c.accuracy}%`;
+                    const accDisplay = isDisq ? '0.0%' : (c.accuracy_display || (c.accuracy != null ? `${c.accuracy}%` : 'N/A'));
                     const pillDisplay = isDisq
                         ? `<span class="badge-pill" style="background: #fee2e2; color: #b91c1c; font-weight: 800;" title="${escapeHtml(c.disqualification_reason || 'Security Malpractice')}">DISQUALIFIED</span>`
                         : `<span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight: 800;">${c.percentage != null ? `${c.percentage}%` : 'N/A'}</span>`;
@@ -4728,7 +4728,7 @@ function renderResultsTable(): void {
             : `<span style="font-weight: 800; color: #047857; font-size: 0.95rem;">${r.raw_score ?? r.score ?? 0}</span> <span style="font-size: 0.75rem; color: var(--text-muted);">/ ${rowMax}</span>`;
 
         const pctDisplay = isDisq ? '0.0%' : (r.percentage != null ? `${r.percentage}%` : 'N/A');
-        const accDisplay = isDisq ? '0.0%' : (r.accuracy != null ? `${r.accuracy}%` : 'N/A');
+        const accDisplay = isDisq ? '0.0%' : (r.accuracy_display || (r.accuracy != null ? `${r.accuracy}%` : 'N/A'));
 
         const statusBadge = isDisq
             ? `<span class="badge-pill" style="background: #fee2e2; color: #b91c1c; font-weight: 800;" title="${escapeHtml(r.disqualification_reason || 'Security Malpractice')}">DISQUALIFIED</span>`

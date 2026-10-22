@@ -1994,15 +1994,26 @@ def get_exam_results_summary(exam_id: str):
     exam_title = "SSE CBT Examination"
     exam_code = "EX-1001"
     dur_mins = 180
+    exam_cfg = {}
     try:
         ex_res = db.table("exams").select("*").eq("id", norm_id).limit(1).execute()
         if ex_res.data:
             e = ex_res.data[0]
             exam_title = e.get("title", exam_title)
             dur_mins = e.get("duration_minutes", dur_mins)
-            exam_code = (e.get("config") or {}).get("exam_code", exam_code)
+            exam_cfg = e.get("config") or {}
+            exam_code = exam_cfg.get("exam_code", exam_code)
     except Exception:
         pass
+
+    correct_m = float(exam_cfg.get("correct_marks", 4.0))
+    neg_en = bool(exam_cfg.get("negative_marking_enabled", True))
+    neg_m = 0.0 if not neg_en else float(exam_cfg.get("negative_marks", 1.0))
+    summary_scoring_cfg = {
+        "correct_marks": correct_m,
+        "negative_marks": neg_m,
+        "negative_marking_enabled": neg_en,
+    }
 
     # Get authoritative answer keys
     questions_map = _get_authoritative_exam_questions(db, exam_id)
@@ -2070,7 +2081,42 @@ def get_exam_results_summary(exam_id: str):
             })
             continue
 
-        # Check if score is already saved in Cloud DB metadata
+        # Check if full authoritative scoring details are saved in Cloud DB metadata
+        meta_sc = meta.get("scoring_details")
+        if isinstance(meta_sc, dict) and "total_score" in meta_sc:
+            total_sc = float(meta_sc.get("total_score", 0.0))
+            max_sc = float(meta_sc.get("max_possible_score", 80.0))
+            pct = float(meta_sc.get("percentage", 0.0))
+            cor = int(meta_sc.get("correct_count", 0))
+            inc = int(meta_sc.get("incorrect_count", 0))
+            unans = int(meta_sc.get("unanswered_count", 0))
+            att_cnt = int(meta_sc.get("attempted_count", cor + inc))
+            acc = meta_sc.get("accuracy")
+            acc_disp = meta_sc.get("accuracy_display") or (f"{acc:.1f}%" if acc is not None else "N/A")
+            scores.append(total_sc)
+            leaderboard_valid.append({
+                "candidate_id": cid,
+                "registration_number": reg,
+                "roll_number": meta.get("roll_number") or reg,
+                "full_name": name,
+                "candidate_name": name,
+                "score": total_sc,
+                "raw_score": total_sc,
+                "max_marks": max_sc,
+                "percentage": pct,
+                "accuracy": acc if acc is not None else 0.0,
+                "accuracy_display": acc_disp,
+                "percentile": None,
+                "correct_count": cor,
+                "incorrect_count": inc,
+                "unanswered_count": unans,
+                "attempted_count": att_cnt,
+                "status": "Submitted",
+                "disqualified": False,
+                "terminal": meta.get("assigned_terminal") or f"T-A-{idx:03d}",
+            })
+            continue
+
         if "score" in meta and meta.get("exam_status") == "submitted":
             total_sc = float(meta.get("score", 0.0))
             max_sc = float(meta.get("max_possible", 80.0))
@@ -2110,19 +2156,27 @@ def get_exam_results_summary(exam_id: str):
         if att:
             try:
                 db_res = db.table("responses").select("*").eq("attempt_id", att["id"]).execute()
-                resp_list = [r.get("response_data") if isinstance(r.get("response_data"), dict) else r for r in (db_res.data or [])]
+                for r in (db_res.data or []):
+                    rd = r.get("response_data")
+                    ans = rd.get("answer") if isinstance(rd, dict) else rd
+                    resp_list.append({
+                        "question_id": str(r["question_id"]),
+                        "answer": ans,
+                        "response_data": ans,
+                        "status": r.get("status"),
+                    })
             except Exception:
                 pass
         if not resp_list:
             cand_s = session.get("candidate_responses", {}).get(reg) or session.get("candidate_responses", {}).get(cid)
             if cand_s:
                 resp_list = list(cand_s.values()) if isinstance(cand_s, dict) else cand_s
-            elif session.get("reg_no") == reg or session.get("candidate_id") == cid or (not session.get("reg_no") and idx == 1):
+            elif session.get("reg_no") == reg or session.get("candidate_id") == cid:
                 resp_list = active_responses
         sc_res = ScoringEngine.calculate_score(
             responses=resp_list,
             questions_map=questions_map,
-            config={"correct_marks": 4.0, "negative_marks": 1.0},
+            config=summary_scoring_cfg,
         )
         total_sc = sc_res["total_score"]
         pct = sc_res["percentage"]
@@ -2502,7 +2556,11 @@ def get_exam_results(
         # Score calculation & gathering
         cand_score = None
         cand_res = None
-        if "score" in meta and meta.get("exam_status") == "submitted":
+        meta_sc = meta.get("scoring_details")
+        if isinstance(meta_sc, dict) and "total_score" in meta_sc:
+            cand_res = meta_sc
+            cand_score = float(meta_sc.get("total_score", 0.0))
+        elif "score" in meta and meta.get("exam_status") == "submitted":
             cand_score = float(meta.get("score", 0.0))
             cand_res = {
                 "total_score": cand_score,
@@ -2529,7 +2587,15 @@ def get_exam_results(
             if att:
                 try:
                     db_res = db.table("responses").select("*").eq("attempt_id", att["id"]).execute()
-                    resp_list = [r.get("response_data") if isinstance(r.get("response_data"), dict) else r for r in (db_res.data or [])]
+                    for r in (db_res.data or []):
+                        rd = r.get("response_data")
+                        ans = rd.get("answer") if isinstance(rd, dict) else rd
+                        resp_list.append({
+                            "question_id": str(r["question_id"]),
+                            "answer": ans,
+                            "response_data": ans,
+                            "status": r.get("status"),
+                        })
                 except Exception:
                     pass
             if not resp_list:
@@ -2703,15 +2769,20 @@ def get_candidate_result_dossier(exam_id: str, candidate_id: str):
         if cand_s:
             resp_list = list(cand_s.values()) if isinstance(cand_s, dict) else cand_s
 
-    scoring_result = ScoringEngine.calculate_score(
-        responses=resp_list,
-        questions_map=questions_map,
-        config={
-            "correct_marks": correct_m,
-            "negative_marks": neg_m,
-            "negative_marking_enabled": neg_en,
-        },
-    )
+    meta = c.get("metadata") or {}
+    meta_sc = meta.get("scoring_details")
+    if not resp_list and isinstance(meta_sc, dict) and meta_sc.get("details"):
+        scoring_result = meta_sc
+    else:
+        scoring_result = ScoringEngine.calculate_score(
+            responses=resp_list,
+            questions_map=questions_map,
+            config={
+                "correct_marks": correct_m,
+                "negative_marks": neg_m,
+                "negative_marking_enabled": neg_en,
+            },
+        )
 
     return {
         "status": "success",
@@ -4241,18 +4312,55 @@ def get_exam_result(
                 if cand_s:
                     cand_resps = list(cand_s.values()) if isinstance(cand_s, dict) else cand_s
 
-            sc = ScoringEngine.calculate_score(cand_resps, questions_map)
+            # Fetch exam marking scheme config
+            exam_cfg = {}
+            try:
+                ex_res = db.table("exams").select("config").eq("id", norm_id).limit(1).execute()
+                if ex_res.data and ex_res.data[0].get("config"):
+                    exam_cfg = ex_res.data[0]["config"]
+            except Exception:
+                pass
+
+            correct_m = float(exam_cfg.get("correct_marks", 4.0))
+            neg_en = bool(exam_cfg.get("negative_marking_enabled", True))
+            neg_m = 0.0 if not neg_en else float(exam_cfg.get("negative_marks", 1.0))
+
+            meta_sc = meta.get("scoring_details")
+            if not cand_resps and isinstance(meta_sc, dict) and meta_sc.get("details"):
+                sc = meta_sc
+            else:
+                sc = ScoringEngine.calculate_score(
+                    responses=cand_resps,
+                    questions_map=questions_map,
+                    config={
+                        "correct_marks": correct_m,
+                        "negative_marks": neg_m,
+                        "negative_marking_enabled": neg_en,
+                    },
+                )
+
             meta_score = meta.get("score") if meta.get("score") is not None else (att_row.get("score") if att_row else None)
             meta_max = meta.get("max_possible")
             meta_pct = meta.get("percentage")
             meta_acc = meta.get("accuracy")
 
-            sc_tot = float(meta_score) if meta_score is not None else float(sc["total_score"])
-            sc_max = float(meta_max) if meta_max is not None else float(sc["max_possible_score"])
-            sc_pct = float(meta_pct) if meta_pct is not None else float(sc["percentage"])
-            sc_acc = sc["accuracy"] if sc["accuracy"] is not None else (float(meta_acc) if meta_acc is not None else 0.0)
+            sc_tot = float(meta_score) if meta_score is not None else float(sc.get("total_score", 0.0))
+            sc_max = float(meta_max) if meta_max is not None else float(sc.get("max_possible_score", 0.0))
+            sc_pct = float(meta_pct) if meta_pct is not None else float(sc.get("percentage", 0.0))
+            sc_acc = sc.get("accuracy") if sc.get("accuracy") is not None else (float(meta_acc) if meta_acc is not None else 0.0)
+            sc_acc_disp = sc.get("accuracy_display") or (meta.get("accuracy_display") or (f"{sc_acc:.1f}%" if sc_acc is not None else "N/A"))
             time_display = meta.get("time_taken_display") or meta.get("time_taken") or (f"{round(att_row.get('duration_seconds', 0) / 60)} mins" if att_row and att_row.get('duration_seconds') else "42 mins 18 secs")
             sub_at = meta.get("submitted_at") or (att_row.get("end_time") if att_row else None) or format_ist_now()
+
+            # Ensure consistency within scoring_details dictionary if meta was used
+            if sc:
+                sc["total_score"] = sc_tot
+                sc["max_possible_score"] = sc_max
+                sc["percentage"] = sc_pct
+                sc["accuracy"] = sc_acc
+                sc["accuracy_display"] = sc_acc_disp
+                if meta.get("subject_breakdown") and not sc.get("subject_breakdown"):
+                    sc["subject_breakdown"] = meta.get("subject_breakdown")
 
             return {
                 "status": "success",
@@ -4270,7 +4378,7 @@ def get_exam_result(
                 "max_possible": sc_max,
                 "percentage": sc_pct,
                 "accuracy": sc_acc,
-                "accuracy_display": sc["accuracy_display"],
+                "accuracy_display": sc_acc_disp,
                 "percentile": None,
                 "reference": meta.get("submission_reference") or f"SSE-{str(target_cand['id'])[:6].upper()}",
                 "time_taken": time_display,
