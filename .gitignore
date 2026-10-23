@@ -8,3 +8,5 @@ venv/
 supabase/.temp/
 .vercel/
 *.zip
+build/
+*.exe
