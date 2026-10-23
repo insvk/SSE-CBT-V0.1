@@ -2171,6 +2171,10 @@ function initAdminWebSocket(): void {
                     appendIncidentLog(`Candidate ${msg.candidate_name || msg.reg_no} completed and submitted examination.`);
                     loadCandidates();
                     loadDashboardSummary();
+                    loadExams();
+                    if (currentResultsExamId) {
+                        loadExamResults(currentResultsExamId, currentResultsViewMode);
+                    }
                     if (msg.exam_id) {
                         const subRow = document.getElementById(`exam-monitoring-row-${msg.exam_id}`);
                         if (subRow && subRow.style.display !== 'none') {

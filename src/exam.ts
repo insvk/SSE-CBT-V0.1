@@ -124,7 +124,7 @@ function getAuthHeaders(): HeadersInit {
 // Purge legacy hardcoded account from browser localStorage if present
 (function purgeLegacyHardcodedUser() {
     try {
-        const staleValues = ['5254740', '5254740(V4.3.7)', 'NARESH S'];
+        const staleValues = ['5254740(V4.3.7)'];
         const r = localStorage.getItem('reg_no') || '';
         const n = localStorage.getItem('candidate_name') || '';
         const u = localStorage.getItem('cbt_remembered_user') || '';
@@ -812,6 +812,17 @@ async function performFinalSubmission(): Promise<void> {
         ui.modalConfirmSubmit.disabled = true;
     }
 
+    const submissionSafetyTimer = setTimeout(() => {
+        if (isSubmitting) {
+            console.warn('[Exam Engine] Submission safety timer expired, unlocking button.');
+            isSubmitting = false;
+            if (ui.modalConfirmSubmit) {
+                ui.modalConfirmSubmit.textContent = "Confirm Final Submit";
+                ui.modalConfirmSubmit.disabled = false;
+            }
+        }
+    }, 15000);
+
     try {
         let examIdToSubmit = EXAM_ID;
         if (!examIdToSubmit) {
@@ -823,7 +834,8 @@ async function performFinalSubmission(): Promise<void> {
                 if (exListRes.ok) {
                     const exList = await exListRes.json();
                     if (Array.isArray(exList) && exList.length > 0) {
-                        examIdToSubmit = exList[0].id;
+                        const activeExam = exList.find((e: any) => e.state === 'active') || exList[0];
+                        examIdToSubmit = activeExam.id;
                         EXAM_ID = examIdToSubmit;
                         localStorage.setItem('active_exam_id', examIdToSubmit);
                     }
@@ -837,12 +849,13 @@ async function performFinalSubmission(): Promise<void> {
                 ui.modalConfirmSubmit.disabled = false;
             }
             isSubmitting = false;
+            clearTimeout(submissionSafetyTimer);
             return;
         }
 
         let candId = localStorage.getItem('candidate_id') || '';
-        let candName = localStorage.getItem('candidate_name') || 'Candidate';
-        let regNo = localStorage.getItem('reg_no') || '';
+        let candName = localStorage.getItem('candidate_name') || ui.candDisplayName?.textContent || 'Candidate';
+        let regNo = localStorage.getItem('reg_no') || ui.candDisplayReg?.textContent || '';
 
         // If candId is not a valid UUID format, clear it so backend generates a deterministic UUID
         if (candId && !candId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
@@ -866,11 +879,15 @@ async function performFinalSubmission(): Promise<void> {
             })
         });
 
+        clearTimeout(submissionSafetyTimer);
+
         if (res.ok) {
             const data = await res.json();
             sessionStorage.setItem('latest_result', JSON.stringify(data));
             localStorage.setItem('active_exam_id', examIdToSubmit);
-            const redirectUrl = `/scorecard.html?exam_id=${encodeURIComponent(examIdToSubmit)}&reg_no=${encodeURIComponent(regNo)}&candidate_id=${encodeURIComponent(candId || (data.scoring_details?.candidate_id || ''))}`;
+            const redirectCandId = candId || (data.scoring_details?.candidate_id || data.candidate_id || '');
+            const redirectReg = regNo || data.registration_number || '';
+            const redirectUrl = `/scorecard.html?exam_id=${encodeURIComponent(examIdToSubmit)}&reg_no=${encodeURIComponent(redirectReg)}&candidate_id=${encodeURIComponent(redirectCandId)}`;
             window.location.href = redirectUrl;
         } else {
             let errorMsg = `Server error (HTTP ${res.status})`;
@@ -892,6 +909,7 @@ async function performFinalSubmission(): Promise<void> {
             isSubmitting = false;
         }
     } catch (netErr: any) {
+        clearTimeout(submissionSafetyTimer);
         console.error('[Exam Submission Network Error]', netErr);
         alert(`Network failure syncing with examination server: ${netErr?.message || 'Connection refused'}. Please retry.`);
         if (ui.modalConfirmSubmit) {

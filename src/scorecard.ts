@@ -3,7 +3,7 @@ export {};
 // Purge legacy hardcoded account from browser localStorage if present
 (function purgeLegacyHardcodedUser() {
     try {
-        const staleValues = ['5254740', '5254740(V4.3.7)', 'NARESH S'];
+        const staleValues = ['5254740(V4.3.7)'];
         const r = localStorage.getItem('reg_no') || '';
         const n = localStorage.getItem('candidate_name') || '';
         const u = localStorage.getItem('cbt_remembered_user') || '';
