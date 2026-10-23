@@ -855,7 +855,8 @@ async def regenerate_candidate_credentials(
         now_ist = format_ist_now()
         meta["emergency_pin"] = temp_pin
         meta["emergency_pin_generated_at_ist"] = now_ist
-        meta["password"] = temp_pin  # Allow direct login with emergency pin
+        if not meta.get("password"):
+            meta["password"] = temp_pin  # Allow direct login with emergency pin if no password existed
 
         db.table("candidates").update({"metadata": meta}).eq("id", actual_id).execute()
 

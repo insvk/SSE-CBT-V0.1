@@ -22,7 +22,7 @@
       }
     })();
   </script>
-  <script type="module" crossorigin src="/assets/admin-36c71d2e.js"></script>
+  <script type="module" crossorigin src="/assets/admin-5dc6f34f.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-3cfb730f.js">
   <link rel="stylesheet" href="/assets/finexy-theme-0be3deec.css">
 </head>
@@ -1983,7 +1983,7 @@
 
   <!-- 7. EMERGENCY PIN MODAL -->
   <div class="modal-backdrop" id="modal-emergency-pin" style="display: none;">
-    <div class="modal-dialog modal-sm" style="text-align: center;">
+    <div class="modal-dialog modal-sm" style="text-align: center; max-width: 440px;">
       <div class="modal-header" style="justify-content: center; position: relative;">
         <div>
           <h3 class="modal-title">Emergency Single-Use PIN</h3>
@@ -1992,14 +1992,30 @@
         <button type="button" class="modal-close-btn" style="position: absolute; right: 0; top: 0;"
           onclick="document.getElementById('modal-emergency-pin').style.display='none'" aria-label="Close modal">&times;</button>
       </div>
-      <div class="modal-body">
-        <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 14px;">Use during network disruption or invigilator manual override.</p>
-        <div id="pin-display-text"
-          style="font-family: var(--fx-font-mono); font-size: 2.2rem; font-weight: 800; color: var(--fx-coral); letter-spacing: 0.15em; background: var(--fx-border-subtle); padding: 14px; border-radius: 14px; border: 1px dashed var(--fx-border); margin: 0 auto 10px;">
+      <div class="modal-body" style="padding-top: 10px;">
+        <div class="fx-subpanel" style="background: rgba(249, 115, 22, 0.05); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; text-align: left;">
+          <div id="pin-cand-name" style="font-weight: 700; color: var(--fx-text-heading, #1e293b); font-size: 0.95rem;">Candidate</div>
+          <div style="font-size: 0.78rem; font-family: var(--fx-font-mono, monospace); color: var(--fx-text-muted, #64748b); margin-top: 2px;">
+            Reg: <span id="pin-cand-reg" style="font-weight: 600; color: var(--fx-text-heading, #1e293b);">--</span> &bull; 
+            Roll: <span id="pin-cand-roll" style="font-weight: 600; color: var(--fx-text-heading, #1e293b);">--</span>
+          </div>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--fx-text-muted); margin-bottom: 12px; line-height: 1.4;">
+          Use during network disruption, terminal switch, or invigilator manual override.
+        </p>
+        <div id="pin-display"
+          style="font-family: var(--fx-font-mono); font-size: 2.3rem; font-weight: 800; color: var(--fx-coral, #ea580c); letter-spacing: 0.18em; background: var(--fx-border-subtle, #f8fafc); padding: 14px; border-radius: 14px; border: 2px dashed var(--fx-border, #cbd5e1); margin: 0 auto 10px; user-select: all;">
           -- -- --</div>
+        <div id="pin-display-text" style="display: none;"></div>
+        <div id="pin-meta-time" style="font-size: 0.74rem; color: var(--fx-text-muted, #64748b); font-weight: 600; margin-bottom: 8px;">
+          Generated: Just now &bull; Valid until Shift End
+        </div>
       </div>
-      <div class="modal-footer" style="justify-content: center; border-top: none; margin-top: 0; padding-top: 0;">
-        <button type="button" class="fx-btn-pill-coral" style="min-width: 130px;"
+      <div class="modal-footer" style="justify-content: center; gap: 10px; border-top: none; margin-top: 0; padding-top: 0;">
+        <button type="button" class="fx-btn-pill-light" id="btn-copy-pin-slip" style="padding: 7px 16px; font-weight: 700; font-size: 0.82rem;">
+          📋 Copy PIN Slip
+        </button>
+        <button type="button" class="fx-btn-pill-coral" style="min-width: 100px; padding: 7px 18px; font-weight: 700; font-size: 0.82rem;"
           onclick="document.getElementById('modal-emergency-pin').style.display='none'">Done</button>
       </div>
     </div>

@@ -1281,32 +1281,46 @@ async function regenerateEmergencyPin(id: string): Promise<void> {
             headers: getHeaders(),
         });
         if (!res.ok) {
-            showToast("Failed to regenerate credentials", true);
+            const errData = await res.json().catch(() => ({}));
+            showToast(errData.detail || "Failed to regenerate credentials", true);
             return;
         }
         const data = await res.json();
         const c = cachedCandidates.find(item => item.id === id);
         const modal = document.getElementById('modal-emergency-pin');
-        if (!modal) return;
 
-        (document.getElementById('pin-display') as HTMLElement).textContent = data.temporary_pin;
-        (document.getElementById('pin-meta-time') as HTMLElement).textContent = `Generated: ${data.generated_at_ist} • Valid until Shift End`;
-        (document.getElementById('pin-cand-name') as HTMLElement).textContent = c?.full_name || 'Candidate';
-        (document.getElementById('pin-cand-reg') as HTMLElement).textContent = data.registration_number;
-        (document.getElementById('pin-cand-roll') as HTMLElement).textContent = data.roll_number;
+        const pinDisplay = document.getElementById('pin-display') || document.getElementById('pin-display-text');
+        if (pinDisplay) pinDisplay.textContent = data.temporary_pin;
+        const pinDisplayText = document.getElementById('pin-display-text');
+        if (pinDisplayText && pinDisplayText !== pinDisplay) pinDisplayText.textContent = data.temporary_pin;
+
+        const pinMetaTime = document.getElementById('pin-meta-time');
+        if (pinMetaTime) pinMetaTime.textContent = `Generated: ${data.generated_at_ist} • Valid until Shift End`;
+
+        const pinCandName = document.getElementById('pin-cand-name');
+        if (pinCandName) pinCandName.textContent = c?.full_name || 'Candidate';
+
+        const pinCandReg = document.getElementById('pin-cand-reg');
+        if (pinCandReg) pinCandReg.textContent = data.registration_number;
+
+        const pinCandRoll = document.getElementById('pin-cand-roll');
+        if (pinCandRoll) pinCandRoll.textContent = data.roll_number;
 
         const btnCopy = document.getElementById('btn-copy-pin-slip');
         if (btnCopy) {
             btnCopy.onclick = () => {
-                const text = `SSE CBT EMERGENCY PIN SLIP\nCandidate: ${c?.full_name}\nRoll No: ${data.roll_number}\nReg No: ${data.registration_number}\nTemporary PIN: ${data.temporary_pin}\nIssued at: ${data.generated_at_ist}`;
+                const text = `SSE CBT EMERGENCY PIN SLIP\nCandidate: ${c?.full_name || 'Candidate'}\nRoll No: ${data.roll_number}\nReg No: ${data.registration_number}\nTemporary PIN: ${data.temporary_pin}\nIssued at: ${data.generated_at_ist}`;
                 copyText(text, "Emergency PIN Slip");
             };
         }
 
-        modal.style.display = 'flex';
+        if (modal) {
+            modal.style.display = 'flex';
+        }
         showToast(`Temporary PIN ${data.temporary_pin} generated!`);
-        loadCandidates();
-    } catch (_) {
+        await loadCandidates();
+    } catch (err) {
+        console.error("Error in regenerateEmergencyPin:", err);
         showToast("Error generating emergency credentials", true);
     }
 }
