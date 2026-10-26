@@ -98,9 +98,9 @@ if os.path.isdir(dist_dir):
             def make_handler(p=filepath):
                 with open(p, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
-                # Inject kiosk-guard.js if not already present
-                if "kiosk-guard.js" not in content and "</body>" in content:
-                    content = content.replace("</body>", '<script src="/kiosk-guard.js"></script></body>')
+                # Ensure kiosk-guard.js is present
+                if "kiosk-guard.js" not in content and "<head>" in content:
+                    content = content.replace("<head>", '<head>\n<script src="/kiosk-guard.js"></script>')
                 async def handler():
                     return HTMLResponse(content)
                 return handler
@@ -114,8 +114,8 @@ if os.path.isdir(dist_dir):
         if os.path.isfile(login_path):
             with open(login_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
-            if "kiosk-guard.js" not in content and "</body>" in content:
-                content = content.replace("</body>", '<script src="/kiosk-guard.js"></script></body>')
+            if "kiosk-guard.js" not in content and "<head>" in content:
+                content = content.replace("<head>", '<head>\n<script src="/kiosk-guard.js"></script>')
             return HTMLResponse(content)
         return {"status": "ok", "message": "SSE CBT Platform Running"}
 
@@ -190,12 +190,6 @@ class KBDLLHOOKSTRUCT(ctypes.Structure):
         ("dwExtraInfo", ctypes.c_ulong),
     ]
 
-VK_TAB = 0x09
-VK_ESCAPE = 0x1B
-VK_LWIN = 0x5B
-VK_RWIN = 0x5C
-VK_APPS = 0x5D
-VK_F4 = 0x73
 LLKHF_ALTDOWN = 0x20
 
 _hook_handle = None
@@ -212,26 +206,11 @@ def install_keyboard_hook():
             kbd = ctypes.cast(lParam, ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
             vk = kbd.vkCode
             alt_pressed = bool(kbd.flags & LLKHF_ALTDOWN)
-
-            # 1. Block Windows Key (Left & Right) and Context Menu Key
-            if vk in (VK_LWIN, VK_RWIN, VK_APPS):
-                return 1
-
-            # 2. Block Alt+Tab (Switch Applications)
-            if alt_pressed and vk == VK_TAB:
-                return 1
-
-            # 3. Block Alt+Esc
-            if alt_pressed and vk == VK_ESCAPE:
-                return 1
-
-            # 4. Block Ctrl+Esc (Start Menu)
             ctrl_pressed = bool(user32.GetAsyncKeyState(0x11) & 0x8000)
-            if ctrl_pressed and vk == VK_ESCAPE:
-                return 1
+            shift_pressed = bool(user32.GetAsyncKeyState(0x10) & 0x8000)
 
-            # 5. Intercept Alt+F4 -> Prompt supervisor exit modal instead of closing window!
-            if alt_pressed and vk == VK_F4:
+            # 1. Supervisor Hotkey: Ctrl + Shift + X (0x58) -> Trigger Exit Modal!
+            if ctrl_pressed and shift_pressed and vk == 0x58:
                 win = window_ref.get("win")
                 if win:
                     try:
@@ -239,6 +218,38 @@ def install_keyboard_hook():
                     except Exception:
                         pass
                 return 1
+
+            # 2. Block ALL Function Keys F1 through F12 (0x70 to 0x7B)
+            if 0x70 <= vk <= 0x7B:
+                # Special check: If Alt+F4 (0x73), trigger exit modal!
+                if alt_pressed and vk == 0x73:
+                    win = window_ref.get("win")
+                    if win:
+                        try:
+                            win.evaluate_js("window.showKioskExitModal && window.showKioskExitModal()")
+                        except Exception:
+                            pass
+                return 1 # Discard F1..F12 (F5 refresh, F11 fullscreen, F12 devtools, etc.)
+
+            # 3. Block Windows Keys (Left Win 0x5B, Right Win 0x5C) & Apps Key (0x5D)
+            if vk in (0x5B, 0x5C, 0x5D):
+                return 1
+
+            # 4. Block Escape (0x1B)
+            if vk == 0x1B:
+                return 1
+
+            # 5. Block ALL ALT combinations (Alt+Tab, Alt+Esc, Alt+Space, Alt+Arrows, etc.)
+            if alt_pressed:
+                return 1
+
+            # 6. Block ALL CTRL combinations EXCEPT allowed text editing (A, C, V, X, Y, Z)
+            if ctrl_pressed:
+                if shift_pressed:
+                    return 1 # Block all Ctrl+Shift (DevTools, etc.)
+                # Allowed typing shortcuts: A (0x41), C (0x43), V (0x56), X (0x58), Y (0x59), Z (0x5A)
+                if vk not in (0x41, 0x43, 0x56, 0x58, 0x59, 0x5A):
+                    return 1 # Block Ctrl+W, Ctrl+R, Ctrl+T, Ctrl+N, Ctrl+P, Ctrl+S, Ctrl+U, etc.!
 
         return user32.CallNextHookEx(None, nCode, wParam, lParam)
 
@@ -370,6 +381,9 @@ def main():
 
     try:
         import webview
+        # Disable browser devtools, menus, and browser accelerator keys in WebView2
+        webview.settings["OPEN_DEVTOOLS_IN_DEBUG"] = False
+        webview.settings["SHOW_DEFAULT_MENUS"] = False
 
         app_data = os.environ.get("LOCALAPPDATA", tempfile.gettempdir())
         storage_path = os.path.join(app_data, "SSE_CBT_Platform_Cache")
@@ -399,8 +413,8 @@ def main():
 
         win.events.closing += on_window_closing
 
-        # Run native message pump on main thread
-        webview.start(storage_path=storage_path)
+        # Run native message pump on main thread with debug=False to enforce accelerator lockdown
+        webview.start(debug=False, storage_path=storage_path)
 
     except Exception as e:
         print(f"[CBT Desktop] pywebview window error ({e}). Launching fallback fullscreen kiosk app...")
