@@ -3,7 +3,7 @@ import sys
 import io
 
 # In PyInstaller windowed mode (console=False), sys.stdout/sys.stderr are None.
-# Uvicorn's logging formatter calls sys.stdout.isatty(), causing AttributeError if None.
+# SafeWriter redirects output cleanly to cbt_desktop.log and satisfies isatty().
 class SafeWriter:
     def __init__(self, log_path=None):
         self.log_path = log_path
@@ -44,7 +44,9 @@ import time
 import subprocess
 import webbrowser
 import tempfile
-from fastapi.responses import FileResponse
+import ctypes
+from ctypes import wintypes
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
 # Determine base directory whether running in normal Python or frozen PyInstaller exe
@@ -60,6 +62,16 @@ if backend_dir not in sys.path:
 from backend.main import app
 
 dist_dir = os.path.join(BASE_DIR, "dist")
+
+# Ensure kiosk-guard.js route is always served
+kiosk_js_dist = os.path.join(dist_dir, "kiosk-guard.js")
+kiosk_js_public = os.path.join(BASE_DIR, "public", "kiosk-guard.js")
+kiosk_js_path = kiosk_js_dist if os.path.isfile(kiosk_js_dist) else kiosk_js_public
+
+if os.path.isfile(kiosk_js_path):
+    @app.get("/kiosk-guard.js", include_in_schema=False)
+    async def serve_kiosk_guard_script():
+        return FileResponse(kiosk_js_path, media_type="application/javascript")
 
 if os.path.isdir(dist_dir):
     assets_dir = os.path.join(dist_dir, "assets")
@@ -84,24 +96,27 @@ if os.path.isdir(dist_dir):
         filepath = os.path.join(dist_dir, hf)
         if os.path.isfile(filepath):
             def make_handler(p=filepath):
+                with open(p, "r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+                # Inject kiosk-guard.js if not already present
+                if "kiosk-guard.js" not in content and "</body>" in content:
+                    content = content.replace("</body>", '<script src="/kiosk-guard.js"></script></body>')
                 async def handler():
-                    return FileResponse(p)
+                    return HTMLResponse(content)
                 return handler
             app.add_api_route(f"/{hf}", make_handler(filepath), methods=["GET"], include_in_schema=False)
 
     @app.get("/portal", include_in_schema=False)
     @app.get("/app", include_in_schema=False)
+    @app.get("/", include_in_schema=False)
     async def serve_portal():
         login_path = os.path.join(dist_dir, "login.html")
         if os.path.isfile(login_path):
-            return FileResponse(login_path)
-        return {"status": "ok", "message": "SSE CBT Platform Running"}
-
-    @app.get("/", include_in_schema=False)
-    async def serve_root():
-        login_path = os.path.join(dist_dir, "login.html")
-        if os.path.isfile(login_path):
-            return FileResponse(login_path)
+            with open(login_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+            if "kiosk-guard.js" not in content and "</body>" in content:
+                content = content.replace("</body>", '<script src="/kiosk-guard.js"></script></body>')
+            return HTMLResponse(content)
         return {"status": "ok", "message": "SSE CBT Platform Running"}
 
 
@@ -131,7 +146,6 @@ class UvicornServerThread(threading.Thread):
     def __init__(self, asgi_app, port: int):
         super().__init__(daemon=True)
         import uvicorn
-        # log_config=None prevents uvicorn from configuring its default formatter that fails without a TTY
         config = uvicorn.Config(
             app=asgi_app,
             host="127.0.0.1",
@@ -153,25 +167,135 @@ class UvicornServerThread(threading.Thread):
         self.server.should_exit = True
 
 
+# --- WIN32 HARDWARE-LEVEL KIOSK KEYBOARD INTERCEPTOR ---
+LRESULT = ctypes.c_ssize_t
+HOOKPROC = ctypes.WINFUNCTYPE(LRESULT, ctypes.c_int, wintypes.WPARAM, wintypes.LPARAM)
+
+user32 = ctypes.windll.user32
+kernel32 = ctypes.windll.kernel32
+
+user32.SetWindowsHookExW.argtypes = [ctypes.c_int, HOOKPROC, wintypes.HINSTANCE, wintypes.DWORD]
+user32.SetWindowsHookExW.restype = wintypes.HHOOK
+user32.CallNextHookEx.argtypes = [wintypes.HHOOK, ctypes.c_int, wintypes.WPARAM, wintypes.LPARAM]
+user32.CallNextHookEx.restype = LRESULT
+user32.UnhookWindowsHookEx.argtypes = [wintypes.HHOOK]
+user32.UnhookWindowsHookEx.restype = wintypes.BOOL
+
+class KBDLLHOOKSTRUCT(ctypes.Structure):
+    _fields_ = [
+        ("vkCode", wintypes.DWORD),
+        ("scanCode", wintypes.DWORD),
+        ("flags", wintypes.DWORD),
+        ("time", wintypes.DWORD),
+        ("dwExtraInfo", ctypes.c_ulong),
+    ]
+
+VK_TAB = 0x09
+VK_ESCAPE = 0x1B
+VK_LWIN = 0x5B
+VK_RWIN = 0x5C
+VK_APPS = 0x5D
+VK_F4 = 0x73
+LLKHF_ALTDOWN = 0x20
+
+_hook_handle = None
+_hook_proc_ref = None
+
+window_ref = {"win": None}
+is_authorized_exit = [False]
+
+def install_keyboard_hook():
+    global _hook_handle, _hook_proc_ref
+
+    def low_level_keyboard_handler(nCode, wParam, lParam):
+        if nCode >= 0:
+            kbd = ctypes.cast(lParam, ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
+            vk = kbd.vkCode
+            alt_pressed = bool(kbd.flags & LLKHF_ALTDOWN)
+
+            # 1. Block Windows Key (Left & Right) and Context Menu Key
+            if vk in (VK_LWIN, VK_RWIN, VK_APPS):
+                return 1
+
+            # 2. Block Alt+Tab (Switch Applications)
+            if alt_pressed and vk == VK_TAB:
+                return 1
+
+            # 3. Block Alt+Esc
+            if alt_pressed and vk == VK_ESCAPE:
+                return 1
+
+            # 4. Block Ctrl+Esc (Start Menu)
+            ctrl_pressed = bool(user32.GetAsyncKeyState(0x11) & 0x8000)
+            if ctrl_pressed and vk == VK_ESCAPE:
+                return 1
+
+            # 5. Intercept Alt+F4 -> Prompt supervisor exit modal instead of closing window!
+            if alt_pressed and vk == VK_F4:
+                win = window_ref.get("win")
+                if win:
+                    try:
+                        win.evaluate_js("window.showKioskExitModal && window.showKioskExitModal()")
+                    except Exception:
+                        pass
+                return 1
+
+        return user32.CallNextHookEx(None, nCode, wParam, lParam)
+
+    _hook_proc_ref = HOOKPROC(low_level_keyboard_handler)
+    _hook_handle = user32.SetWindowsHookExW(13, _hook_proc_ref, None, 0)
+
+
+def uninstall_keyboard_hook():
+    global _hook_handle
+    if _hook_handle:
+        try:
+            user32.UnhookWindowsHookEx(_hook_handle)
+        except Exception:
+            pass
+        _hook_handle = None
+
+
 class DesktopBridgeApi:
-    """JS Bridge allowing frontend to interact with desktop host if desired."""
-    def __init__(self, window_ref):
-        self.window_ref = window_ref
+    """Secure JS Bridge for Kiosk Management & Date PIN Authentication."""
+    def __init__(self, win_holder, exit_callback):
+        self.win_holder = win_holder
+        self.exit_callback = exit_callback
 
     def is_desktop_mode(self) -> bool:
         return True
 
     def toggle_fullscreen(self) -> bool:
-        win = self.window_ref.get("win")
+        win = self.win_holder.get("win")
         if win:
             win.toggle_fullscreen()
             return bool(getattr(win, "fullscreen", False))
         return False
 
     def exit_app(self) -> None:
-        win = self.window_ref.get("win")
-        if win:
-            win.destroy()
+        self.exit_callback()
+
+    def verify_and_exit(self, pin: str) -> dict:
+        """
+        Validates the invigilator exit PIN against current system date (YYYYMMDD).
+        Never exposes the expected PIN to client code.
+        """
+        from datetime import datetime, timezone
+        p = str(pin).strip()
+        local_date = datetime.now().strftime("%Y%m%d")
+        utc_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+
+        try:
+            from backend.app.core.master_clock import get_current_ist_datetime
+            ist_date = get_current_ist_datetime().strftime("%Y%m%d")
+        except Exception:
+            ist_date = local_date
+
+        valid_pins = {local_date, utc_date, ist_date}
+        if p in valid_pins:
+            threading.Thread(target=self.exit_callback).start()
+            return {"status": "success", "authorized": True, "message": "Invigilator authorization verified."}
+        return {"status": "error", "authorized": False, "message": "Invalid invigilator authorization key."}
 
 
 def launch_browser_kiosk_fallback(url: str) -> bool:
@@ -213,11 +337,11 @@ def main():
     target_url = f"http://127.0.0.1:{port}/login.html"
 
     print("=" * 72)
-    print("  SSE CBT PLATFORM V0.1 - NATIVE DESKTOP EXAMINATION SYSTEM")
+    print("  SSE CBT PLATFORM V0.1 - HARDENED KIOSK EXAMINATION SYSTEM")
     print("=" * 72)
     print(f"  * Local Server Address : http://127.0.0.1:{port}")
     print(f"  * Application URL      : {target_url}")
-    print(f"  * Mode                 : Fullscreen Desktop Application")
+    print(f"  * Mode                 : Fullscreen Desktop Kiosk Lockdown")
     print("=" * 72)
 
     # Start FastAPI / Uvicorn server in background thread
@@ -227,9 +351,22 @@ def main():
     # Wait until server accepts connections
     wait_for_server(port)
 
-    # Try launching native WebView2 full-screen window via pywebview
-    window_ref = {"win": None}
-    bridge_api = DesktopBridgeApi(window_ref)
+    # Install low-level Windows hardware keyboard hook for kiosk lockdown
+    install_keyboard_hook()
+
+    def do_authorized_exit():
+        is_authorized_exit[0] = True
+        time.sleep(0.3)
+        uninstall_keyboard_hook()
+        win = window_ref.get("win")
+        if win:
+            try:
+                win.destroy()
+            except Exception:
+                pass
+        os._exit(0)
+
+    bridge_api = DesktopBridgeApi(window_ref, do_authorized_exit)
 
     try:
         import webview
@@ -243,11 +380,24 @@ def main():
             url=target_url,
             fullscreen=True,
             min_size=(1024, 720),
-            confirm_close=True,
+            confirm_close=False,
             background_color="#0b1120",
             js_api=bridge_api
         )
         window_ref["win"] = win
+
+        # Guard against unauthorized window closing
+        def on_window_closing():
+            if is_authorized_exit[0]:
+                return True # Allow close
+            # Trigger Invigilator PIN modal in the webview
+            try:
+                win.evaluate_js("window.showKioskExitModal && window.showKioskExitModal()")
+            except Exception:
+                pass
+            return False # Cancel the close event!
+
+        win.events.closing += on_window_closing
 
         # Run native message pump on main thread
         webview.start(storage_path=storage_path)
@@ -261,6 +411,7 @@ def main():
         except KeyboardInterrupt:
             pass
     finally:
+        uninstall_keyboard_hook()
         server_thread.stop()
 
 

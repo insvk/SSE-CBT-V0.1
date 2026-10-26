@@ -39,3 +39,36 @@ def trigger_clock_sync():
         "sync_result": sync_res,
         "clock": clock_payload,
     }
+
+
+from pydantic import BaseModel
+
+class VerifyPinRequest(BaseModel):
+    pin: str
+
+
+@router.post("/verify-exit-pin")
+def verify_kiosk_exit_pin(req: VerifyPinRequest):
+    """
+    Validates supervisor exit PIN against authoritative system date (YYYYMMDD).
+    Never exposes the expected PIN in responses or error logs.
+    """
+    pin = req.pin.strip()
+    from datetime import datetime, timezone
+    ist_date = get_current_ist_datetime().strftime("%Y%m%d")
+    local_date = datetime.now().strftime("%Y%m%d")
+    utc_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+
+    valid_pins = {ist_date, local_date, utc_date}
+    if pin in valid_pins:
+        return {
+            "status": "success",
+            "authorized": True,
+            "message": "Invigilator authorization verified."
+        }
+    return {
+        "status": "error",
+        "authorized": False,
+        "message": "Invalid invigilator authorization key."
+    }
+
