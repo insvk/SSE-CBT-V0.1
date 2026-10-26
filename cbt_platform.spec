@@ -13,6 +13,11 @@ datas = [
 if os.path.exists('.env'):
     datas.append(('.env', '.'))
 
+# Collect webview, pythonnet, and clr_loader resources
+datas += collect_data_files('webview')
+datas += collect_data_files('pythonnet')
+datas += collect_data_files('clr_loader')
+
 hiddenimports = [
     'uvicorn',
     'uvicorn.logging',
@@ -37,7 +42,13 @@ hiddenimports = [
     'jwt',
     'multipart',
     'dotenv',
-] + collect_submodules('uvicorn') + collect_submodules('fastapi') + collect_submodules('starlette')
+    'webview',
+    'webview.platforms',
+    'webview.platforms.winforms',
+    'pythonnet',
+    'clr_loader',
+    'clr',
+] + collect_submodules('uvicorn') + collect_submodules('fastapi') + collect_submodules('starlette') + collect_submodules('webview') + collect_submodules('pythonnet') + collect_submodules('clr_loader')
 
 a = Analysis(
     ['desktop_launcher.py'],
@@ -71,7 +82,7 @@ exe = EXE(
     upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

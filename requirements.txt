@@ -9,3 +9,5 @@ python-multipart>=0.0.6
 httpx>=0.24.0
 pytest>=7.4.0
 pyinstaller>=6.0.0
+pywebview>=6.2.1
+pythonnet>=3.0.0
