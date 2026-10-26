@@ -377,15 +377,14 @@
                 <div class="kiosk-badge">🔒 CBT Kiosk Lockdown</div>
                 <h2 class="kiosk-title">Invigilator Authorization</h2>
                 <p class="kiosk-desc">
-                    Secure Kiosk Lockdown is active. Enter the Date PIN to safely terminate this session.
+                    Secure Kiosk Lockdown is active. Enter authorized credentials to terminate this session.
                 </p>
                 <div class="kiosk-input-wrap">
                     <div class="kiosk-label-row">
-                        <label class="kiosk-label" for="kiosk-pin-input">Master Date PIN</label>
-                        <span class="kiosk-hint">Format: YYYYMMDD</span>
+                        <label class="kiosk-label" for="kiosk-pin-input">Master Security PIN</label>
                     </div>
                     <div class="kiosk-input-box">
-                        <input type="password" id="kiosk-pin-input" class="kiosk-input" maxlength="24" placeholder="YYYYMMDD" autocomplete="off" />
+                        <input type="password" id="kiosk-pin-input" class="kiosk-input" maxlength="24" placeholder="••••••••" autocomplete="off" />
                         <button type="button" id="kiosk-toggle-eye" class="kiosk-eye-btn" title="Show/Hide PIN">👁️</button>
                     </div>
                     <div id="kiosk-error-msg" class="kiosk-error"></div>
@@ -480,7 +479,7 @@
         var pin = pinInput.value.trim().replace(/\s+/g, '');
 
         if (!pin) {
-            errorMsg.textContent = 'Please enter the Master Date PIN (e.g. 20261026).';
+            errorMsg.textContent = 'Please enter the authorization PIN.';
             errorMsg.style.display = 'block';
             pinInput.focus();
             return;
@@ -499,7 +498,7 @@
                     btnSubmit.style.background = '#16a34a';
                     return;
                 } else {
-                    throw new Error((bridgeRes && bridgeRes.message) || 'Invalid Invigilator Date PIN.');
+                    throw new Error((bridgeRes && bridgeRes.message) || 'Invalid Authorization PIN.');
                 }
             }
 
@@ -521,7 +520,7 @@
                     window.close();
                 }
             } else {
-                throw new Error((data && data.message) || 'Invalid Invigilator Date PIN.');
+                throw new Error((data && data.message) || 'Invalid Authorization PIN.');
             }
         } catch (err) {
             errorMsg.textContent = err.message || 'Authorization Failed. Access Denied.';
