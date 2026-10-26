@@ -53,13 +53,22 @@ def verify_kiosk_exit_pin(req: VerifyPinRequest):
     Validates supervisor exit PIN against authoritative system date (YYYYMMDD).
     Never exposes the expected PIN in responses or error logs.
     """
-    pin = req.pin.strip()
+    pin = req.pin.strip().replace(" ", "")
     from datetime import datetime, timezone
-    ist_date = get_current_ist_datetime().strftime("%Y%m%d")
-    local_date = datetime.now().strftime("%Y%m%d")
-    utc_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+    today_local = datetime.now()
+    today_utc = datetime.now(timezone.utc)
+    try:
+        today_ist = get_current_ist_datetime()
+    except Exception:
+        today_ist = today_local
 
-    valid_pins = {ist_date, local_date, utc_date}
+    valid_pins = set()
+    for dt in (today_local, today_utc, today_ist):
+        valid_pins.add(dt.strftime("%Y%m%d"))
+        valid_pins.add(dt.strftime("%Y-%m-%d"))
+        valid_pins.add(dt.strftime("%d%m%Y"))
+        valid_pins.add(dt.strftime("%d-%m-%Y"))
+
     if pin in valid_pins:
         return {
             "status": "success",

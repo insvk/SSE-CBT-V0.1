@@ -98,7 +98,6 @@ if os.path.isdir(dist_dir):
             def make_handler(p=filepath):
                 with open(p, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
-                # Ensure kiosk-guard.js is present
                 if "kiosk-guard.js" not in content and "<head>" in content:
                     content = content.replace("<head>", '<head>\n<script src="/kiosk-guard.js"></script>')
                 async def handler():
@@ -197,12 +196,25 @@ _hook_proc_ref = None
 
 window_ref = {"win": None}
 is_authorized_exit = [False]
+is_modal_open = [False]
+
+def async_show_exit_modal():
+    """Trigger modal asynchronously to prevent low-level hook message loop deadlocks."""
+    win = window_ref.get("win")
+    if win:
+        try:
+            win.run_js("window.showKioskExitModal && window.showKioskExitModal();")
+        except Exception:
+            pass
+
 
 def install_keyboard_hook():
     global _hook_handle, _hook_proc_ref
 
     def low_level_keyboard_handler(nCode, wParam, lParam):
-        if nCode >= 0:
+        # CRITICAL: Only intercept on KEYDOWN (0x0100) and SYSKEYDOWN (0x0104).
+        # Never swallow KEYUP (0x0101/0x0105) so modifiers never get stuck!
+        if nCode >= 0 and wParam in (0x0100, 0x0104):
             kbd = ctypes.cast(lParam, ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
             vk = kbd.vkCode
             alt_pressed = bool(kbd.flags & LLKHF_ALTDOWN)
@@ -211,43 +223,41 @@ def install_keyboard_hook():
 
             # 1. Supervisor Hotkey: Ctrl + Shift + X (0x58) -> Trigger Exit Modal!
             if ctrl_pressed and shift_pressed and vk == 0x58:
-                win = window_ref.get("win")
-                if win:
-                    try:
-                        win.evaluate_js("window.showKioskExitModal && window.showKioskExitModal()")
-                    except Exception:
-                        pass
+                threading.Thread(target=async_show_exit_modal, daemon=True).start()
                 return 1
 
-            # 2. Block ALL Function Keys F1 through F12 (0x70 to 0x7B)
-            if 0x70 <= vk <= 0x7B:
-                # Special check: If Alt+F4 (0x73), trigger exit modal!
-                if alt_pressed and vk == 0x73:
-                    win = window_ref.get("win")
-                    if win:
-                        try:
-                            win.evaluate_js("window.showKioskExitModal && window.showKioskExitModal()")
-                        except Exception:
-                            pass
-                return 1 # Discard F1..F12 (F5 refresh, F11 fullscreen, F12 devtools, etc.)
+            # 2. Alt + F4 (0x73) -> Trigger Exit Modal instead of closing!
+            if alt_pressed and vk == 0x73:
+                threading.Thread(target=async_show_exit_modal, daemon=True).start()
+                return 1
 
-            # 3. Block Windows Keys (Left Win 0x5B, Right Win 0x5C) & Apps Key (0x5D)
+            # 3. If Invigilator Exit Modal is currently open, allow all typing!
+            # Allow: Numbers (0-9: 0x30..0x39, Numpad 0x60..0x69), Letters, Backspace (0x08), Enter (0x0D), Delete (0x2E)
+            if is_modal_open[0]:
+                if not alt_pressed and not (ctrl_pressed and not shift_pressed):
+                    # Normal typing inside modal must pass through unhindered!
+                    return user32.CallNextHookEx(None, nCode, wParam, lParam)
+
+            # 4. Block Windows Keys (Left Win 0x5B, Right Win 0x5C) & Apps Key (0x5D)
             if vk in (0x5B, 0x5C, 0x5D):
                 return 1
 
-            # 4. Block Escape (0x1B)
-            if vk == 0x1B:
+            # 5. Block Function Keys F1 through F12 (0x70..0x7B)
+            if 0x70 <= vk <= 0x7B:
                 return 1
 
-            # 5. Block ALL ALT combinations (Alt+Tab, Alt+Esc, Alt+Space, Alt+Arrows, etc.)
+            # 6. Block Escape (0x1B) when modal is not open
+            if vk == 0x1B and not is_modal_open[0]:
+                return 1
+
+            # 7. Block ALL ALT combinations (Alt+Tab, Alt+Esc, Alt+Space, Alt+Arrows)
             if alt_pressed:
                 return 1
 
-            # 6. Block ALL CTRL combinations EXCEPT allowed text editing (A, C, V, X, Y, Z)
+            # 8. Block ALL CTRL combinations EXCEPT allowed text editing (A, C, V, X, Y, Z)
             if ctrl_pressed:
                 if shift_pressed:
-                    return 1 # Block all Ctrl+Shift (DevTools, etc.)
-                # Allowed typing shortcuts: A (0x41), C (0x43), V (0x56), X (0x58), Y (0x59), Z (0x5A)
+                    return 1 # Block all Ctrl+Shift
                 if vk not in (0x41, 0x43, 0x56, 0x58, 0x59, 0x5A):
                     return 1 # Block Ctrl+W, Ctrl+R, Ctrl+T, Ctrl+N, Ctrl+P, Ctrl+S, Ctrl+U, etc.!
 
@@ -276,6 +286,10 @@ class DesktopBridgeApi:
     def is_desktop_mode(self) -> bool:
         return True
 
+    def set_modal_open(self, is_open: bool) -> None:
+        """Notifies Python host that the PIN entry modal is active to permit unhindered typing."""
+        is_modal_open[0] = bool(is_open)
+
     def toggle_fullscreen(self) -> bool:
         win = self.win_holder.get("win")
         if win:
@@ -288,22 +302,29 @@ class DesktopBridgeApi:
 
     def verify_and_exit(self, pin: str) -> dict:
         """
-        Validates the invigilator exit PIN against current system date (YYYYMMDD).
-        Never exposes the expected PIN to client code.
+        Validates the invigilator exit PIN against current system date.
+        Accepts YYYYMMDD, YYYY-MM-DD, DDMMYYYY, DD-MM-YYYY across local, UTC, and IST.
         """
         from datetime import datetime, timezone
-        p = str(pin).strip()
-        local_date = datetime.now().strftime("%Y%m%d")
-        utc_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+        p = str(pin).strip().replace(" ", "")
 
+        today_local = datetime.now()
+        today_utc = datetime.now(timezone.utc)
         try:
             from backend.app.core.master_clock import get_current_ist_datetime
-            ist_date = get_current_ist_datetime().strftime("%Y%m%d")
+            today_ist = get_current_ist_datetime()
         except Exception:
-            ist_date = local_date
+            today_ist = today_local
 
-        valid_pins = {local_date, utc_date, ist_date}
+        valid_pins = set()
+        for dt in (today_local, today_utc, today_ist):
+            valid_pins.add(dt.strftime("%Y%m%d"))
+            valid_pins.add(dt.strftime("%Y-%m-%d"))
+            valid_pins.add(dt.strftime("%d%m%Y"))
+            valid_pins.add(dt.strftime("%d-%m-%Y"))
+
         if p in valid_pins:
+            is_authorized_exit[0] = True
             threading.Thread(target=self.exit_callback).start()
             return {"status": "success", "authorized": True, "message": "Invigilator authorization verified."}
         return {"status": "error", "authorized": False, "message": "Invalid invigilator authorization key."}
@@ -367,7 +388,6 @@ def main():
 
     def do_authorized_exit():
         is_authorized_exit[0] = True
-        time.sleep(0.3)
         uninstall_keyboard_hook()
         win = window_ref.get("win")
         if win:
@@ -375,6 +395,7 @@ def main():
                 win.destroy()
             except Exception:
                 pass
+        time.sleep(0.3)
         os._exit(0)
 
     bridge_api = DesktopBridgeApi(window_ref, do_authorized_exit)
@@ -404,11 +425,8 @@ def main():
         def on_window_closing():
             if is_authorized_exit[0]:
                 return True # Allow close
-            # Trigger Invigilator PIN modal in the webview
-            try:
-                win.evaluate_js("window.showKioskExitModal && window.showKioskExitModal()")
-            except Exception:
-                pass
+            # Trigger Invigilator PIN modal asynchronously
+            threading.Thread(target=async_show_exit_modal, daemon=True).start()
             return False # Cancel the close event!
 
         win.events.closing += on_window_closing
