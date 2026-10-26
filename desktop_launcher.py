@@ -1,5 +1,43 @@
 import os
 import sys
+import io
+
+# In PyInstaller windowed mode (console=False), sys.stdout/sys.stderr are None.
+# Uvicorn's logging formatter calls sys.stdout.isatty(), causing AttributeError if None.
+class SafeWriter:
+    def __init__(self, log_path=None):
+        self.log_path = log_path
+
+    def isatty(self) -> bool:
+        return False
+
+    def write(self, s: str):
+        if not s:
+            return
+        if self.log_path:
+            try:
+                with open(self.log_path, "a", encoding="utf-8") as f:
+                    f.write(s)
+            except Exception:
+                pass
+
+    def flush(self):
+        pass
+
+if getattr(sys, "frozen", False):
+    EXE_DIR = os.path.dirname(sys.executable)
+else:
+    EXE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+desktop_log_file = os.path.join(EXE_DIR, "cbt_desktop.log")
+
+if sys.stdout is None:
+    sys.stdout = SafeWriter(desktop_log_file)
+if sys.stderr is None:
+    sys.stderr = SafeWriter(desktop_log_file)
+if sys.stdin is None:
+    sys.stdin = io.StringIO()
+
 import socket
 import threading
 import time
@@ -11,7 +49,7 @@ from fastapi.staticfiles import StaticFiles
 
 # Determine base directory whether running in normal Python or frozen PyInstaller exe
 if getattr(sys, "frozen", False):
-    BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    BASE_DIR = getattr(sys, "_MEIPASS", EXE_DIR)
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -75,7 +113,7 @@ def find_available_port(start_port=8000, max_port=8040) -> int:
     return start_port
 
 
-def wait_for_server(port: int, timeout: float = 6.0) -> bool:
+def wait_for_server(port: int, timeout: float = 10.0) -> bool:
     start = time.time()
     while time.time() - start < timeout:
         try:
@@ -93,11 +131,23 @@ class UvicornServerThread(threading.Thread):
     def __init__(self, asgi_app, port: int):
         super().__init__(daemon=True)
         import uvicorn
-        config = uvicorn.Config(app=asgi_app, host="127.0.0.1", port=port, log_level="warning", access_log=False)
+        # log_config=None prevents uvicorn from configuring its default formatter that fails without a TTY
+        config = uvicorn.Config(
+            app=asgi_app,
+            host="127.0.0.1",
+            port=port,
+            log_level="warning",
+            access_log=False,
+            log_config=None
+        )
         self.server = uvicorn.Server(config=config)
 
     def run(self):
-        self.server.run()
+        try:
+            self.server.run()
+        except Exception as e:
+            if sys.stderr:
+                sys.stderr.write(f"Uvicorn server error: {e}\n")
 
     def stop(self):
         self.server.should_exit = True
@@ -221,7 +271,8 @@ if __name__ == "__main__":
         import traceback
         err = traceback.format_exc()
         try:
-            with open("cbt_desktop_error.log", "w", encoding="utf-8") as f:
+            err_log_path = os.path.join(EXE_DIR, "cbt_desktop_error.log")
+            with open(err_log_path, "w", encoding="utf-8") as f:
                 f.write(err)
         except Exception:
             pass
